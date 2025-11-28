@@ -2,12 +2,14 @@
 #include "utils.h"
 
 DNA::DNA()
-    : perceptionRadius(randomInRange(20, 60)),
-      maxSpeed(randomInRange(0.5, 3)),
-      mutationRate(0.01),
-      reproductionCost(randomInRange(1.0, 5.0)),
-      reproductionCooldown(randomInRange(40, 60)),
-      ageOfMaturity(randomInRange(15, 30))
+    : perceptionRadius(randomInRange(5, 15)),
+      maxSpeed(randomInRange(0.5, 2)),
+      mutationRate(0.05),
+      reproductionCost(randomInRange(5, 15.0)),
+      coherence(randomInRange(0.1, 1.0)),
+      avoidance(randomInRange(0.1, 1.0)),
+      reproductionCooldown(randomInRange(100, 250)),
+      ageOfMaturity(randomInRange(20, 60))
 {
 }
 
@@ -23,6 +25,8 @@ DNA::DNA()
     child.reproductionCooldown =
         (rand() % 2) ? reproductionCooldown : partner.reproductionCooldown;
     child.ageOfMaturity = (rand() % 2) ? ageOfMaturity : partner.ageOfMaturity;
+    child.coherence     = (rand() % 2) ? coherence : partner.coherence;
+    child.avoidance     = (rand() % 2) ? avoidance : partner.avoidance;
     return child;
 }
 
@@ -33,6 +37,12 @@ void DNA::mutate()
     }
     if ((rand() % 100) / 100.0 < mutationRate) {
         maxSpeed += randomDelta();
+    }
+    if ((rand() % 100) / 100.0 < mutationRate) {
+        coherence += randomDelta();
+    }
+    if ((rand() % 100) / 100.0 < mutationRate) {
+        avoidance += randomDelta();
     }
 
     if ((rand() % 100) / 100.0 < mutationRate) {

@@ -20,11 +20,14 @@ class Vehicle {
     [[nodiscard]] Vec2D const&           getVelocity() const;
     [[nodiscard]] Vec2D const&           getAcceleration() const;
     [[nodiscard]] std::optional<Vehicle> reproduce(Vehicles& vehicles);
-    void                                 eat(std::vector<Vec2D>& foodPositions);
+    void                                 eat(std::vector<Food>& foodPositions);
+    void                                 avoid(Vehicles const& vehicles);
+    void                                 cohere(Vehicles const& vehicles);
     Vec2D                                seek(Vec2D const& target);
     void                                 update();
     void                                 show() const;
     void                                 applyForce(Vec2D const& force);
+    void                                 avoidEdges();
 
    private:
     World* world;

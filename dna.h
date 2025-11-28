@@ -6,6 +6,8 @@ struct DNA {
     double maxSpeed;
     double mutationRate;
     double reproductionCost;
+    double coherence;  // New trait for cohesion behavior
+    double avoidance;  // New trait for avoidance behavior
     int    reproductionCooldown;
     int    ageOfMaturity;
 

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "dna.h"
+#include "food.h"
 #include "vec2d.h"
 
 class Vehicle;
@@ -11,9 +12,10 @@ struct World {
     double               width;
     double               height;
     std::vector<Vehicle> vehicles;
-    std::vector<Vec2D>   food;
+    std::vector<Food>    food;
     std::vector<Vec2D>   poison;
     static bool          gameRunning;
+    int                  deadCounter = 0;
 
     static void stopRunning(int)
     {
@@ -26,9 +28,11 @@ struct World {
 
     void addVehicle(Vec2D const& position, DNA const& dna);
 
-    Vec2D const& newFood();
+    Food const& newFood();
 
     auto pruneDeadVehicles() -> typename decltype(vehicles)::size_type;
+
+    auto pruneEatenFood() -> typename decltype(food)::size_type;
 
     Vehicle& createVehicle(Vec2D const& position);
 };
