@@ -22,11 +22,14 @@ class Vehicle {
     [[nodiscard]] std::optional<Vehicle> reproduce(Vehicles& vehicles);
     void                                 eat(std::vector<Food>& foodPositions);
     void                                 avoid(Vehicles const& vehicles);
+    void                                 align(Vehicles const& vehicles);
     void                                 cohere(Vehicles const& vehicles);
+    void                                 attemptMalice(Vehicles& vehicles);
+    void                                 attemptAltruism(Vehicles& vehicles);
     Vec2D                                seek(Vec2D const& target);
     void                                 update();
     void                                 show() const;
-    void                                 applyForce(Vec2D const& force);
+    void                                 applyForce(Vec2D& force);
     void                                 avoidEdges();
 
    private:

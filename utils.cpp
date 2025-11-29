@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <fstream>
 
 double randomDelta(double scale)
 {
@@ -8,4 +9,10 @@ double randomDelta(double scale)
 double randomInRange(double min, double max)
 {
     return min + (rand() / (RAND_MAX / (max - min)));
+}
+
+void log(std::string const& message)
+{
+    static std::ofstream logFile("simulation_log.txt", std::ios_base::app);
+    logFile << message << std::endl;
 }

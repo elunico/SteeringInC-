@@ -1,7 +1,6 @@
 
 #include "vehicle.h"
-#include <curses.h>
-#include <iostream>
+
 #include <string>
 #include "utils.h"
 #include "vec2d.h"
@@ -57,6 +56,29 @@ void Vehicle::eat(std::vector<Food>& foodPosition)
     }
 }
 
+void Vehicle::align(Vehicles const& vehicles)
+{
+    Vec2D avgVelocity;
+    int   count = 0;
+    for (size_t i = 0; i < vehicles.size(); ++i) {
+        if (&vehicles[i] == this)
+            continue;
+        double distance = position.distanceTo(vehicles[i].position);
+        if (distance < dna.perceptionRadius) {
+            avgVelocity += vehicles[i].velocity;
+            count++;
+        }
+    }
+    if (count > 0) {
+        avgVelocity /= static_cast<double>(count);
+        avgVelocity.normalize();
+        avgVelocity *= dna.maxSpeed;
+        Vec2D steer = avgVelocity - velocity;
+        steer *= 0.1;  // Adjust the strength of alignment
+        applyForce(steer);
+    }
+}
+
 void Vehicle::avoid(Vehicles const& vehicles)
 {
     for (size_t i = 0; i < vehicles.size(); ++i) {
@@ -93,6 +115,46 @@ void Vehicle::cohere(Vehicles const& vehicles)
         Vec2D steer = seek(centerOfMass);
         steer *= dna.coherence;
         applyForce(steer);
+    }
+}
+
+void Vehicle::attemptMalice(Vehicles& vehicles)
+{
+    if (health <= 5.0 || age < dna.ageOfMaturity) {
+        return;  // Not enough health to attempt malice
+    }
+    for (size_t i = 0; i < vehicles.size(); ++i) {
+        if (&vehicles[i] == this)
+            continue;
+        double distance = position.distanceTo(vehicles[i].position);
+        if (distance < dna.perceptionRadius) {
+            if (randomInRange(0, 1) < dna.maliceProbability) {
+                vehicles[i].health -= dna.maliceDamage;
+                this->health += dna.maliceDamage * 0.5;  // gain some health
+                // log("Vehicle attacked another vehicle!");
+                break;  // only attack one vehicle at a time
+            }
+        }
+    }
+}
+
+void Vehicle::attemptAltruism(Vehicles& vehicles)
+{
+    if (health <= 5.0 || age < dna.ageOfMaturity) {
+        return;  // Not enough health to attempt altruism
+    }
+    for (size_t i = 0; i < vehicles.size(); ++i) {
+        if (&vehicles[i] == this)
+            continue;
+        double distance = position.distanceTo(vehicles[i].position);
+        if (distance < dna.perceptionRadius) {
+            if (randomInRange(0, 1) < dna.altruismProbability) {
+                vehicles[i].health += dna.altruismHeal;
+                this->health -= dna.altruismHeal;  // lose some health
+                // log("Vehicle helped another vehicle!");
+                break;  // only help one vehicle at a time
+            }
+        }
     }
 }
 
@@ -176,7 +238,10 @@ void Vehicle::update()
 
     position += velocity;
 
-    avoidEdges();
+    if (position.x < 0 || position.x > world->width || position.y < 0 ||
+        position.y > world->height) {
+        health = 0;  // Vehicle dies if it goes out of bounds
+    }
 
     // Reset acceleration after each update
     acceleration.reset();
@@ -184,21 +249,13 @@ void Vehicle::update()
 
 void Vehicle::show() const
 {
-    if (health <= 5.0)
-        mvprintw(static_cast<int>(position.y), static_cast<int>(position.x),
-                 "X");
-    else
-        mvprintw(static_cast<int>(position.y), static_cast<int>(position.x),
-                 "V");
-    // Placeholder for rendering logic
-    // std::cout << "Position: (" << position.x << ", " << position.y << ")"
-    //   << std::string(65, '\x08');
-    // std::cout << "Velocity: (" << velocity.x << ", " << velocity.y <<
-    // ")\n"; std::cout << "Acceleration: (" << acceleration.x << ", "
-    //   << acceleration.y << ")\n";
+    // std::cout << "Vehicle at (" << (position.x) << ", " << (position.y) << ")
+    // "
+    //           << "Health: " << (health) << " Age: " << age << "\n";
 }
 
-void Vehicle::applyForce(Vec2D const& force)
+void Vehicle::applyForce(Vec2D& force)
 {
-    acceleration += (force / mass);
+    force /= mass;
+    acceleration += force;
 }

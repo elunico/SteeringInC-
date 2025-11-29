@@ -8,6 +8,10 @@ struct DNA {
     double reproductionCost;
     double coherence;  // New trait for cohesion behavior
     double avoidance;  // New trait for avoidance behavior
+    double maliceProbability;
+    double altruismProbability;
+    double maliceDamage;
+    double altruismHeal;
     int    reproductionCooldown;
     int    ageOfMaturity;
 

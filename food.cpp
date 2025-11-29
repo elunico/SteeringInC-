@@ -12,7 +12,7 @@ void Food::update()
 
 void Food::show() const
 {
-    mvprintw(static_cast<int>(position.y), static_cast<int>(position.x), "*");
+    mvprintw(static_cast<int>(position.y), static_cast<int>(position.x), "F");
 }
 
 void Food::markEaten()

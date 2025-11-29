@@ -1,98 +1,54 @@
-#include <ncurses.h>
+#include <FL/Fl.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Window.H>
 #include <sys/signal.h>
 #include <unistd.h>
 #include <csignal>
 #include <cstdlib>
 #include <iostream>
+#include <thread>
+#include <utility>
 #include <vector>
 #include "vec2d.h"
 #include "vehicle.h"
 
+#include "renderer.h"
 #include "utils.h"
 
-int main()
+int main(int argc, char* argv[])
 {
-    initscr();
+    auto [width, height] = std::pair{800, 600};
 
-    cbreak();
-    noecho();
-    curs_set(0);
-    nodelay(stdscr, TRUE);
-    keypad(stdscr, TRUE);
-
-    printw("Vehicle Simulation Started. Press Ctrl+C to stop.\n");
-
-    auto seed = static_cast<unsigned>(time(0));
+    Fl_Window* window = new Fl_Window(width, height);
+    auto       seed   = static_cast<unsigned>(time(0));
     srand(seed);  // Seed for random number generation
 
-    World world(200, 60);
-    world.newFood();
+    World     world(seed, width, height);
+    Renderer* renderer = new Renderer(&world, 0, 0, width, height);
+    window->end();
+    window->show(argc, argv);
+    for (int i = 0; i < 50; ++i) {
+        world.newFood();
+    }
 
     for (int i = 0; i < 20; ++i) {
-        world.createVehicle(
-            Vec2D(randomInRange(0, 100), randomInRange(0, 100)));
+        world.createVehicle(world.randomPosition());
     }
 
-    std::vector<Vehicle> offspring;
     while (World::gameRunning) {
-        clear();
-        mvprintw(0, 0, "Seed %u: Population %d; Food Count: %d", seed,
-                 world.vehicles.size(), world.food.size());
-
-        // if (getch() == 'q') {
-        //     World::stopRunning(0);
-        //     break;
-        // }
-
-        if (world.vehicles.empty()) {
-            mvprintw(2, 0, "All vehicles have died. Simulation ended.");
-            mvprintw(3, 0, "Press any key to exit.");
-            refresh();
-            nodelay(stdscr, FALSE);
-            getch();
+        if (!world.tick()) {
+            // all vehicles are dead
             break;
         }
-
-        if (rand() % 100 < 10 && world.food.size() < 50) {
-            world.newFood();
-        }
-
-        for (auto& food : world.food) {
-            food.update();
-            food.show();
-        }
-
-        for (auto& vehicle : world.vehicles) {
-            vehicle.update();
-            vehicle.eat(world.food);
-            vehicle.cohere(world.vehicles);
-            vehicle.avoid(world.vehicles);
-            auto child = vehicle.reproduce(world.vehicles);
-            if (child) {
-                offspring.push_back(*child);
-            }
-
-            // std::cout << "Population size : " << world.vehicles.size() << "
-            // ";
-            vehicle.show();
-        }
-
-        refresh();
-        // Remove dead vehicles
-        world.pruneDeadVehicles();
-        // Remove eaten food
-        world.pruneEatenFood();
-
-        // Add offspring to the world
-        for (auto& child : offspring) {
-            world.addVehicle(std::move(child));
-        }
-        offspring.clear();
-
-        usleep(10000);
+        renderer->redraw();
+        Fl::check();
     }
-    endwin();
-    std::cout << "\nSimulation ended (Seed " << seed << ").\n";
+
+    renderer->redraw();
+    while (Fl::wait())
+        ;
+    std::cout << "\nSimulation ended after " << world.tickCounter
+              << " ticks (Seed " << seed << ").\n";
     // report vehicle fitness at end of simulation
     for (size_t i = 0; i < world.vehicles.size(); ++i) {
         std::cout << "Vehicle " << i << " age: " << world.vehicles[i].getAge()
