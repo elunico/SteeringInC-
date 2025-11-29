@@ -6,7 +6,7 @@
 #include "vehicle.h"
 
 #define FOOD_PCT_CHANCE 20
-#define MAX_FOOD 500
+#define MAX_FOOD 400
 
 bool World::gameRunning = true;
 
@@ -105,7 +105,8 @@ std::stringstream World::infoStream() const
     ss << "(World: [" << width << "x" << height << "] seed: " << seed << ") "
        << "Vehicles: " << vehicles.size() << " | Food: " << food.size()
        << " | Dead Vehicles: " << deadCounter
-       << " | Born Vehicles: " << bornCounter << " | Time Elapsed: "
+       << " | Born Vehicles: " << bornCounter << " | Oldest Vehicle: " << maxAge
+       << " | Time Elapsed: "
        << std::chrono::duration_cast<std::chrono::seconds>(
               std::chrono::steady_clock::now() - startTime)
               .count()

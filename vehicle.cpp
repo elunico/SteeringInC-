@@ -6,7 +6,10 @@
 
 #define MAX_FORCE 0.1
 
-Vehicle::Vehicle(Vec2D const& position) : position(position)
+Vehicle::Vehicle(Vec2D const& position)
+    : position(position),
+      velocity(randomInRange(-dna.maxSpeed, dna.maxSpeed),
+               randomInRange(-dna.maxSpeed, dna.maxSpeed))
 {
 }
 
@@ -41,6 +44,11 @@ Vehicle::Vehicle(Vec2D const& position) : position(position)
 [[nodiscard]] Vec2D const& Vehicle::getAcceleration() const
 {
     return acceleration;
+}
+
+[[nodiscard]] int Vehicle::getGeneration() const
+{
+    return generation;
 }
 
 void Vehicle::eat(std::vector<Food>& foodPosition)
@@ -193,6 +201,8 @@ Vec2D Vehicle::seek(Vec2D const& target)
             Vec2D childPos = (position + vehicles[i].position) / 2;
             health -= 0.5;  // Cost of reproduction
             Vehicle offspring(childPos);
+            offspring.generation =
+                std::max(generation, vehicles[i].generation) + 1;
             // move away from parents slightly
             offspring.velocity =
                 Vec2D(randomInRange(-1, 1), randomInRange(-1, 1));
@@ -227,14 +237,15 @@ void Vehicle::avoidEdges()
 
     if (steer.x != 0 || steer.y != 0) {
         steer = seek(steer);
-        applyForce(steer);
+        steer *= 2.0;  // stronger force to avoid edges
+        applyForce(steer, true);
     }
 }
 
 void Vehicle::update()
 {
     age++;
-    health -= 0.1;  // Decrease health over time
+    health -= 0.05;  // Decrease health over time
 
     velocity += acceleration;
     velocity.setMag(dna.maxSpeed);
@@ -248,18 +259,18 @@ void Vehicle::update()
 
     // Reset acceleration after each update
     acceleration.reset();
+
+    // Update world's max age if necessary
+    if (age > world->maxAge) {
+        world->maxAge = age;
+    }
 }
 
-void Vehicle::show() const
-{
-    // std::cout << "Vehicle at (" << (position.x) << ", " << (position.y) << ")
-    // "
-    //           << "Health: " << (health) << " Age: " << age << "\n";
-}
-
-void Vehicle::applyForce(Vec2D& force)
+void Vehicle::applyForce(Vec2D& force, bool unlimited)
 {
     force /= mass;
-    force.limit(MAX_FORCE);
+    if (!unlimited) {
+        force.limit(MAX_FORCE);
+    }
     acceleration += force;
 }

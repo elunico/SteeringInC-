@@ -22,6 +22,7 @@ struct World {
     int                                   deadCounter = 0;
     int                                   bornCounter = 0;
     int                                   tickCounter = 0;
+    int                                   maxAge      = 0;
     std::chrono::steady_clock::time_point startTime;
 
     static void stopRunning(int)

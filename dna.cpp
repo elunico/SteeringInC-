@@ -3,17 +3,17 @@
 
 DNA::DNA()
     : perceptionRadius(randomInRange(75, 200)),
-      maxSpeed(randomInRange(0.5, 2)),
-      mutationRate(0.05),
+      maxSpeed(randomInRange(1, 4)),
+      mutationRate(0.1),
       reproductionCost(randomInRange(5, 15.0)),
       coherence(randomInRange(0.1, 1.0)),
       avoidance(randomInRange(0.1, 1.0)),
-      maliceProbability(randomInRange(0.0, 0.3)),
-      altruismProbability(randomInRange(0.0, 0.3)),
-      maliceDamage(randomInRange(2.0, 15.0)),
-      altruismHeal(randomInRange(2.0, 15.0)),
+      maliceProbability(randomInRange(-0.1, 0.05)),
+      altruismProbability(randomInRange(0.0, 0.1)),
+      maliceDamage(randomInRange(2.0, 5.0)),
+      altruismHeal(randomInRange(2.0, 5.0)),
       reproductionCooldown(randomInRange(100, 250)),
-      ageOfMaturity(randomInRange(20, 60))
+      ageOfMaturity(randomInRange(75, 200))
 {
 }
 

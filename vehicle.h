@@ -19,6 +19,7 @@ class Vehicle {
     [[nodiscard]] DNA const&             getDNA() const;
     [[nodiscard]] Vec2D const&           getPosition() const;
     [[nodiscard]] Vec2D const&           getVelocity() const;
+    [[nodiscard]] int                    getGeneration() const;
     [[nodiscard]] Vec2D const&           getAcceleration() const;
     [[nodiscard]] std::optional<Vehicle> reproduce(Vehicles& vehicles);
     void                                 eat(std::vector<Food>& foodPositions);
@@ -29,9 +30,8 @@ class Vehicle {
     void                                 attemptAltruism(Vehicles& vehicles);
     Vec2D                                seek(Vec2D const& target);
     void                                 update();
-    void                                 show() const;
-    void                                 applyForce(Vec2D& force);
     void                                 avoidEdges();
+    void applyForce(Vec2D& force, bool unlimited = false);
 
    private:
     World* world;
@@ -39,12 +39,12 @@ class Vehicle {
     int    age                       = 0;
     double mass                      = 1.0;
     int    timeSinceLastReproduction = -1;
+    int    generation                = 0;
+    DNA    dna;
 
     Vec2D position;
     Vec2D velocity;
     Vec2D acceleration;
-
-    DNA dna;
 
     friend struct World;
 };

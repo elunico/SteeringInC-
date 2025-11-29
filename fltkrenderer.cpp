@@ -52,13 +52,11 @@ void FLTKCustomDrawer::clearScreen()
 void FLTKCustomDrawer::drawVehicle(Vehicle const& vehicle)
 {
     // Draw vehicles as blue triangles
-    fl_color((displayColors[std::max(
-        0ul, std::min(static_cast<size_t>(vehicle.getHealth() * 5 / 20.0),
-                      displayColors.size() - 1))]));
+    fl_color((displayColors[vehicle.getGeneration() % displayColors.size()]));
     Vec2D      pos     = vehicle.getPosition();
     double     heading = vehicle.getVelocity().heading();
     DNA const& dna     = vehicle.getDNA();
-    int        size    = 6;
+    int        size    = remap(vehicle.getHealth(), 0.0, 20.0, 3.0, 7.0);
 
     // Calculate triangle vertices
     int x1 = static_cast<int>(pos.x + cos(heading) * size);
