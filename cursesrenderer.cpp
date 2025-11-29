@@ -39,6 +39,9 @@ void CursesRenderer::drawVehicle(Vehicle const& vehicle)
 
 void CursesRenderer::drawLivingWorld()
 {
+    auto ss = world->infoStream();
+    mvaddstr(0, 0, ss.str().c_str());
+
     for (auto& food : world->food) {
         drawFood(food);
     }

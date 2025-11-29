@@ -1,5 +1,6 @@
 #include "fltkrenderer.h"
 
+#include <chrono>
 #include <cmath>
 
 #include <sstream>
@@ -112,13 +113,7 @@ void FLTKCustomDrawer::drawDeadWorld()
 void FLTKCustomDrawer::draw()
 {
     clearScreen();
-    std::stringstream ss;
-    ss << "(World: [" << world->width << "x" << world->height
-       << "] seed: " << world->seed << ") "
-       << "Vehicles: " << world->vehicles.size()
-       << " | Food: " << world->food.size()
-       << " | Dead Vehicles: " << world->deadCounter
-       << " | Tick: " << world->tickCounter;
+    auto ss = world->infoStream();
     fl_font(FL_HELVETICA_BOLD, 14);
     fl_color(FL_BLACK);
     fl_draw(ss.str().c_str(), 0, 0, w(), h(), FL_ALIGN_TOP_LEFT);

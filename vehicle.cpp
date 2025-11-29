@@ -198,6 +198,7 @@ Vec2D Vehicle::seek(Vec2D const& target)
                 Vec2D(randomInRange(-1, 1), randomInRange(-1, 1));
             offspring.dna             = childDNA;
             timeSinceLastReproduction = 0;
+            world->bornCounter++;
             return offspring;
         }
     }

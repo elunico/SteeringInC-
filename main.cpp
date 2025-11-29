@@ -11,7 +11,7 @@
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 {
-    auto [width, height] = std::pair{1600, 1000};
+    auto [width, height] = std::pair{1800, 1000};
 
     auto const seed = static_cast<unsigned>(time(nullptr));
     srand(seed);  // Seed for random number generation
@@ -21,13 +21,13 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 
     world.setup(100, 250);  // 50 vehicles, 50 food items
 
+    world.startTime = std::chrono::steady_clock::now();
     while (World::gameRunning) {
         if (!world.tick()) {
             // all vehicles are dead
             break;
         }
         renderer->render();
-        // usleep(10000);
     }
 
     renderer->render();

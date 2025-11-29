@@ -88,6 +88,32 @@ void World::setup(int vehicleCount, int foodCount)
     }
 }
 
+double World::tps() const
+{
+    using namespace std::chrono;
+    auto now      = steady_clock::now();
+    auto duration = duration_cast<seconds>(now - startTime).count();
+    if (duration == 0) {
+        return static_cast<double>(tickCounter);
+    }
+    return static_cast<double>(tickCounter) / static_cast<double>(duration);
+}
+
+std::stringstream World::infoStream() const
+{
+    std::stringstream ss;
+    ss << "(World: [" << width << "x" << height << "] seed: " << seed << ") "
+       << "Vehicles: " << vehicles.size() << " | Food: " << food.size()
+       << " | Dead Vehicles: " << deadCounter
+       << " | Born Vehicles: " << bornCounter << " | Time Elapsed: "
+       << std::chrono::duration_cast<std::chrono::seconds>(
+              std::chrono::steady_clock::now() - startTime)
+              .count()
+       << "s"
+       << " | Tick: " << tickCounter << " | TPS: " << tps();
+    return ss;
+}
+
 bool World::tick()
 {
     static std::vector<Vehicle> offspring;
@@ -120,7 +146,8 @@ bool World::tick()
     // Remove eaten food
     pruneEatenFood();
 
-    // Add offspring to the         addAllVehicles(std::move(offspring));
+    // Add offspring to the
+    addAllVehicles(std::move(offspring));
     static_assert(std::is_trivially_destructible<Vehicle>::value,
                   "Vehicle must be trivially destructible for clear()");
     offspring.clear();
