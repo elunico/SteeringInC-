@@ -1,32 +1,63 @@
-#include "renderer.h"
+#include "fltkrenderer.h"
 
 #include <cmath>
 
 #include <sstream>
 #include "vehicle.h"
-Renderer::Renderer(World* world, int X, int Y, int W, int H, const char* L)
-    : Fl_Box(X, Y, W, H, L), world(world)
+
+FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
+{
+    window = new Fl_Window(W, H);
+    drawer = new FLTKCustomDrawer(world, W, H);
+    window->end();
+    window->show();
+}
+
+FLTKRenderer::~FLTKRenderer()
+{
+    drawer->redraw();
+    while (Fl::wait())
+        ;
+    delete drawer;
+    delete window;
+}
+
+void FLTKRenderer::render()
+{
+    clearScreen();
+    drawer->redraw();
+    Fl::check();
+}
+
+void FLTKRenderer::clearScreen()
+{
+    drawer->clearScreen();
+}
+
+FLTKCustomDrawer::FLTKCustomDrawer(World* world, int W, int H)
+    : Fl_Box(0, 0, W, H, nullptr), world(world)
 {
 }
 
 std::array<unsigned int, 6> displayColors = {FL_BLUE,   FL_CYAN, FL_GREEN,
                                              FL_YELLOW, FL_RED,  FL_MAGENTA};
 
-void Renderer::clearScreen()
+void FLTKCustomDrawer::clearScreen()
 {
     fl_color(FL_WHITE);
     fl_rectf(x(), y(), w(), h());
 }
 
-void Renderer::drawVehicle(Vehicle const& vehicle)
+void FLTKCustomDrawer::drawVehicle(Vehicle const& vehicle)
 {
     // Draw vehicles as blue triangles
     fl_color((displayColors[std::max(
         0ul, std::min(static_cast<size_t>(vehicle.getHealth() * 5 / 20.0),
                       displayColors.size() - 1))]));
-    Vec2D  pos     = vehicle.getPosition();
-    double heading = vehicle.getVelocity().heading();
-    int    size    = 6;
+    Vec2D      pos     = vehicle.getPosition();
+    double     heading = vehicle.getVelocity().heading();
+    DNA const& dna     = vehicle.getDNA();
+    int        size    = 6;
 
     // Calculate triangle vertices
     int x1 = static_cast<int>(pos.x + cos(heading) * size);
@@ -42,9 +73,15 @@ void Renderer::drawVehicle(Vehicle const& vehicle)
     fl_vertex(x2, y2);
     fl_vertex(x3, y3);
     fl_end_polygon();
+
+    // Draw an empty circle with a thin line to represent perception radius
+    fl_color(FL_GREEN);
+    fl_line_style(FL_SOLID, 2);
+    fl_arc(pos.x - dna.perceptionRadius / 2, pos.y - dna.perceptionRadius / 2,
+           dna.perceptionRadius, dna.perceptionRadius, 0, 360);
 }
 
-void Renderer::drawFood(Food const& position)
+void FLTKCustomDrawer::drawFood(Food const& position)
 {
     // Draw food as green circles
     fl_color(FL_GREEN);
@@ -52,7 +89,7 @@ void Renderer::drawFood(Food const& position)
            static_cast<int>(position.position.y) - 2, 4, 4, 0, 360);
 }
 
-void Renderer::drawLivingWorld()
+void FLTKCustomDrawer::drawLivingWorld()
 {
     for (auto& food : world->food) {
         drawFood(food);
@@ -63,19 +100,18 @@ void Renderer::drawLivingWorld()
     }
 }
 
-void Renderer::drawDeadWorld()
+void FLTKCustomDrawer::drawDeadWorld()
 {
     fl_color(FL_RED);
     std::string message = "All vehicles have perished.";
     fl_font(FL_HELVETICA_BOLD, 24);
-    int textWidth = fl_width(message.c_str());
+    int textWidth = fl_width(message.c_str()) + 1;
     fl_draw(message.c_str(), (w() - textWidth) / 2, h() / 2);
 }
 
-void Renderer::draw()
+void FLTKCustomDrawer::draw()
 {
     clearScreen();
-
     std::stringstream ss;
     ss << "(World: [" << world->width << "x" << world->height
        << "] seed: " << world->seed << ") "

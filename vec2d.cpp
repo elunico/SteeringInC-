@@ -62,6 +62,13 @@ Vec2D& Vec2D::operator/=(double scalar)
     return std::sqrt(x * x + y * y);
 }
 
+void Vec2D::setMag(double mag)
+{
+    normalize();
+    x *= mag;
+    y *= mag;
+}
+
 void Vec2D::normalize()
 {
     double mag = magnitude();

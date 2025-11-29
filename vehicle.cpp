@@ -1,10 +1,10 @@
 
 #include "vehicle.h"
-
-#include <string>
 #include "utils.h"
 #include "vec2d.h"
 #include "world.h"
+
+#define MAX_FORCE 0.1
 
 Vehicle::Vehicle(Vec2D const& position) : position(position)
 {
@@ -18,6 +18,11 @@ Vehicle::Vehicle(Vec2D const& position) : position(position)
 [[nodiscard]] int Vehicle::getAge() const
 {
     return age;
+}
+
+[[nodiscard]] DNA const& Vehicle::getDNA() const
+{
+    return dna;
 }
 
 [[nodiscard]] double Vehicle::getFitness() const
@@ -43,11 +48,13 @@ void Vehicle::eat(std::vector<Food>& foodPosition)
     for (auto& food : foodPosition) {
         if (food.wasEaten)
             continue;
-        if (position.distanceTo(food.position) <= dna.perceptionRadius) {
+        double d = position.distanceTo(food.position);
+        if (d <= dna.perceptionRadius) {
             Vec2D steer = seek(food.position);
+            steer *= 1 / d;  // stronger force when closer
             applyForce(steer);
         }
-        if (position.distanceTo(food.position) <= dna.maxSpeed) {
+        if (d <= dna.maxSpeed) {
             // Already at target; captured food
             health += 5.0;  // Increase health on reaching target
             food.markEaten();
@@ -65,16 +72,14 @@ void Vehicle::align(Vehicles const& vehicles)
             continue;
         double distance = position.distanceTo(vehicles[i].position);
         if (distance < dna.perceptionRadius) {
-            avgVelocity += vehicles[i].velocity;
+            avgVelocity += (vehicles[i].velocity * (1 / distance));
             count++;
         }
     }
     if (count > 0) {
         avgVelocity /= static_cast<double>(count);
-        avgVelocity.normalize();
-        avgVelocity *= dna.maxSpeed;
-        Vec2D steer = avgVelocity - velocity;
-        steer *= 0.1;  // Adjust the strength of alignment
+        auto steer = seek(avgVelocity);
+        steer *= dna.coherence;
         applyForce(steer);
     }
 }
@@ -85,14 +90,11 @@ void Vehicle::avoid(Vehicles const& vehicles)
         if (&vehicles[i] == this)
             continue;
         double distance = position.distanceTo(vehicles[i].position);
-        if (distance < dna.perceptionRadius && distance > 0) {
-            // todo: maybe use seek()?
-            Vec2D fleeVector = position - vehicles[i].position;
-            fleeVector.normalize();
-            fleeVector *= dna.maxSpeed;
-            fleeVector -= velocity;
-            fleeVector *= dna.avoidance;
-            applyForce(fleeVector);
+        if (distance < dna.perceptionRadius) {
+            Vec2D steer = seek(vehicles[i].position);
+            steer *= -dna.avoidance * (1 / distance);  // stronger force when
+                                                       // closer
+            applyForce(steer);
         }
     }
 }
@@ -106,7 +108,7 @@ void Vehicle::cohere(Vehicles const& vehicles)
             continue;
         double distance = position.distanceTo(vehicles[i].position);
         if (distance < dna.perceptionRadius) {
-            centerOfMass += vehicles[i].position;
+            centerOfMass += (vehicles[i].position * (1 / distance));
             count++;
         }
     }
@@ -162,7 +164,7 @@ Vec2D Vehicle::seek(Vec2D const& target)
 {
     Vec2D desired = target - position;
     desired.normalize();
-    desired *= dna.maxSpeed;
+    // desired *= dna.maxSpeed;
     desired -= velocity;
     return desired;
 }
@@ -234,7 +236,7 @@ void Vehicle::update()
     health -= 0.1;  // Decrease health over time
 
     velocity += acceleration;
-    velocity.limit(dna.maxSpeed);
+    velocity.setMag(dna.maxSpeed);
 
     position += velocity;
 
@@ -257,5 +259,6 @@ void Vehicle::show() const
 void Vehicle::applyForce(Vec2D& force)
 {
     force /= mass;
+    force.limit(MAX_FORCE);
     acceleration += force;
 }

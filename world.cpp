@@ -5,8 +5,8 @@
 #include "utils.h"
 #include "vehicle.h"
 
-#define FOOD_PCT_CHANCE 25
-#define MAX_FOOD 200
+#define FOOD_PCT_CHANCE 20
+#define MAX_FOOD 500
 
 bool World::gameRunning = true;
 
@@ -76,6 +76,18 @@ auto World::pruneEatenFood() -> typename decltype(food)::size_type
     return (initialSize - food.size());
 }
 
+void World::setup(int vehicleCount, int foodCount)
+{
+    for (int i = 0; i < vehicleCount; ++i) {
+        Vec2D pos = randomPosition();
+        createVehicle(pos);
+    }
+
+    for (int i = 0; i < foodCount; ++i) {
+        newFood();
+    }
+}
+
 bool World::tick()
 {
     static std::vector<Vehicle> offspring;
@@ -112,7 +124,7 @@ bool World::tick()
     static_assert(std::is_trivially_destructible<Vehicle>::value,
                   "Vehicle must be trivially destructible for clear()");
     offspring.clear();
-    usleep(10000);
+    // usleep(10000);
 
     tickCounter++;
     return vehicles.size() > 0;

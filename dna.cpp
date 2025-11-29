@@ -2,7 +2,7 @@
 #include "utils.h"
 
 DNA::DNA()
-    : perceptionRadius(randomInRange(20, 80)),
+    : perceptionRadius(randomInRange(75, 200)),
       maxSpeed(randomInRange(0.5, 2)),
       mutationRate(0.05),
       reproductionCost(randomInRange(5, 15.0)),

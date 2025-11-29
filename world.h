@@ -29,9 +29,11 @@ struct World {
 
     Vec2D randomPosition() const;
 
-    void addVehicle(Vehicle&& vehicle);
-
     bool tick();
+
+    void setup(int vehicleCount, int foodCount);
+
+    void addVehicle(Vehicle&& vehicle);
 
     void addVehicle(Vec2D const& position, DNA const& dna);
 

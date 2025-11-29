@@ -16,6 +16,7 @@ class Vehicle {
     [[nodiscard]] double                 getHealth() const;
     [[nodiscard]] int                    getAge() const;
     [[nodiscard]] double                 getFitness() const;
+    [[nodiscard]] DNA const&             getDNA() const;
     [[nodiscard]] Vec2D const&           getPosition() const;
     [[nodiscard]] Vec2D const&           getVelocity() const;
     [[nodiscard]] Vec2D const&           getAcceleration() const;

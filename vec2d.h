@@ -19,6 +19,7 @@ struct Vec2D {
 
     [[nodiscard]] double distanceTo(Vec2D const& other) const;
     [[nodiscard]] double magnitude() const;
+    void                 setMag(double mag);
     void                 normalize();
     [[nodiscard]] Vec2D  normalized() const;
     void                 limit(double max);
