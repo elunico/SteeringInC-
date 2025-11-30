@@ -1,5 +1,6 @@
 #ifndef VEC2D_H
 #define VEC2D_H
+#include <iosfwd>
 
 struct Vec2D {
     double x;
@@ -31,5 +32,7 @@ struct Vec2D {
     void                 reset();
     void                 set(double newX, double newY);
 };
+
+std::ostream& operator<<(std::ostream& os, Vec2D const& v);
 
 #endif  // VEC2D_H

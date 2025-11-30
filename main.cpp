@@ -12,34 +12,30 @@
 int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 {
     auto [width, height] = std::pair{1800, 1000};
-    auto const seed      = static_cast<unsigned>(time(nullptr));
+    auto const seed      = 1764448905;  // static_cast<unsigned>(time(nullptr));
+    // srand(seed);  // Seed for random number generation
     srand(seed);  // Seed for random number generation
 
-    World world(seed, width, height);
-    auto* renderer = new FLTKRenderer(&world, width, height);
+    auto* renderer = new FLTKRenderer(width, height);
+    World world(seed, width, height, renderer);
 
-    world.setup(100, 250);  // 50 vehicles, 50 food items
+    world.setup(400, 250);  // 50 vehicles, 50 food items
 
-    world.startTime = std::chrono::steady_clock::now();
-    while (World::gameRunning) {
-        if (!world.tick()) {
-            // all vehicles are dead
-            break;
-        }
-        renderer->render();
-    }
+    world.run();
 
-    renderer->render();
+    renderer->render(&world);
     delete renderer;
 
     std::cout << "Simulation ended.\n";
-    std::cout << world.infoStream().str() << std::endl;
+
     // report vehicle fitness at the end of simulation
     for (size_t i = 0; i < world.vehicles.size(); ++i) {
         std::cout << "Vehicle " << i << " age: " << world.vehicles[i].getAge()
                   << " health: " << world.vehicles[i].getHealth()
                   << " fitness: " << world.vehicles[i].getFitness() << "\n";
     }
+
+    std::cout << world.infoStream().str() << std::endl;
 
     return 0;
 }

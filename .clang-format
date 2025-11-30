@@ -11,7 +11,7 @@ BreakBeforeBraces: WebKit
 BreakInheritanceList: AfterColon
 IndentWidth: 4
 PointerAlignment: Left
-ReflowComments: true
+ReflowComments: IndentOnly
 SortIncludes: CaseInsensitive
 SortUsingDeclarations: true
 SpaceAfterCStyleCast: true

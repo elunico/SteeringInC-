@@ -13,8 +13,8 @@
 #include "world.h"
 
 struct FLTKCustomDrawer : public Fl_Box {
-    World* world;
-    FLTKCustomDrawer(World* world, int W, int H);
+    World* world{};
+    FLTKCustomDrawer(int W, int H);
 
     void draw() override;
 
@@ -26,21 +26,26 @@ struct FLTKCustomDrawer : public Fl_Box {
 
     void drawDeadWorld();
 
-    void clearScreen();
+    void drawQuadtree(QuadTree<Vehicle, Rectangle> const& quad_tree);
+
+    void clearScreen() const;
+
+    int handle(int) override;
 };
 
 struct FLTKRenderer : public IRenderer {
-    World*            world;
     FLTKCustomDrawer* drawer;
     Fl_Window*        window;
 
-    FLTKRenderer(World* world, int W, int H);
+    FLTKRenderer(int W, int H);
 
     void clearScreen() override;
 
-    void render() override;
+    void render(World*) override;
 
-    ~FLTKRenderer();
+    void refresh() override;
+
+    ~FLTKRenderer() override;
 };
 
 #endif  // RENDERER_H

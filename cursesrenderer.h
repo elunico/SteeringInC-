@@ -10,19 +10,22 @@
 #include "world.h"
 
 class CursesRenderer : public IRenderer {
-    World* world;
     int    width;
     int    height;
 
    public:
-    CursesRenderer(World* world, int width, int height);
+    CursesRenderer(int width, int height);
 
     void clearScreen() override;
     void drawFood(Food const& food);
     void drawVehicle(Vehicle const& vehicle);
-    void drawLivingWorld();
+    void drawLivingWorld(World *world);
     void drawDeadWorld();
-    void render() override;
+    void render(World * world) override;
+
+    void refresh() override;
+
+    void drawQuadtree(QuadTree<Vehicle, Rectangle> const& quad_tree) ;
 
     ~CursesRenderer();
 };

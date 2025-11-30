@@ -6,8 +6,8 @@ struct DNA {
     double maxSpeed;
     double mutationRate;
     double reproductionCost;
-    double coherence;  // New trait for cohesion behavior
-    double avoidance;  // New trait for avoidance behavior
+    double maliceDesire;  // New trait for cohesion behavior
+    double altruismDesire;  // New trait for avoidance behavior
     double maliceProbability;
     double altruismProbability;
     double maliceDamage;

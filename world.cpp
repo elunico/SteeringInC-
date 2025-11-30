@@ -1,17 +1,30 @@
 #include "world.h"
 #include <unistd.h>
 #include <csignal>
+#include <iostream>
+
 #include "food.h"
+#include "irenderer.h"
+#include "quadtree.h"
+#include "rectangle.h"
 #include "utils.h"
 #include "vehicle.h"
 
-#define FOOD_PCT_CHANCE 20
-#define MAX_FOOD 400
-
 bool World::gameRunning = true;
+bool World::isPaused    = false;
+bool World::useQuadtree = true;
 
-World::World(long seed, int width, int height)
-    : seed(seed), width(width), height(height)
+std::string quadtreeMessage()
+{
+    if (World::useQuadtree) {
+        return "[QT ON]";
+    } else {
+        return "[PLAIN]";
+    }
+}
+
+World::World(long seed, int width, int height, IRenderer* renderer)
+    : renderer{renderer}, seed(seed), width(width), height(height)
 {
     signal(SIGINT, stopRunning);
 }
@@ -41,7 +54,7 @@ void World::addAllVehicles(std::vector<Vehicle>&& newVehicles)
 
 Vec2D World::randomPosition() const
 {
-    return Vec2D(randomInRange(0, width), randomInRange(0, height));
+    return {randomInRange(0, width), randomInRange(0, height)};
 }
 
 Food const& World::newFood()
@@ -51,29 +64,37 @@ Food const& World::newFood()
     return food.back();
 }
 
-auto World::pruneDeadVehicles() -> typename decltype(vehicles)::size_type
+auto World::pruneDeadVehicles() -> decltype(vehicles)::size_type
 {
-    auto initialSize = vehicles.size();
+    auto const initialSize = vehicles.size();
 
-    vehicles.erase(std::remove_if(vehicles.begin(), vehicles.end(),
-                                  [this](Vehicle const& v) {
-                                      if (v.getHealth() <= 0) {
-                                          deadCounter++;
-                                          return true;
-                                      }
-                                      return false;
-                                  }),
-                   vehicles.end());
+    std::erase_if(vehicles, [this](Vehicle const& v) {
+        if (v.getHealth() <= 0) {
+            deadCounter++;
+            return true;
+        }
+        return false;
+    });
     return (initialSize - vehicles.size());
 }
 
-auto World::pruneEatenFood() -> typename decltype(food)::size_type
+auto World::pruneEatenFood() -> decltype(food)::size_type
 {
     auto initialSize = food.size();
     food.erase(std::remove_if(food.begin(), food.end(),
                               [](Food const& f) { return f.wasEaten; }),
                food.end());
     return (initialSize - food.size());
+}
+
+std::chrono::duration<std::chrono::seconds::rep> World::elapsedTime() const
+{
+    if (gameRunning) {
+        return std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::steady_clock::now() - startTime);
+    }
+    return std::chrono::duration_cast<std::chrono::seconds>(endTime -
+                                                            startTime);
 }
 
 void World::setup(int vehicleCount, int foodCount)
@@ -102,7 +123,8 @@ double World::tps() const
 std::stringstream World::infoStream() const
 {
     std::stringstream ss;
-    ss << "(World: [" << width << "x" << height << "] seed: " << seed << ") "
+    ss << "(World: [" << width << "x" << height << "] " << quadtreeMessage()
+       << " seed: " << seed << ") "
        << "Vehicles: " << vehicles.size() << " | Food: " << food.size()
        << " | Dead Vehicles: " << deadCounter
        << " | Born Vehicles: " << bornCounter << " | Oldest Vehicle: " << maxAge
@@ -115,6 +137,21 @@ std::stringstream World::infoStream() const
     return ss;
 }
 
+void World::run()
+{
+    startTime = std::chrono::steady_clock::now();
+    while (gameRunning) {
+        if (!isPaused) {
+            if (!tick()) {
+                gameRunning = false;
+                break;
+            }
+        }
+        renderer->render(this);
+    }
+    endTime = std::chrono::steady_clock::now();
+}
+
 bool World::tick()
 {
     static std::vector<Vehicle> offspring;
@@ -123,21 +160,76 @@ bool World::tick()
         newFood();
     }
 
+    // build quadtree for spatial partitioning (optimize neighbor searches)
+    // for food and vehicles
+    std::vector<Vehicle*>        neighbors;
+    std::vector<Food*>           foodNeighbors;
+    QuadTree<Food, Rectangle>    foodTree;
+    QuadTree<Vehicle, Rectangle> vehicleTree;
+    if (useQuadtree) {
+        foodTree = QuadTree<Food, Rectangle>{
+            Rectangle{Vec2D{0, 0}, Vec2D{static_cast<double>(width),
+                                         static_cast<double>(height)}},
+            4};
+
+        vehicleTree = QuadTree<Vehicle, Rectangle>{
+            Rectangle{Vec2D{0, 0}, Vec2D{static_cast<double>(width),
+                                         static_cast<double>(height)}},
+            4};
+
+        for (auto& f : food) {
+            foodTree.insert(&f);
+        }
+        for (auto& v : vehicles) {
+            v.highlighted = false;
+            vehicleTree.insert(&v);
+        }
+
+        // qt = vehicleTree;
+    } else {
+        // qt = nullptr;
+        for (auto& v : vehicles) {
+            v.highlighted = false;
+            neighbors.push_back(&v);
+        }
+        for (auto& f : food) {
+            foodNeighbors.push_back(&f);
+        }
+    }
+
     for (auto& food : food) {
         food.update();
     }
 
     for (auto& vehicle : vehicles) {
-        vehicle.align(vehicles);
-        vehicle.cohere(vehicles);
-        vehicle.avoid(vehicles);
-        vehicle.eat(food);
-        auto child = vehicle.reproduce(vehicles);
-        if (child) {
-            offspring.push_back(*child);
+        if (useQuadtree) {
+            neighbors     = vehicleTree.query(Rectangle{
+                Vec2D{vehicle.position.x - vehicle.dna.perceptionRadius,
+                      vehicle.position.y - vehicle.dna.perceptionRadius},
+                Vec2D{vehicle.position.x + vehicle.dna.perceptionRadius,
+                      vehicle.position.y + vehicle.dna.perceptionRadius}});
+            foodNeighbors = foodTree.query(Rectangle{
+                Vec2D{vehicle.position.x - vehicle.dna.perceptionRadius,
+                      vehicle.position.y - vehicle.dna.perceptionRadius},
+                Vec2D{vehicle.position.x + vehicle.dna.perceptionRadius,
+                      vehicle.position.y + vehicle.dna.perceptionRadius}});
         }
-        vehicle.attemptMalice(vehicles);
-        vehicle.attemptAltruism(vehicles);
+
+        if (vehicle.verbose) {
+            for (auto& n : neighbors) {
+                n->highlighted = true;
+            }
+        }
+
+        // std::cout << "Checking " << neighbors.size() << " neighbors\n";
+        // TODO: figure out why align and cohere cause the vehicles to travel to 0,0
+        // vehicle.align(neighbors);
+        // vehicle.cohere(neighbors);
+        // vehicle.avoid(neighbors);
+        if (auto child = vehicle.behaviors(neighbors, foodNeighbors);
+            child.has_value()) {
+            offspring.push_back(std::move(child.value()));
+        }
         vehicle.update();
         vehicle.avoidEdges();
     }
@@ -155,7 +247,7 @@ bool World::tick()
     // usleep(10000);
 
     tickCounter++;
-    return vehicles.size() > 0;
+    return !vehicles.empty();
 }
 
 Vehicle& World::createVehicle(Vec2D const& position)
@@ -163,4 +255,10 @@ Vehicle& World::createVehicle(Vec2D const& position)
     auto& v = vehicles.emplace_back(position);
     v.world = this;
     return v;
+}
+
+World::~World()
+{
+    // World does not own renderer, so it should not be deleted here
+    // delete renderer;
 }

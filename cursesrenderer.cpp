@@ -5,8 +5,8 @@
 #include "cursesrenderer.h"
 #include <ncurses.h>
 
-CursesRenderer::CursesRenderer(World* world, int width, int height)
-    : world(world), width(width), height(height)
+CursesRenderer::CursesRenderer( int width, int height)
+    :  width(width), height(height)
 {
     initscr();
     cbreak();
@@ -37,7 +37,7 @@ void CursesRenderer::drawVehicle(Vehicle const& vehicle)
     mvaddch(vehicle.getPosition().y, vehicle.getPosition().x, ACS_CKBOARD);
 }
 
-void CursesRenderer::drawLivingWorld()
+void CursesRenderer::drawLivingWorld(World *world)
 {
     auto ss = world->infoStream();
     mvaddstr(0, 0, ss.str().c_str());
@@ -56,15 +56,22 @@ void CursesRenderer::drawDeadWorld()
     mvaddstr(height / 2, width / 2, "All vehicles have perished.");
 }
 
-void CursesRenderer::render()
+void CursesRenderer::render(World* world)
 {
     clearScreen();
 
     if (!world->vehicles.empty()) {
-        drawLivingWorld();
+        drawLivingWorld(world);
     } else {
         drawDeadWorld();
     }
 
     refresh();
+}
+void CursesRenderer::refresh()
+{
+    ::refresh();
+}
+void CursesRenderer::drawQuadtree(QuadTree<Vehicle, Rectangle> const& _)
+{
 }

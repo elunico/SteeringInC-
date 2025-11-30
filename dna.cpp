@@ -6,8 +6,8 @@ DNA::DNA()
       maxSpeed(randomInRange(1, 4)),
       mutationRate(0.1),
       reproductionCost(randomInRange(5, 15.0)),
-      coherence(randomInRange(0.1, 1.0)),
-      avoidance(randomInRange(0.1, 1.0)),
+      maliceDesire(randomInRange(0.01, 0.3)),
+      altruismDesire(randomInRange(0.05, 0.5)),
       maliceProbability(randomInRange(-0.1, 0.05)),
       altruismProbability(randomInRange(0.0, 0.1)),
       maliceDamage(randomInRange(2.0, 5.0)),
@@ -29,8 +29,8 @@ DNA::DNA()
     child.reproductionCooldown =
         (rand() % 2) ? reproductionCooldown : partner.reproductionCooldown;
     child.ageOfMaturity = (rand() % 2) ? ageOfMaturity : partner.ageOfMaturity;
-    child.coherence     = (rand() % 2) ? coherence : partner.coherence;
-    child.avoidance     = (rand() % 2) ? avoidance : partner.avoidance;
+    child.maliceDesire     = (rand() % 2) ? maliceDesire : partner.maliceDesire;
+    child.altruismDesire     = (rand() % 2) ? altruismDesire : partner.altruismDesire;
     child.maliceProbability =
         (rand() % 2) ? maliceProbability : partner.maliceProbability;
     child.altruismProbability =
@@ -49,10 +49,10 @@ void DNA::mutate()
         maxSpeed += randomDelta();
     }
     if ((rand() % 100) / 100.0 < mutationRate) {
-        coherence += randomDelta();
+        maliceDesire += randomDelta();
     }
     if ((rand() % 100) / 100.0 < mutationRate) {
-        avoidance += randomDelta();
+        altruismDesire += randomDelta();
     }
 
     if ((rand() % 100) / 100.0 < mutationRate) {

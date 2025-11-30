@@ -1,5 +1,6 @@
 #include "vec2d.h"
 #include <cmath>
+#include <iostream>
 
 Vec2D::Vec2D() : x(0), y(0)
 {
@@ -139,4 +140,10 @@ void Vec2D::set(double newX, double newY)
 {
     x = newX;
     y = newY;
+}
+
+std::ostream& operator<<(std::ostream& os, Vec2D const& vec)
+{
+    os << "(" << vec.x << ", " << vec.y << ")";
+    return os;
 }
