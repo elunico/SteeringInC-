@@ -37,4 +37,4 @@ Pressing `q` will enable and disable the building and use of the quadtree in det
 Closing the window will end the simulation and print a summary. 
 
 ## Demonstration
-![Demo Gif](https://app.eluni.co/vehicle-demo)
+[Demo Gif](https://app.eluni.co/vehicle-demo)
