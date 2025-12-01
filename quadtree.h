@@ -24,7 +24,9 @@ concept Shapeable = requires(S a, Vec2D t) {
 };
 
 template <typename Contained, Shapeable Shape>
-struct QuadTree {
+struct [[deprecated(
+    "Optimizations to the search algorithm make the construction of qt cost "
+    "more than help")]] QuadTree {
     Shape                   boundary;
     std::size_t             capacity;
     std::vector<Contained*> points{};

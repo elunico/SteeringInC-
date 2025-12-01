@@ -6,7 +6,7 @@ include_directories(.)
 
 set(CMAKE_CXX_STANDARD 23)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror -O0 -g -fsanitize=address -fsanitize=undefined")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror -O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic  -O3 -DNDEBUG")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDEFLT_NO_QT")
 
 find_package(Curses REQUIRED)
