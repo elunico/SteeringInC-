@@ -7,15 +7,25 @@
 
 #include <iostream>
 #include <sstream>
+#include "controls.h"
 #include "vehicle.h"
+
+Fl_Window* FLTKRenderer::window        = nullptr;
+Fl_Window* FLTKRenderer::controlWindow = nullptr;
 
 FLTKRenderer::FLTKRenderer(int W, int H)
 {
     window = new Fl_Window(W, H);
+
+    // am i to understand that this Fl_Window owns the drawer bc it is a subclass
+    // of Fl_Box? Therefore when the window is destroyed the drawer is deleted
+    // since it is an Fl object in the window and therefore my double free
+    // is caused by calling delete drawer after the destructor runs for
+    // FLTKRenderer?
     drawer = new FLTKCustomDrawer(W, H);
-    Fl::set_atclose([](auto w, auto) {
+    Fl::set_atclose([](auto, auto) {
         World::stopRunning(0);
-        w->hide();
+        FLTKRenderer::teardown();
     });
     window->end();
     window->show();
@@ -23,17 +33,23 @@ FLTKRenderer::FLTKRenderer(int W, int H)
 
 FLTKRenderer::~FLTKRenderer()
 {
-    drawer->redraw();
     while (Fl::wait())
         ;
-    delete drawer;
+    // See FLTKRenderer::FLTKRenderer
+    // delete drawer;
     delete window;
+    delete controlWindow;
 }
 
 void FLTKRenderer::render(World* world)
 {
-    clearScreen();
     drawer->world = world;
+    if (!hasControlWindow) {
+        hasControlWindow = true;
+        controlWindow    = new ControlWindow(world, world->width + 10, 200,
+                                             (QtButtonBase::h + 15) * 8);
+        controlWindow->show();
+    }
     refresh();
 }
 void FLTKRenderer::refresh()
@@ -83,48 +99,36 @@ void FLTKCustomDrawer::clearScreen() const
 
 int FLTKCustomDrawer::handle(int i)
 {
-    // std::cout << "handle: " << i << std::endl;
     if (i == FL_PUSH) {
-        double x = Fl::event_x();
-        double y = Fl::event_y();
-        for (auto& vehicle : world->vehicles) {
-            if (vehicle.getPosition().distanceTo(Vec2D{x, y}) < 10) {
-                vehicle.verbose = !vehicle.verbose;
-                return 1;
-            }
-        }
-        return Fl_Box::handle(i);
-    }
-    if (i == FL_SHORTCUT) {
-        auto key = Fl::event_key();
-        if (key == ' ') {
-            if (!World::isPaused)
-                World::pause();
-            world->tick();
-            return 1;
-        }
-        if (key == 's') {
-            World::unpause();
-            return 1;
-        }
-        if (key == 'q') {
-            World::toggleQuadtree();
-            return 1;
-        }
-        if (key == 'c') {
+        if (World::killMode) {
+            double x = Fl::event_x();
+            double y = Fl::event_y();
             for (auto& vehicle : world->vehicles) {
-                vehicle.verbose = false;
+                if (vehicle.getPosition().distanceTo(Vec2D{x, y}) <
+                    World::killRadius) {
+                    vehicle.kill();
+                }
             }
             return 1;
+        } else {
+            double x = Fl::event_x();
+            double y = Fl::event_y();
+            for (auto& vehicle : world->vehicles) {
+                if (vehicle.getPosition().distanceTo(Vec2D{x, y}) < 10) {
+                    vehicle.verbose = !vehicle.verbose;
+                    return 1;
+                }
+            }
+            return Fl_Box::handle(i);
         }
     }
     return Fl_Box::handle(i);
 }
 
+FLTKCustomDrawer::~FLTKCustomDrawer() = default;
+
 void FLTKCustomDrawer::drawVehicle(Vehicle const& vehicle)
 {
-    // Draw vehicles as blue triangles
-    // fl_color((displayColors[vehicle.getGeneration() % displayColors.size()]));
     fl_color(FL_BLACK);
     if (vehicle.highlighted) {
         fl_color(FL_RED);
@@ -134,9 +138,7 @@ void FLTKCustomDrawer::drawVehicle(Vehicle const& vehicle)
     }
     Vec2D  pos     = vehicle.getPosition();
     double heading = vehicle.getVelocity().heading();
-    // double     speed   = vehicle.getVelocity().magnitude();
-    // DNA const& dna     = vehicle.getDNA();
-    int size = remap(vehicle.getHealth(), 0.0, 20.0, 4.0, 10.0);
+    int    size    = remap(vehicle.getHealth(), 0.0, 20.0, 4.0, 10.0);
 
     // Calculate triangle vertices
     int x1 = static_cast<int>(pos.x + cos(heading) * size);
@@ -160,18 +162,10 @@ void FLTKCustomDrawer::drawVehicle(Vehicle const& vehicle)
         fl_line_style(FL_SOLID, 2);
         fl_arc(pos.x - rad / 2, pos.y - rad / 2, rad, rad, 0, 360);
     }
-
-    // draw the current velocity as an arrow whose length is proportional to its
-    // magnitude
-    // fl_color(FL_BLACK);
-    // fl_line_style(FL_SOLID, 1);
-    // fl_line(pos.x, pos.y, pos.x + cos(heading) * speed * size,
-    // pos.y + sin(heading) * speed * size);
 }
 
 void FLTKCustomDrawer::drawFood(Food const& position)
 {
-    // Draw food as green circles
     fl_color(FL_GREEN);
     fl_pie(static_cast<int>(position.position.x) - 2,
            static_cast<int>(position.position.y) - 2, 4, 4, 0, 360);
@@ -202,20 +196,24 @@ void FLTKCustomDrawer::draw()
     assert(world != nullptr &&
            "World pointer is null. Did you forget to set it?");
     clearScreen();
-    auto ss = world->infoStream();
+    auto ss  = world->infoStream();
+    auto msg = ss.str();
     fl_font(FL_HELVETICA_BOLD, 14);
     fl_color(FL_BLACK);
-    fl_draw(ss.str().c_str(), 0, 0, w(), h(), FL_ALIGN_TOP_LEFT);
-
+    fl_draw(msg.c_str(), 0, 0, w(), h(), FL_ALIGN_TOP_LEFT | FL_ALIGN_WRAP);
     if (!world->vehicles.empty()) {
         drawLivingWorld();
     } else {
         drawDeadWorld();
     }
+}
 
-    // for (auto const& vehicle : world->vehicles) {
-    //     if (vehicle.verbose && world->qt != nullptr) {
-    //         drawQuadtree(*vehicle.owner);
-    //     }
-    // }
+void FLTKRenderer::teardown()
+{
+    if (controlWindow) {
+        controlWindow->hide();
+    }
+    if (window) {
+        window->hide();
+    }
 }

@@ -29,6 +29,8 @@ struct World {
     static bool                           gameRunning;
     static bool                           isPaused;
     static bool                           useQuadtree;
+    static bool                           killMode;
+    static int                            killRadius;
     int                                   deadCounter = 0;
     int                                   bornCounter = 0;
     int                                   tickCounter = 0;
@@ -86,6 +88,8 @@ struct World {
     bool tick();
 
     Vehicle& createVehicle(Vec2D const& position);
+
+    void clearVerboseVehicles();
 
     ~World();
 };

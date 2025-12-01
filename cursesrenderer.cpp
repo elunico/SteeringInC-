@@ -72,6 +72,6 @@ void CursesRenderer::refresh()
 {
     ::refresh();
 }
-void CursesRenderer::drawQuadtree(QuadTree<Vehicle, Rectangle> const& _)
+void CursesRenderer::drawQuadtree(QuadTree<Vehicle, Rectangle> const&)
 {
 }

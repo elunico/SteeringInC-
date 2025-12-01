@@ -85,7 +85,6 @@ void Vehicle::behavior_eat(Food* target, double record)
 {
     if (record <= dna.perceptionRadius) {
         Vec2D steer = seek(target->position);
-        // steer *= 1 / record;
         if (verbose)
             std::cout << "Applying eat force: " << steer << std::endl;
         applyForce(steer);
@@ -102,8 +101,7 @@ void Vehicle::behavior_malice(Vehicle* target, double record)
         // ATTACK!
         if (record < dna.maxSpeed) {
             target->health -= dna.maliceDamage;
-            this->health += dna.maliceDamage * 0.5;  // gain some health
-            // log("Vehicle attacked another vehicle!");
+            this->health += dna.maliceDamage * 0.5;
         }
         if (record < dna.perceptionRadius) {
             // if vehicle is far away, try to seek it
@@ -126,11 +124,10 @@ void Vehicle::behavior_altruism(Vehicle* target, double record)
         if (record < dna.maxSpeed) {
             if (randomInRange(0, 1) < dna.altruismProbability) {
                 target->health += dna.altruismHeal;
-                this->health -= dna.altruismHeal;  // lose some health
+                this->health -= dna.altruismHeal;
             }
         }
         if (record < dna.perceptionRadius) {
-            // if vehicle is far away, try to seek it
             Vec2D steer = seek(target->position);
             steer *= dna.altruismDesire;
             if (verbose)
@@ -144,7 +141,6 @@ Vec2D Vehicle::seek(Vec2D const& target)
 {
     Vec2D desired = target - position;
     desired.normalize();
-    // desired *= dna.maxSpeed;
     desired -= velocity;
     return desired;
 }
@@ -191,6 +187,11 @@ Vec2D Vehicle::seek(Vec2D const& target)
     return std::nullopt;
 }
 
+void Vehicle::kill()
+{
+    health = 0;
+}
+
 void Vehicle::avoidEdges()
 {
     static const double edgeThreshold = 25.0;
@@ -224,7 +225,7 @@ void Vehicle::avoidEdges()
 void Vehicle::update()
 {
     age++;
-    health -= 0.05;  // Decrease health over time
+    health -= 0.05;
 
     velocity += acceleration;
     velocity.setMag(dna.maxSpeed);
@@ -240,13 +241,8 @@ void Vehicle::update()
     acceleration.reset();
 
     // Update world's max age if necessary
-    if (age > world->maxAge) {
-        world->maxAge = age;
-    }
-
-    if (health > MAX_HEALTH) {
-        health = MAX_HEALTH;  // Cap health at maximum value
-    }
+    world->maxAge = std::max(world->maxAge, age);
+    health        = std::min(health, MAX_HEALTH);
 }
 
 void Vehicle::applyForce(Vec2D& force, bool unlimited)
@@ -255,6 +251,5 @@ void Vehicle::applyForce(Vec2D& force, bool unlimited)
     if (!unlimited) {
         force.limit(MAX_FORCE);
     }
-    // std::cout << "Applying force: " << force << std::endl;
     acceleration += force;
 }

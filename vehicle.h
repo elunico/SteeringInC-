@@ -16,15 +16,17 @@ class Vehicle {
     using Vehicles = std::vector<Vehicle*>;
     using Foods    = std::vector<Food*>;
 
-    [[nodiscard]] double                 getHealth() const;
-    [[nodiscard]] int                    getAge() const;
-    [[nodiscard]] double                 getFitness() const;
-    [[nodiscard]] DNA const&             getDNA() const;
-    [[nodiscard]] Vec2D const&           getPosition() const;
-    [[nodiscard]] Vec2D const&           getVelocity() const;
-    [[nodiscard]] int                    getGeneration() const;
-    [[nodiscard]] Vec2D const&           getAcceleration() const;
-    void                                 update();
+    [[nodiscard]] double       getHealth() const;
+    [[nodiscard]] int          getAge() const;
+    [[nodiscard]] double       getFitness() const;
+    [[nodiscard]] DNA const&   getDNA() const;
+    [[nodiscard]] Vec2D const& getPosition() const;
+    [[nodiscard]] Vec2D const& getVelocity() const;
+    [[nodiscard]] int          getGeneration() const;
+    [[nodiscard]] Vec2D const& getAcceleration() const;
+    void                       update();
+    void                       kill();
+
     [[nodiscard]] std::optional<Vehicle> behaviors(Vehicles& vehicles,
                                                    Foods&    foodPositions);
     void                                 avoidEdges();
@@ -42,7 +44,7 @@ class Vehicle {
     T* findNearest(std::vector<T*>& items, double& outDistance)
     {
         T*     nearest = nullptr;
-        double record  = INFINITY;
+        double record  = std::numeric_limits<double>::infinity();
 
         for (auto& item : items) {
             if constexpr (std::is_same_v<std::decay_t<decltype(*this)>, T>) {

@@ -2,27 +2,79 @@
 
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
+#include <unistd.h>
 #include <iostream>
 #include <utility>
 #include <vector>
 
+#include "controls.h"
 #include "cursesrenderer.h"
 #include "fltkrenderer.h"
 
+struct arguments {
+    bool useCurses        = false;
+    int  width            = 800;
+    int  height           = 600;
+    int  startingVehicles = 10;
+};
+
+void parse_args(int argc, char* argv[], arguments& args)
+{
+    int c;
+    while ((c = getopt(argc, argv, "w:h:s:c")) != -1) {
+        switch (c) {
+            case 'w':
+                args.width = std::stoi(optarg);
+                break;
+            case 'h':
+                args.height = std::stoi(optarg);
+                break;
+            case 'c':
+                args.useCurses = true;
+                break;
+            case 's':
+                args.startingVehicles = std::stoi(optarg);
+                break;
+            default:
+                std::cerr << "Unknown option: " << static_cast<char>(optopt)
+                          << "\n";
+                std::cerr << "Usage: " << argv[0]
+                          << " [-w width] [-h height] [-s startingVehicles] "
+                             "[-c (use curses)]\n";
+                exit(EXIT_FAILURE);
+        }
+    }
+    if (args.width <= 0 || args.height <= 0) {
+        std::cerr << "Width and height must be positive integers.\n";
+        exit(EXIT_FAILURE);
+    }
+    if (args.startingVehicles <= 0) {
+        std::cerr << "Starting vehicles must be a positive integer.\n";
+        exit(EXIT_FAILURE);
+    }
+}
+
 int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 {
-    auto [width, height] = std::pair{1800, 1000};
-    auto const seed      = 1764448905;  // static_cast<unsigned>(time(nullptr));
+    arguments args;
+    parse_args(argc, argv, args);
+
+    const int  width  = args.width;
+    const int  height = args.height;
+    auto const seed   = 1764448905;  // static_cast<unsigned>(time(nullptr));
     // srand(seed);  // Seed for random number generation
     srand(seed);  // Seed for random number generation
 
-    auto* renderer = new FLTKRenderer(width, height);
+    auto renderer = new FLTKRenderer(width, height);
+
     World world(seed, width, height, renderer);
 
-    world.setup(400, 250);  // 50 vehicles, 50 food items
+    world.setup(args.startingVehicles,
+                250);  // startingVehicles vehicles, 250 food items
 
     world.run();
 
+    // we own the renderer even though the world has a pointer to it
     renderer->render(&world);
     delete renderer;
 

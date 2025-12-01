@@ -31,11 +31,16 @@ struct FLTKCustomDrawer : public Fl_Box {
     void clearScreen() const;
 
     int handle(int) override;
+
+    ~FLTKCustomDrawer() override;
+
 };
 
 struct FLTKRenderer : public IRenderer {
+    bool              hasControlWindow = false;
     FLTKCustomDrawer* drawer;
-    Fl_Window*        window;
+    static Fl_Window* window;
+    static Fl_Window* controlWindow;
 
     FLTKRenderer(int W, int H);
 
@@ -46,6 +51,8 @@ struct FLTKRenderer : public IRenderer {
     void refresh() override;
 
     ~FLTKRenderer() override;
+
+    static void teardown();
 };
 
 #endif  // RENDERER_H

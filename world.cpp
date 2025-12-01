@@ -12,7 +12,14 @@
 
 bool World::gameRunning = true;
 bool World::isPaused    = false;
+bool World::killMode    = false;
+int  World::killRadius  = 100;
+
+#ifdef DEFLT_NO_QT
+bool World::useQuadtree = false;
+#else
 bool World::useQuadtree = true;
+#endif
 
 std::string quadtreeMessage()
 {
@@ -124,8 +131,9 @@ std::stringstream World::infoStream() const
 {
     std::stringstream ss;
     ss << "(World: [" << width << "x" << height << "] " << quadtreeMessage()
-       << " seed: " << seed << ") "
-       << "Vehicles: " << vehicles.size() << " | Food: " << food.size()
+       << " seed: " << seed << ") ";
+
+    ss << "Vehicles: " << vehicles.size() << " | Food: " << food.size()
        << " | Dead Vehicles: " << deadCounter
        << " | Born Vehicles: " << bornCounter << " | Oldest Vehicle: " << maxAge
        << " | Time Elapsed: "
@@ -134,6 +142,9 @@ std::stringstream World::infoStream() const
               .count()
        << "s"
        << " | Tick: " << tickCounter << " | TPS: " << tps();
+    if (World::killMode) {
+        ss << "\n[KILL MODE ON (Radius: " << World::killRadius << ")] ";
+    }
     return ss;
 }
 
@@ -184,10 +195,7 @@ bool World::tick()
             v.highlighted = false;
             vehicleTree.insert(&v);
         }
-
-        // qt = vehicleTree;
     } else {
-        // qt = nullptr;
         for (auto& v : vehicles) {
             v.highlighted = false;
             neighbors.push_back(&v);
@@ -221,11 +229,6 @@ bool World::tick()
             }
         }
 
-        // std::cout << "Checking " << neighbors.size() << " neighbors\n";
-        // TODO: figure out why align and cohere cause the vehicles to travel to 0,0
-        // vehicle.align(neighbors);
-        // vehicle.cohere(neighbors);
-        // vehicle.avoid(neighbors);
         if (auto child = vehicle.behaviors(neighbors, foodNeighbors);
             child.has_value()) {
             offspring.push_back(std::move(child.value()));
@@ -234,9 +237,7 @@ bool World::tick()
         vehicle.avoidEdges();
     }
 
-    // Remove dead vehicles
     pruneDeadVehicles();
-    // Remove eaten food
     pruneEatenFood();
 
     // Add offspring to the
@@ -255,6 +256,13 @@ Vehicle& World::createVehicle(Vec2D const& position)
     auto& v = vehicles.emplace_back(position);
     v.world = this;
     return v;
+}
+
+void World::clearVerboseVehicles()
+{
+    for (auto& v : vehicles) {
+        v.verbose = false;
+    }
 }
 
 World::~World()
