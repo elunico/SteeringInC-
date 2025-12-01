@@ -9,10 +9,11 @@
 #include "utils.h"
 #include "vehicle.h"
 
-bool World::gameRunning = true;
-bool World::isPaused    = false;
-bool World::killMode    = false;
-int  World::killRadius  = 100;
+bool World::gameRunning        = true;
+bool World::isPaused           = false;
+bool World::showSoughtVehicles = false;
+bool World::killMode           = false;
+int  World::killRadius         = 100;
 
 #ifdef DEFLT_NO_QT
 bool World::useQuadtree = false;
@@ -37,8 +38,8 @@ World::World(long seed, int width, int height)
 
 void World::addVehicle(Vehicle&& vehicle)
 {
-    vehicle.world = this;
-    vehicles.push_back(std::move(vehicle));
+    vehicle.world        = this;
+    vehicles[vehicle.id] = std::move(vehicle);
 }
 
 void World::addVehicle(Vec2D const& position, DNA const& dna)
@@ -53,9 +54,9 @@ void World::addAllVehicles(std::vector<Vehicle>&& newVehicles)
     for (auto& v : newVehicles) {
         v.world = this;
     }
-    vehicles.insert(vehicles.end(),
-                    std::make_move_iterator(newVehicles.begin()),
-                    std::make_move_iterator(newVehicles.end()));
+    for (auto& v : newVehicles) {
+        vehicles[v.id] = std::move(v);
+    }
 }
 
 Vec2D World::randomPosition() const
@@ -74,8 +75,16 @@ auto World::pruneDeadVehicles() -> decltype(vehicles)::size_type
 {
     auto const initialSize = vehicles.size();
 
-    std::erase_if(vehicles, [this](Vehicle const& v) {
-        if (v.getHealth() <= 0) {
+    for (auto& [id, v] : vehicles) {
+        if (v.lastSoughtVehicle != 0 &&
+            vehicles[v.lastSoughtVehicle].isDead()) {
+            v.lastSoughtVehicle = 0;
+        }
+    }
+
+    std::erase_if(vehicles, [this](auto& p) {
+        auto& v = p.second;
+        if (v.isDead()) {
             deadCounter++;
             return true;
         }
@@ -190,12 +199,12 @@ bool World::tick()
         for (auto& f : food) {
             foodTree.insert(&f);
         }
-        for (auto& v : vehicles) {
+        for (auto& [id, v] : vehicles) {
             v.highlighted = false;
             vehicleTree.insert(&v);
         }
     } else {
-        for (auto& v : vehicles) {
+        for (auto& [id, v] : vehicles) {
             v.highlighted = false;
             neighbors.push_back(&v);
         }
@@ -208,7 +217,7 @@ bool World::tick()
         food.update();
     }
 
-    for (auto& vehicle : vehicles) {
+    for (auto& [id, vehicle] : vehicles) {
         if (useQuadtree) {
             neighbors     = vehicleTree.query(Rectangle{
                 Vec2D{vehicle.position.x - vehicle.dna.perceptionRadius,
@@ -220,12 +229,6 @@ bool World::tick()
                       vehicle.position.y - vehicle.dna.perceptionRadius},
                 Vec2D{vehicle.position.x + vehicle.dna.perceptionRadius,
                       vehicle.position.y + vehicle.dna.perceptionRadius}});
-        }
-
-        if (vehicle.verbose) {
-            for (auto& n : neighbors) {
-                n->highlighted = true;
-            }
         }
 
         if (auto child = vehicle.behaviors(neighbors, foodNeighbors);
@@ -241,8 +244,8 @@ bool World::tick()
 
     // Add offspring to the
     addAllVehicles(std::move(offspring));
-    static_assert(std::is_trivially_destructible<Vehicle>::value,
-                  "Vehicle must be trivially destructible for clear()");
+    // static_assert(std::is_trivially_destructible<Vehicle>::value,
+    // "Vehicle must be trivially destructible for clear()");
     offspring.clear();
     // usleep(10000);
 
@@ -252,14 +255,15 @@ bool World::tick()
 
 Vehicle& World::createVehicle(Vec2D const& position)
 {
-    auto& v = vehicles.emplace_back(position);
-    v.world = this;
-    return v;
+    Vehicle v(position);
+    v.world        = this;
+    vehicles[v.id] = std::move(v);
+    return vehicles[v.id];
 }
 
 void World::clearVerboseVehicles()
 {
-    for (auto& v : vehicles) {
+    for (auto& [id, v] : vehicles) {
         v.verbose = false;
     }
 }

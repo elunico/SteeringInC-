@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include "fltkrenderer.h"
+#include "utils.h"
 
 struct arguments {
     bool useCurses        = false;
@@ -65,21 +66,24 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
     world.setup(args.startingVehicles,
                 250);  // startingVehicles vehicles, 250 food items
 
+    usleep(1000000);
+
     world.run(renderer);
 
     renderer->render();
     delete renderer;
 
-    std::cout << "Simulation ended.\n";
+    output("Simulation ended.\n");
 
     // report vehicle fitness at the end of simulation
-    for (size_t i = 0; i < world.vehicles.size(); ++i) {
-        std::cout << "Vehicle " << i << " age: " << world.vehicles[i].getAge()
-                  << " health: " << world.vehicles[i].getHealth()
-                  << " fitness: " << world.vehicles[i].getFitness() << "\n";
+    int count = 1;
+    for (auto [id, vehicle] : world.vehicles) {
+        output("Vehicle #", count++, " ID: ", id, " age: ", vehicle.getAge(),
+               " health: ", vehicle.getHealth(),
+               " fitness: ", vehicle.getFitness(), "\n");
     }
 
-    std::cout << world.infoStream().str() << std::endl;
+    output(world.infoStream().str(), "\n");
 
     return 0;
 }

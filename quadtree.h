@@ -83,7 +83,7 @@ struct QuadTree {
 
         if constexpr (std::is_same_v<Contained, Vehicle>) {
             if (item->verbose) {
-                std::cout << "Inserting highlighted vehicle into quadtree\n";
+                output("Inserting highlighted vehicle into quadtree\n");
             }
         }
 

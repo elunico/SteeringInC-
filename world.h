@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <sstream>
+#include <unordered_map>
 #include <vector>
 #include "dna.h"
 #include "food.h"
@@ -16,22 +17,24 @@
 class Vehicle;
 
 struct World {
-    long                                  seed;
-    int                                   width;
-    int                                   height;
-    std::vector<Vehicle>                  vehicles;
-    std::vector<Food>                     food;
-    static bool                           gameRunning;
-    static bool                           isPaused;
-    static bool                           useQuadtree;
-    static bool                           killMode;
-    static int                            killRadius;
-    int                                   deadCounter = 0;
-    int                                   bornCounter = 0;
-    int                                   tickCounter = 0;
-    int                                   maxAge      = 0;
-    std::chrono::steady_clock::time_point startTime;
-    std::chrono::steady_clock::time_point endTime;
+    using VehicleIdType = unsigned long;
+    long                                       seed;
+    int                                        width;
+    int                                        height;
+    std::unordered_map<VehicleIdType, Vehicle> vehicles;
+    std::vector<Food>                          food;
+    static bool                                gameRunning;
+    static bool                                isPaused;
+    static bool                                useQuadtree;
+    static bool                                showSoughtVehicles;
+    static bool                                killMode;
+    static int                                 killRadius;
+    int                                        deadCounter = 0;
+    int                                        bornCounter = 0;
+    int                                        tickCounter = 0;
+    int                                        maxAge      = 0;
+    std::chrono::steady_clock::time_point      startTime;
+    std::chrono::steady_clock::time_point      endTime;
 
     static void stopRunning(int)
     {

@@ -47,7 +47,7 @@ void CursesRenderer::drawLivingWorld(World* world)
         drawFood(food);
     }
 
-    for (auto& vehicle : world->vehicles) {
+    for (auto& [id, vehicle] : world->vehicles) {
         drawVehicle(vehicle);
     }
 }

@@ -10,9 +10,16 @@
 #define MAX_FORCE 0.2
 #define MAX_HEALTH 40.0
 
+// 0 is a sentinel value meaning no vehicle sought yet
+typename Vehicle::IdType Vehicle::globalIdCounter = 1;
+
+Vehicle::Vehicle() : Vehicle(Vec2D{0.0, 0.0})
+{
+}
 Vehicle::Vehicle(Vec2D const& position)
     : position(position),
-      velocity(randomInRange(0, dna.maxSpeed), randomInRange(0, dna.maxSpeed))
+      velocity(randomInRange(0, dna.maxSpeed), randomInRange(0, dna.maxSpeed)),
+      id(globalIdCounter++)
 {
     if (auto const changer = rand() % 3; changer == 0) {
         // flip x-velocity
@@ -66,9 +73,36 @@ Vehicle::Vehicle(Vec2D const& position)
 [[nodiscard]] std::optional<Vehicle> Vehicle::behaviors(Vehicles& vehicles,
                                                         Foods&    foodPositions)
 {
-    double record;
-    auto   targetFood    = findNearest(foodPositions, record);
-    auto   targetVehicle = findNearest(vehicles, record);
+    if (lastSoughtVehicle != 0) {
+        if (auto d = position.distanceTo(
+                world->vehicles[lastSoughtVehicle].getPosition());
+            d > dna.perceptionRadius) {
+            lastSoughtVehicle = 0;
+        }
+    }
+
+    double record = -1.0;  // if we dont findNearest, assume the vehicle is
+                           // close enough already
+    auto targetFood    = findNearest(foodPositions, record);
+    auto targetVehicle = lastSoughtVehicle != 0
+                             ? &world->vehicles[lastSoughtVehicle]
+                             : findNearest(vehicles, record);
+
+    if (record > dna.perceptionRadius) {
+        return std::nullopt;  // Too far away to seek anything
+    }
+
+    // TODO: there is an issue with saving this pointer.
+    // if offspring are created, they may invalidate this pointer. Consider
+    // using IDs instead. keep all the vehicles in a hash map with unique IDs
+    // and store the ID instead of pointer
+    lastSoughtVehicle = targetVehicle->id;
+
+    if (verbose) {
+        if (targetVehicle != nullptr) {
+            targetVehicle->highlighted = true;
+        }
+    }
 
     if (targetFood != nullptr)
         behavior_eat(targetFood, record);
@@ -86,7 +120,7 @@ void Vehicle::behavior_eat(Food* target, double record)
     if (record <= dna.perceptionRadius) {
         Vec2D steer = seek(target->position);
         if (verbose)
-            std::cout << "Applying eat force: " << steer << std::endl;
+            output("Applying eat force: ", steer, "\n");
         applyForce(steer);
     } else if (record <= dna.maxSpeed) {
         // Already at target; captured food
@@ -108,7 +142,7 @@ void Vehicle::behavior_malice(Vehicle* target, double record)
             Vec2D steer = seek(target->position);
             steer *= dna.maliceDesire;
             if (verbose)
-                std::cout << "Applying malice force: " << steer << std::endl;
+                output("Applying malice force: ", steer, "\n");
             applyForce(steer);
         }
     }
@@ -124,14 +158,15 @@ void Vehicle::behavior_altruism(Vehicle* target, double record)
         if (record < dna.maxSpeed) {
             if (randomInRange(0, 1) < dna.altruismProbability) {
                 target->health += dna.altruismHeal;
-                this->health -= dna.altruismHeal;
+                this->health -=
+                    (dna.altruismHeal * 1.1);  // Slight cost to self
             }
         }
         if (record < dna.perceptionRadius) {
             Vec2D steer = seek(target->position);
             steer *= dna.altruismDesire;
             if (verbose)
-                std::cout << "Applying altruism force: " << steer << std::endl;
+                output("Applying altruism force: ", steer, "\n");
             applyForce(steer);
         }
     }
@@ -176,7 +211,7 @@ Vec2D Vehicle::seek(Vec2D const& target)
     } else {
         auto steer = seek(target->position);
         if (verbose)
-            std::cout << "Applying reproduction force: " << steer << std::endl;
+            output("Applying reproduction force: ", steer, "\n");
         applyForce(steer);
     }
 
@@ -190,6 +225,11 @@ Vec2D Vehicle::seek(Vec2D const& target)
 void Vehicle::kill()
 {
     health = 0;
+}
+
+bool Vehicle::isDead() const
+{
+    return health <= 0;
 }
 
 void Vehicle::avoidEdges()
@@ -217,7 +257,7 @@ void Vehicle::avoidEdges()
         steer = seek(steer);
         steer *= 2.0;  // stronger force to avoid edges
         if (verbose)
-            std::cout << "Applying avoid edges force: " << steer << std::endl;
+            output("Applying avoid edges force: ", steer, "\n");
         applyForce(steer, true);
     }
 }

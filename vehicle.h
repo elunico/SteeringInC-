@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <type_traits>
+#include <unordered_map>
 #include "dna.h"
 #include "quadtree.h"
 #include "vec2d.h"
@@ -11,7 +12,9 @@
 
 class Vehicle {
    public:
+    using IdType = World::VehicleIdType;
     Vehicle(Vec2D const& position);
+    Vehicle();
 
     using Vehicles = std::vector<Vehicle*>;
     using Foods    = std::vector<Food*>;
@@ -26,17 +29,19 @@ class Vehicle {
     [[nodiscard]] Vec2D const& getAcceleration() const;
     void                       update();
     void                       kill();
+    bool                       isDead() const;
 
     [[nodiscard]] std::optional<Vehicle> behaviors(Vehicles& vehicles,
                                                    Foods&    foodPositions);
     void                                 avoidEdges();
 
    private:
-    void  behavior_eat(Food* target, double record);
-    void  behavior_malice(Vehicle* target, double record);
-    void  behavior_altruism(Vehicle* target, double record);
-    Vec2D seek(Vec2D const& target);
-    void  applyForce(Vec2D& force, bool unlimited = false);
+    static IdType globalIdCounter;
+    void          behavior_eat(Food* target, double record);
+    void          behavior_malice(Vehicle* target, double record);
+    void          behavior_altruism(Vehicle* target, double record);
+    Vec2D         seek(Vec2D const& target);
+    void          applyForce(Vec2D& force, bool unlimited = false);
     [[nodiscard]] std::optional<Vehicle> reproduce(Vehicle* target,
                                                    double   record);
 
@@ -62,7 +67,7 @@ class Vehicle {
         return nearest;
     }
 
-    World* world;
+    World* world                     = nullptr;
     double health                    = 20.0;
     int    age                       = 0;
     double mass                      = 1.0;
@@ -75,8 +80,10 @@ class Vehicle {
     Vec2D acceleration;
 
    public:
-    bool verbose     = false;
-    bool highlighted = false;
+    IdType id;
+    IdType lastSoughtVehicle = 0;
+    bool   verbose           = false;
+    bool   highlighted       = false;
 
     friend struct World;
 };

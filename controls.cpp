@@ -157,6 +157,12 @@ ControlWindow::ControlWindow(World* world, int startX, int W, int H)
             return 1;  // Indicate handled
         }));
 
+    buttons.push_back(std::make_unique<QtToggleButton>(
+        world, buttonWidth, "Toggle Sought Vehicles", [](int) {
+            World::showSoughtVehicles = !World::showSoughtVehicles;
+            return 1;  // Indicate handled
+        }));
+
     end();
 }
 

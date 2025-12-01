@@ -15,10 +15,10 @@ FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
     window = new Fl_Window(W, H);
     window->label("Vehicle Simulation");
 
-    // am i to understand that this Fl_Window owns the drawer bc it is a subclass
-    // of Fl_Box? Therefore when the window is destroyed the drawer is deleted
-    // since it is an Fl object in the window and therefore my double free
-    // is caused by calling delete drawer after the destructor runs for
+    // am i to understand that this Fl_Window owns the drawer bc it is a
+    // subclass of Fl_Box? Therefore when the window is destroyed the drawer is
+    // deleted since it is an Fl object in the window and therefore my double
+    // free is caused by calling delete drawer after the destructor runs for
     // FLTKRenderer?
     drawer = new FLTKCustomDrawer(world, W, H);
     Fl::set_atclose([](auto, auto) {
@@ -100,24 +100,23 @@ int FLTKCustomDrawer::handle(int i)
         if (World::killMode) {
             double x = Fl::event_x();
             double y = Fl::event_y();
-            for (auto& vehicle : world->vehicles) {
+            for (auto& [id, vehicle] : world->vehicles) {
                 if (vehicle.getPosition().distanceTo(Vec2D{x, y}) <
                     World::killRadius) {
                     vehicle.kill();
                 }
             }
             return 1;
-        } else {
-            double x = Fl::event_x();
-            double y = Fl::event_y();
-            for (auto& vehicle : world->vehicles) {
-                if (vehicle.getPosition().distanceTo(Vec2D{x, y}) < 10) {
-                    vehicle.verbose = !vehicle.verbose;
-                    return 1;
-                }
-            }
-            return Fl_Box::handle(i);
         }
+        double x = Fl::event_x();
+        double y = Fl::event_y();
+        for (auto& [id, vehicle] : world->vehicles) {
+            if (vehicle.getPosition().distanceTo(Vec2D{x, y}) < 10) {
+                vehicle.verbose = !vehicle.verbose;
+                return 1;
+            }
+        }
+        return Fl_Box::handle(i);
     }
     return Fl_Box::handle(i);
 }
@@ -133,6 +132,11 @@ void FLTKCustomDrawer::drawVehicle(Vehicle const& vehicle)
     if (vehicle.verbose) {
         fl_color(FL_BLUE);
     }
+
+    if (vehicle.getAge() < vehicle.getDNA().ageOfMaturity) {
+        fl_color(FL_MAGENTA);
+    }
+
     Vec2D  pos     = vehicle.getPosition();
     double heading = vehicle.getVelocity().heading();
     int    size    = remap(vehicle.getHealth(), 0.0, 20.0, 4.0, 10.0);
@@ -159,6 +163,16 @@ void FLTKCustomDrawer::drawVehicle(Vehicle const& vehicle)
         fl_line_style(FL_SOLID, 2);
         fl_arc(pos.x - rad / 2, pos.y - rad / 2, rad, rad, 0, 360);
     }
+
+    // Draw  a line from the vehicle to its last sought vehicle if it exists
+    if (vehicle.lastSoughtVehicle && World::showSoughtVehicles) {
+        fl_color(FL_BLUE);
+        auto& position =
+            world->vehicles[vehicle.lastSoughtVehicle].getPosition();
+        fl_line(pos.x, pos.y, position.x, position.y);
+        fl_rect(static_cast<int>(position.x) - 3,
+                static_cast<int>(position.y) - 3, 6, 6);
+    }
 }
 
 void FLTKCustomDrawer::drawFood(Food const& position)
@@ -174,7 +188,7 @@ void FLTKCustomDrawer::drawLivingWorld()
         drawFood(food);
     }
 
-    for (auto& vehicle : world->vehicles) {
+    for (auto& [id, vehicle] : world->vehicles) {
         drawVehicle(vehicle);
     }
 }
