@@ -17,9 +17,9 @@ class IRenderer {
 
     // virtual void drawDeadWorld() = 0;
 
-    virtual void render(World * world) = 0;
+    virtual void render() = 0;
 
-    virtual void refresh()=  0;
+    virtual void refresh() = 0;
 
     virtual ~IRenderer() = default;
 };

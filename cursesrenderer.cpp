@@ -4,9 +4,10 @@
 
 #include "cursesrenderer.h"
 #include <ncurses.h>
+#include "world.h"
 
-CursesRenderer::CursesRenderer( int width, int height)
-    :  width(width), height(height)
+CursesRenderer::CursesRenderer(World* world, int width, int height)
+    : world(world), width(width), height(height)
 {
     initscr();
     cbreak();
@@ -37,7 +38,7 @@ void CursesRenderer::drawVehicle(Vehicle const& vehicle)
     mvaddch(vehicle.getPosition().y, vehicle.getPosition().x, ACS_CKBOARD);
 }
 
-void CursesRenderer::drawLivingWorld(World *world)
+void CursesRenderer::drawLivingWorld(World* world)
 {
     auto ss = world->infoStream();
     mvaddstr(0, 0, ss.str().c_str());
@@ -56,7 +57,7 @@ void CursesRenderer::drawDeadWorld()
     mvaddstr(height / 2, width / 2, "All vehicles have perished.");
 }
 
-void CursesRenderer::render(World* world)
+void CursesRenderer::render()
 {
     clearScreen();
 

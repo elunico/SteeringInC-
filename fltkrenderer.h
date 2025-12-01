@@ -14,7 +14,7 @@
 
 struct FLTKCustomDrawer : public Fl_Box {
     World* world{};
-    FLTKCustomDrawer(int W, int H);
+    FLTKCustomDrawer(World* world, int W, int H);
 
     void draw() override;
 
@@ -33,20 +33,20 @@ struct FLTKCustomDrawer : public Fl_Box {
     int handle(int) override;
 
     ~FLTKCustomDrawer() override;
-
 };
 
 struct FLTKRenderer : public IRenderer {
+    World*            world;
     bool              hasControlWindow = false;
     FLTKCustomDrawer* drawer;
     static Fl_Window* window;
     static Fl_Window* controlWindow;
 
-    FLTKRenderer(int W, int H);
+    FLTKRenderer(World* world, int W, int H);
 
     void clearScreen() override;
 
-    void render(World*) override;
+    void render() override;
 
     void refresh() override;
 

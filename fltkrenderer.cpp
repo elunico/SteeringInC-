@@ -1,34 +1,37 @@
 #include "fltkrenderer.h"
-
 #include <assert.h>
-
-#include <chrono>
 #include <cmath>
-
 #include <iostream>
 #include <sstream>
 #include "controls.h"
 #include "vehicle.h"
+#include "world.h"
 
 Fl_Window* FLTKRenderer::window        = nullptr;
 Fl_Window* FLTKRenderer::controlWindow = nullptr;
 
-FLTKRenderer::FLTKRenderer(int W, int H)
+FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
 {
     window = new Fl_Window(W, H);
+    window->label("Vehicle Simulation");
 
     // am i to understand that this Fl_Window owns the drawer bc it is a subclass
     // of Fl_Box? Therefore when the window is destroyed the drawer is deleted
     // since it is an Fl object in the window and therefore my double free
     // is caused by calling delete drawer after the destructor runs for
     // FLTKRenderer?
-    drawer = new FLTKCustomDrawer(W, H);
+    drawer = new FLTKCustomDrawer(world, W, H);
     Fl::set_atclose([](auto, auto) {
         World::stopRunning(0);
         FLTKRenderer::teardown();
     });
     window->end();
     window->show();
+
+    controlWindow = new ControlWindow(world, W + 10, 200, H);
+    controlWindow->label("Controls");
+    controlWindow->end();
+    controlWindow->show();
 }
 
 FLTKRenderer::~FLTKRenderer()
@@ -41,15 +44,8 @@ FLTKRenderer::~FLTKRenderer()
     delete controlWindow;
 }
 
-void FLTKRenderer::render(World* world)
+void FLTKRenderer::render()
 {
-    drawer->world = world;
-    if (!hasControlWindow) {
-        hasControlWindow = true;
-        controlWindow    = new ControlWindow(world, world->width + 10, 200,
-                                             (QtButtonBase::h + 15) * 8);
-        controlWindow->show();
-    }
     refresh();
 }
 void FLTKRenderer::refresh()
@@ -84,7 +80,8 @@ void FLTKRenderer::clearScreen()
     drawer->clearScreen();
 }
 
-FLTKCustomDrawer::FLTKCustomDrawer(int W, int H) : Fl_Box(0, 0, W, H, nullptr)
+FLTKCustomDrawer::FLTKCustomDrawer(World* world, int W, int H)
+    : Fl_Box(0, 0, W, H, nullptr), world(world)
 {
 }
 

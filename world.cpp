@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include <csignal>
 #include <iostream>
-
 #include "food.h"
 #include "irenderer.h"
 #include "quadtree.h"
@@ -30,8 +29,8 @@ std::string quadtreeMessage()
     }
 }
 
-World::World(long seed, int width, int height, IRenderer* renderer)
-    : renderer{renderer}, seed(seed), width(width), height(height)
+World::World(long seed, int width, int height)
+    : seed(seed), width(width), height(height)
 {
     signal(SIGINT, stopRunning);
 }
@@ -148,7 +147,7 @@ std::stringstream World::infoStream() const
     return ss;
 }
 
-void World::run()
+void World::run(IRenderer* renderer)
 {
     startTime = std::chrono::steady_clock::now();
     while (gameRunning) {
@@ -158,7 +157,7 @@ void World::run()
                 break;
             }
         }
-        renderer->render(this);
+        renderer->render();
     }
     endTime = std::chrono::steady_clock::now();
 }

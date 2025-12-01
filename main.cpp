@@ -1,14 +1,8 @@
-#include <unistd.h>
-
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
 #include <unistd.h>
 #include <iostream>
-#include <utility>
 #include <vector>
-
-#include "controls.h"
-#include "cursesrenderer.h"
 #include "fltkrenderer.h"
 
 struct arguments {
@@ -65,17 +59,15 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
     // srand(seed);  // Seed for random number generation
     srand(seed);  // Seed for random number generation
 
-    auto renderer = new FLTKRenderer(width, height);
-
-    World world(seed, width, height, renderer);
+    World world(seed, width, height);
+    auto  renderer = new FLTKRenderer(&world, width, height);
 
     world.setup(args.startingVehicles,
                 250);  // startingVehicles vehicles, 250 food items
 
-    world.run();
+    world.run(renderer);
 
-    // we own the renderer even though the world has a pointer to it
-    renderer->render(&world);
+    renderer->render();
     delete renderer;
 
     std::cout << "Simulation ended.\n";

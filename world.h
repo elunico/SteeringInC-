@@ -1,16 +1,13 @@
 #ifndef WORLD_H
 #define WORLD_H
 
+#include <chrono>
 #include <sstream>
 #include <vector>
 #include "dna.h"
 #include "food.h"
-
-#include <chrono>
-
 #include "irenderer.h"
 #include "quadtree.h"
-#include "rectangle.h"
 #include "vec2d.h"
 
 #define FOOD_PCT_CHANCE 20
@@ -19,8 +16,6 @@
 class Vehicle;
 
 struct World {
-    // renderer is borrowed not owned, so it must outlive the world
-    IRenderer*                            renderer;
     long                                  seed;
     int                                   width;
     int                                   height;
@@ -48,7 +43,7 @@ struct World {
         useQuadtree = !useQuadtree;
     }
 
-    World(long seed, int width, int height, IRenderer* renderer);
+    World(long seed, int width, int height);
 
     void addVehicle(Vehicle&& vehicle);
 
@@ -73,7 +68,7 @@ struct World {
 
     [[nodiscard]] std::stringstream infoStream() const;
 
-    void run();
+    void run(IRenderer* renderer);
 
     static void pause()
     {
