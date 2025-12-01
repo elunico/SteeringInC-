@@ -33,3 +33,4 @@ When the program is running with the FLTK renderer (which is default), you can c
 Currently there are no ways to control the simulation in curses mode.
 
 ## Demonstration
+[Demo Gif](https://app.eluni.co/vehicle-demo)
