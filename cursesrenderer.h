@@ -26,8 +26,6 @@ class CursesRenderer : public IRenderer {
 
     void refresh() override;
 
-    void drawQuadtree(QuadTree<Vehicle, Rectangle> const& quad_tree);
-
     ~CursesRenderer();
 };
 

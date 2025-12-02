@@ -97,12 +97,6 @@ ControlWindow::ControlWindow(World* world, int startX, int W, int H)
     static int const buttonWidth = W - 20;
 
     buttons.push_back(std::make_unique<QtToggleButton>(
-        world, buttonWidth, "Toggle Quadtree", [](int) {
-            World::toggleQuadtree();
-            return 1;  // Indicate handled
-        }));
-
-    buttons.push_back(std::make_unique<QtToggleButton>(
         world, buttonWidth, "Pause/Step", [world](int) {
             if (World::isPaused) {
                 world->tick();

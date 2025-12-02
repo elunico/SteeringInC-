@@ -1,6 +1,7 @@
 
 #include "vehicle.h"
 
+#include <cstddef>
 #include <iostream>
 
 #include "utils.h"
@@ -32,12 +33,12 @@ Vehicle::Vehicle(Vec2D const& position)
     }
 }
 
-[[nodiscard]] double Vehicle::getHealth() const
+[[nodiscard]] double Vehicle::get_health() const
 {
     return health;
 }
 
-[[nodiscard]] int Vehicle::getAge() const
+[[nodiscard]] int Vehicle::get_age() const
 {
     return age;
 }
@@ -47,108 +48,127 @@ Vehicle::Vehicle(Vec2D const& position)
     return dna;
 }
 
-[[nodiscard]] double Vehicle::getFitness() const
+[[nodiscard]] double Vehicle::get_fitness() const
 {
-    return getHealth() + getAge() * 0.1;
+    return get_health() + get_age() * 0.1;
 }
 
-[[nodiscard]] Vec2D const& Vehicle::getPosition() const
+[[nodiscard]] Vec2D const& Vehicle::get_position() const
 {
     return position;
 }
-[[nodiscard]] Vec2D const& Vehicle::getVelocity() const
+[[nodiscard]] Vec2D const& Vehicle::get_velocity() const
 {
     return velocity;
 }
-[[nodiscard]] Vec2D const& Vehicle::getAcceleration() const
+[[nodiscard]] Vec2D const& Vehicle::get_acceleration() const
 {
     return acceleration;
 }
 
-[[nodiscard]] int Vehicle::getGeneration() const
+[[nodiscard]] int Vehicle::get_generation() const
 {
     return generation;
+}
+
+void Vehicle::food_behaviors(Foods& foodPositions)
+{
+    double record;  // distance to nearest food
+    auto   targetFood = findNearest(foodPositions, record);
+
+    if (targetFood != nullptr)
+        seek_for_eat(targetFood, record);
+}
+
+void Vehicle::check_sought_vehicle()
+{
+    // if their last sought vehicle is dead or out of range, reset it
+    // so they can seek a new one
+    if (lastSoughtVehicle != 0) {
+        if (auto d = position.distanceTo(
+                world->vehicles[lastSoughtVehicle].get_position());
+            d > dna.perceptionRadius ||
+            world->vehicles[lastSoughtVehicle].isDead()) {
+            lastSoughtVehicle = 0;
+        }
+    }
+}
+
+std::optional<Vehicle> Vehicle::vehicle_behaviors(Vehicles& vehicles)
+{
+    check_sought_vehicle();
+
+    double record = -1.0;  // if we are pursing the same vehicle, assume we are
+                           // close enough due to prior knowledge
+                           // otherwise find the nearest vehicle
+    auto targetVehicle = lastSoughtVehicle == 0
+                             ? findNearest(vehicles, record)
+                             : &world->vehicles[lastSoughtVehicle];
+
+    // if the *nearest* vehicle is too far too see, or there is no vehicle do
+    // nothing
+    if (record > dna.perceptionRadius || targetVehicle == nullptr) {
+        return std::nullopt;
+    }
+
+    // update the currently sought vehicle
+    lastSoughtVehicle = targetVehicle->id;
+
+    if (verbose) {
+        targetVehicle->highlighted = true;
+    }
+
+    seek_for_malice(targetVehicle, record);
+    seek_for_altruism(targetVehicle, record);
+    return reproduce(targetVehicle, record);
 }
 
 [[nodiscard]] std::optional<Vehicle> Vehicle::behaviors(Vehicles& vehicles,
                                                         Foods&    foodPositions)
 {
-    if (lastSoughtVehicle != 0) {
-        if (auto d = position.distanceTo(
-                world->vehicles[lastSoughtVehicle].getPosition());
-            d > dna.perceptionRadius) {
-            lastSoughtVehicle = 0;
-        }
-    }
+    food_behaviors(foodPositions);
 
-    double record = -1.0;  // if we dont findNearest, assume the vehicle is
-                           // close enough already
-    auto targetFood    = findNearest(foodPositions, record);
-    auto targetVehicle = lastSoughtVehicle != 0
-                             ? &world->vehicles[lastSoughtVehicle]
-                             : findNearest(vehicles, record);
-
-    if (record > dna.perceptionRadius) {
-        return std::nullopt;  // Too far away to seek anything
-    }
-
-    // TODO: there is an issue with saving this pointer.
-    // if offspring are created, they may invalidate this pointer. Consider
-    // using IDs instead. keep all the vehicles in a hash map with unique IDs
-    // and store the ID instead of pointer
-    lastSoughtVehicle = targetVehicle->id;
-
-    if (verbose) {
-        if (targetVehicle != nullptr) {
-            targetVehicle->highlighted = true;
-        }
-    }
-
-    if (targetFood != nullptr)
-        behavior_eat(targetFood, record);
-    if (targetVehicle != nullptr) {
-        behavior_malice(targetVehicle, record);
-        behavior_altruism(targetVehicle, record);
-        return reproduce(targetVehicle, record);
-    } else {
+    // only search for vehicles if health is sufficient
+    if (health < 10.0) {
         return std::nullopt;
     }
+
+    return vehicle_behaviors(vehicles);
 }
 
-void Vehicle::behavior_eat(Food* target, double record)
+void Vehicle::seek_for_eat(Food* target, double record)
 {
-    if (record <= dna.perceptionRadius) {
+    if (record <= dna.maxSpeed) {
+        // Already at target; captured food
+        health += 5.0;  // Increase health on reaching target
+        target->mark_eaten();
+    } else if (record <= dna.perceptionRadius) {
         Vec2D steer = seek(target->position);
         if (verbose)
             output("Applying eat force: ", steer, "\n");
-        applyForce(steer);
-    } else if (record <= dna.maxSpeed) {
-        // Already at target; captured food
-        health += 5.0;  // Increase health on reaching target
-        target->markEaten();
+        apply_force(steer);
     }
 }
 
-void Vehicle::behavior_malice(Vehicle* target, double record)
+void Vehicle::seek_for_malice(Vehicle* target, double record)
 {
     if (randomInRange(0, 1) < dna.maliceProbability) {
         // ATTACK!
         if (record < dna.maxSpeed) {
             target->health -= dna.maliceDamage;
             this->health += dna.maliceDamage * 0.5;
-        }
-        if (record < dna.perceptionRadius) {
+        } else if (record < dna.perceptionRadius) {
             // if vehicle is far away, try to seek it
             Vec2D steer = seek(target->position);
             steer *= dna.maliceDesire;
             if (verbose)
                 output("Applying malice force: ", steer, "\n");
-            applyForce(steer);
+            apply_force(steer);
         }
     }
 }
 
-void Vehicle::behavior_altruism(Vehicle* target, double record)
+void Vehicle::seek_for_altruism(Vehicle* target, double record)
 {
     if (health <= 5.0 || age < dna.ageOfMaturity) {
         return;  // Not enough health to attempt altruism
@@ -161,13 +181,12 @@ void Vehicle::behavior_altruism(Vehicle* target, double record)
                 this->health -=
                     (dna.altruismHeal * 1.1);  // Slight cost to self
             }
-        }
-        if (record < dna.perceptionRadius) {
+        } else if (record < dna.perceptionRadius) {
             Vec2D steer = seek(target->position);
             steer *= dna.altruismDesire;
             if (verbose)
                 output("Applying altruism force: ", steer, "\n");
-            applyForce(steer);
+            apply_force(steer);
         }
     }
 }
@@ -212,7 +231,7 @@ Vec2D Vehicle::seek(Vec2D const& target)
         auto steer = seek(target->position);
         if (verbose)
             output("Applying reproduction force: ", steer, "\n");
-        applyForce(steer);
+        apply_force(steer);
     }
 
     // cannot modify world's vehicle list here to avoid iterator invalidation
@@ -258,7 +277,7 @@ void Vehicle::avoidEdges()
         steer *= 2.0;  // stronger force to avoid edges
         if (verbose)
             output("Applying avoid edges force: ", steer, "\n");
-        applyForce(steer, true);
+        apply_force(steer, true);
     }
 }
 
@@ -268,7 +287,7 @@ void Vehicle::update()
     health -= 0.05;
 
     velocity += acceleration;
-    velocity.setMag(dna.maxSpeed);
+    velocity.set_mag(dna.maxSpeed);
 
     position += velocity;
 
@@ -285,7 +304,7 @@ void Vehicle::update()
     health        = std::min(health, MAX_HEALTH);
 }
 
-void Vehicle::applyForce(Vec2D& force, bool unlimited)
+void Vehicle::apply_force(Vec2D& force, bool unlimited)
 {
     force /= mass;
     if (!unlimited) {

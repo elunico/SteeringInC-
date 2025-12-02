@@ -2,15 +2,22 @@
 #define UTILS_H
 
 #include <cassert>
+#include <concepts>
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include "vec2d.h"
 
 #ifndef NDEBUG
 #define UNREACHABLE() assert(false && "Unreachable code reached.")
 #else
 #define UNREACHABLE() std::unreachable();
 #endif
+
+template <typename T>
+concept Positionable = requires(T a) {
+    { a.get_position() } -> std::convertible_to<Vec2D>;
+};
 
 double randomDelta(double scale = 0.1);
 

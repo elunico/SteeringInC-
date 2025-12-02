@@ -10,11 +10,11 @@ struct Food {
     int  lifespan = randomInRange(850, 1750);  // lifespan in simulation ticks
     bool wasEaten = false;
 
-    Vec2D const& getPosition() const;
+    Vec2D const& get_position() const;
 
     void update();
 
-    void markEaten();
+    void mark_eaten();
 };
 
 #endif  // FOOD_H

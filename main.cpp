@@ -1,13 +1,18 @@
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
 #include <unistd.h>
+#include <cassert>
+#include <fstream>
+#include <ios>
 #include <iostream>
+#include <istream>
 #include <vector>
 #include "fltkrenderer.h"
 #include "utils.h"
 
 struct arguments {
     bool useCurses        = false;
+    bool autoStart        = true;
     int  width            = 800;
     int  height           = 600;
     int  startingVehicles = 10;
@@ -16,8 +21,11 @@ struct arguments {
 void parse_args(int argc, char* argv[], arguments& args)
 {
     int c;
-    while ((c = getopt(argc, argv, "w:h:s:c")) != -1) {
+    while ((c = getopt(argc, argv, "w:h:s:cp")) != -1) {
         switch (c) {
+            case 'p':
+                args.autoStart = false;
+                break;
             case 'w':
                 args.width = std::stoi(optarg);
                 break;
@@ -35,7 +43,7 @@ void parse_args(int argc, char* argv[], arguments& args)
                           << "\n";
                 std::cerr << "Usage: " << argv[0]
                           << " [-w width] [-h height] [-s startingVehicles] "
-                             "[-c (use curses)]\n";
+                             "[-c (use curses)] [-p (pause)]\n";
                 exit(EXIT_FAILURE);
         }
     }
@@ -53,6 +61,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 {
     arguments args;
     parse_args(argc, argv, args);
+    if (args.autoStart) {
+        World::isPaused = false;
+    } else {
+        World::isPaused = true;
+    }
 
     const int  width  = args.width;
     const int  height = args.height;
@@ -66,8 +79,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
     world.setup(args.startingVehicles,
                 250);  // startingVehicles vehicles, 250 food items
 
-    usleep(1000000);
-
     world.run(renderer);
 
     renderer->render();
@@ -78,9 +89,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
     // report vehicle fitness at the end of simulation
     int count = 1;
     for (auto [id, vehicle] : world.vehicles) {
-        output("Vehicle #", count++, " ID: ", id, " age: ", vehicle.getAge(),
-               " health: ", vehicle.getHealth(),
-               " fitness: ", vehicle.getFitness(), "\n");
+        output("Vehicle #", count++, " ID: ", id, " age: ", vehicle.get_age(),
+               " health: ", vehicle.get_health(),
+               " fitness: ", vehicle.get_fitness(), "\n");
     }
 
     output(world.infoStream().str(), "\n");

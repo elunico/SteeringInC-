@@ -2,7 +2,7 @@
 #include "utils.h"
 
 DNA::DNA()
-    : perceptionRadius(randomInRange(75, 200)),
+    : perceptionRadius(randomInRange(40, 100)),
       maxSpeed(randomInRange(1, 4)),
       mutationRate(0.1),
       reproductionCost(randomInRange(5, 15.0)),
@@ -29,8 +29,9 @@ DNA::DNA()
     child.reproductionCooldown =
         (rand() % 2) ? reproductionCooldown : partner.reproductionCooldown;
     child.ageOfMaturity = (rand() % 2) ? ageOfMaturity : partner.ageOfMaturity;
-    child.maliceDesire     = (rand() % 2) ? maliceDesire : partner.maliceDesire;
-    child.altruismDesire     = (rand() % 2) ? altruismDesire : partner.altruismDesire;
+    child.maliceDesire  = (rand() % 2) ? maliceDesire : partner.maliceDesire;
+    child.altruismDesire =
+        (rand() % 2) ? altruismDesire : partner.altruismDesire;
     child.maliceProbability =
         (rand() % 2) ? maliceProbability : partner.maliceProbability;
     child.altruismProbability =

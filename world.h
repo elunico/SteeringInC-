@@ -8,7 +8,6 @@
 #include "dna.h"
 #include "food.h"
 #include "irenderer.h"
-#include "quadtree.h"
 #include "vec2d.h"
 
 #define FOOD_PCT_CHANCE 20
@@ -25,7 +24,6 @@ struct World {
     std::vector<Food>                          food;
     static bool                                gameRunning;
     static bool                                isPaused;
-    static bool                                useQuadtree;
     static bool                                showSoughtVehicles;
     static bool                                killMode;
     static int                                 killRadius;
@@ -39,11 +37,6 @@ struct World {
     static void stopRunning(int)
     {
         gameRunning = false;
-    }
-
-    static void toggleQuadtree()
-    {
-        useQuadtree = !useQuadtree;
     }
 
     World(long seed, int width, int height);
@@ -91,7 +84,5 @@ struct World {
 
     ~World();
 };
-
-std::string quadtreeMessage();
 
 #endif  // WORLD_H

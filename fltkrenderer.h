@@ -26,8 +26,6 @@ struct FLTKCustomDrawer : public Fl_Box {
 
     void drawDeadWorld();
 
-    void drawQuadtree(QuadTree<Vehicle, Rectangle> const& quad_tree);
-
     void clearScreen() const;
 
     int handle(int) override;

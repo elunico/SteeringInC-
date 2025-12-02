@@ -7,8 +7,7 @@
 #include "vec2d.h"
 
 class Circle {
-
-    Vec2D center;
+    Vec2D  center;
     double radius;
 
     Circle(Vec2D const& center, double radius);
@@ -16,9 +15,6 @@ class Circle {
     bool contains(Vec2D const& point) const;
 
     bool intersects(Circle const& other) const;
-
 };
 
-
-
-#endif //CIRCLE_H
+#endif  // CIRCLE_H

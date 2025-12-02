@@ -20,11 +20,11 @@ struct Vec2D {
 
     [[nodiscard]] double distanceTo(Vec2D const& other) const;
     [[nodiscard]] double magnitude() const;
-    void                 setMag(double mag);
+    void                 set_mag(double mag);
     void                 normalize();
     [[nodiscard]] Vec2D  normalized() const;
     void                 limit(double max);
-    void                 setHeading(double angle);
+    void                 set_heading(double angle);
     [[nodiscard]] double heading() const;
     [[nodiscard]] Vec2D  copy() const;
     void                 rotate(double angle);

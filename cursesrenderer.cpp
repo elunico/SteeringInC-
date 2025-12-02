@@ -35,7 +35,7 @@ void CursesRenderer::drawFood(Food const& food)
 
 void CursesRenderer::drawVehicle(Vehicle const& vehicle)
 {
-    mvaddch(vehicle.getPosition().y, vehicle.getPosition().x, ACS_CKBOARD);
+    mvaddch(vehicle.get_position().y, vehicle.get_position().x, ACS_CKBOARD);
 }
 
 void CursesRenderer::drawLivingWorld(World* world)
@@ -72,7 +72,4 @@ void CursesRenderer::render()
 void CursesRenderer::refresh()
 {
     ::refresh();
-}
-void CursesRenderer::drawQuadtree(QuadTree<Vehicle, Rectangle> const&)
-{
 }

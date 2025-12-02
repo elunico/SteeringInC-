@@ -5,7 +5,6 @@
 #include <type_traits>
 #include <unordered_map>
 #include "dna.h"
-#include "quadtree.h"
 #include "vec2d.h"
 
 #include "world.h"
@@ -19,14 +18,14 @@ class Vehicle {
     using Vehicles = std::vector<Vehicle*>;
     using Foods    = std::vector<Food*>;
 
-    [[nodiscard]] double       getHealth() const;
-    [[nodiscard]] int          getAge() const;
-    [[nodiscard]] double       getFitness() const;
+    [[nodiscard]] double       get_health() const;
+    [[nodiscard]] int          get_age() const;
+    [[nodiscard]] double       get_fitness() const;
     [[nodiscard]] DNA const&   getDNA() const;
-    [[nodiscard]] Vec2D const& getPosition() const;
-    [[nodiscard]] Vec2D const& getVelocity() const;
-    [[nodiscard]] int          getGeneration() const;
-    [[nodiscard]] Vec2D const& getAcceleration() const;
+    [[nodiscard]] Vec2D const& get_position() const;
+    [[nodiscard]] Vec2D const& get_velocity() const;
+    [[nodiscard]] int          get_generation() const;
+    [[nodiscard]] Vec2D const& get_acceleration() const;
     void                       update();
     void                       kill();
     bool                       isDead() const;
@@ -36,12 +35,15 @@ class Vehicle {
     void                                 avoidEdges();
 
    private:
-    static IdType globalIdCounter;
-    void          behavior_eat(Food* target, double record);
-    void          behavior_malice(Vehicle* target, double record);
-    void          behavior_altruism(Vehicle* target, double record);
-    Vec2D         seek(Vec2D const& target);
-    void          applyForce(Vec2D& force, bool unlimited = false);
+    static IdType          globalIdCounter;
+    void                   seek_for_eat(Food* target, double record);
+    void                   seek_for_malice(Vehicle* target, double record);
+    void                   seek_for_altruism(Vehicle* target, double record);
+    Vec2D                  seek(Vec2D const& target);
+    void                   food_behaviors(Foods& foodPositions);
+    void                   check_sought_vehicle();
+    std::optional<Vehicle> vehicle_behaviors(Vehicles& vehicles);
+    void                   apply_force(Vec2D& force, bool unlimited = false);
     [[nodiscard]] std::optional<Vehicle> reproduce(Vehicle* target,
                                                    double   record);
 

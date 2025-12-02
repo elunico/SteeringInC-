@@ -4,8 +4,6 @@
 #include <iostream>
 #include "food.h"
 #include "irenderer.h"
-#include "quadtree.h"
-#include "rectangle.h"
 #include "utils.h"
 #include "vehicle.h"
 
@@ -14,21 +12,6 @@ bool World::isPaused           = false;
 bool World::showSoughtVehicles = false;
 bool World::killMode           = false;
 int  World::killRadius         = 100;
-
-#ifdef DEFLT_NO_QT
-bool World::useQuadtree = false;
-#else
-bool World::useQuadtree = true;
-#endif
-
-std::string quadtreeMessage()
-{
-    if (World::useQuadtree) {
-        return "[QT ON]";
-    } else {
-        return "[PLAIN]";
-    }
-}
 
 World::World(long seed, int width, int height)
     : seed(seed), width(width), height(height)
@@ -138,7 +121,7 @@ double World::tps() const
 std::stringstream World::infoStream() const
 {
     std::stringstream ss;
-    ss << "(World: [" << width << "x" << height << "] " << quadtreeMessage()
+    ss << "(World: [" << width << "x" << height << "] "
        << " seed: " << seed << ") ";
 
     ss << "Vehicles: " << vehicles.size() << " | Food: " << food.size()
@@ -181,56 +164,20 @@ bool World::tick()
 
     // build quadtree for spatial partitioning (optimize neighbor searches)
     // for food and vehicles
-    std::vector<Vehicle*>        neighbors;
-    std::vector<Food*>           foodNeighbors;
-    QuadTree<Food, Rectangle>    foodTree;
-    QuadTree<Vehicle, Rectangle> vehicleTree;
-    if (useQuadtree) {
-        foodTree = QuadTree<Food, Rectangle>{
-            Rectangle{Vec2D{0, 0}, Vec2D{static_cast<double>(width),
-                                         static_cast<double>(height)}},
-            4};
+    std::vector<Vehicle*> neighbors;
+    std::vector<Food*>    foodNeighbors;
 
-        vehicleTree = QuadTree<Vehicle, Rectangle>{
-            Rectangle{Vec2D{0, 0}, Vec2D{static_cast<double>(width),
-                                         static_cast<double>(height)}},
-            4};
-
-        for (auto& f : food) {
-            foodTree.insert(&f);
-        }
-        for (auto& [id, v] : vehicles) {
-            v.highlighted = false;
-            vehicleTree.insert(&v);
-        }
-    } else {
-        for (auto& [id, v] : vehicles) {
-            v.highlighted = false;
-            neighbors.push_back(&v);
-        }
-        for (auto& f : food) {
-            foodNeighbors.push_back(&f);
-        }
+    for (auto& [id, v] : vehicles) {
+        v.highlighted = false;
+        neighbors.push_back(&v);
     }
 
     for (auto& food : food) {
+        foodNeighbors.push_back(&food);
         food.update();
     }
 
     for (auto& [id, vehicle] : vehicles) {
-        if (useQuadtree) {
-            neighbors     = vehicleTree.query(Rectangle{
-                Vec2D{vehicle.position.x - vehicle.dna.perceptionRadius,
-                      vehicle.position.y - vehicle.dna.perceptionRadius},
-                Vec2D{vehicle.position.x + vehicle.dna.perceptionRadius,
-                      vehicle.position.y + vehicle.dna.perceptionRadius}});
-            foodNeighbors = foodTree.query(Rectangle{
-                Vec2D{vehicle.position.x - vehicle.dna.perceptionRadius,
-                      vehicle.position.y - vehicle.dna.perceptionRadius},
-                Vec2D{vehicle.position.x + vehicle.dna.perceptionRadius,
-                      vehicle.position.y + vehicle.dna.perceptionRadius}});
-        }
-
         if (auto child = vehicle.behaviors(neighbors, foodNeighbors);
             child.has_value()) {
             offspring.push_back(std::move(child.value()));

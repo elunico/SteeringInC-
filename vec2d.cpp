@@ -63,7 +63,7 @@ Vec2D& Vec2D::operator/=(double scalar)
     return std::sqrt(x * x + y * y);
 }
 
-void Vec2D::setMag(double mag)
+void Vec2D::set_mag(double mag)
 {
     normalize();
     x *= mag;
@@ -96,7 +96,7 @@ void Vec2D::limit(double max)
     }
 }
 
-void Vec2D::setHeading(double angle)
+void Vec2D::set_heading(double angle)
 {
     double mag = magnitude();
     x          = cos(angle) * mag;

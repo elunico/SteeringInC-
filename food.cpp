@@ -9,12 +9,12 @@ void Food::update()
     }
 }
 
-void Food::markEaten()
+void Food::mark_eaten()
 {
     wasEaten = true;
 }
 
-Vec2D const& Food::getPosition() const
+Vec2D const& Food::get_position() const
 {
     return position;
 }
