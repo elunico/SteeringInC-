@@ -2,18 +2,18 @@
 #define DNA_H
 
 struct DNA {
-    double perceptionRadius;
-    double maxSpeed;
-    double mutationRate;
-    double reproductionCost;
-    double maliceDesire;
-    double altruismDesire;
-    double maliceProbability;
-    double altruismProbability;
-    double maliceDamage;
-    double altruismHeal;
-    int    reproductionCooldown;
-    int    ageOfMaturity;
+    double perception_radius;
+    double max_speed;
+    double mutation_rate;
+    double reproduction_cost;
+    double malice_desire;
+    double altruism_desire;
+    double malice_probability;
+    double altruism_probability;
+    double malice_damage;
+    double altruism_heal;
+    int    reproduction_cooldown;
+    int    age_of_maturity;
 
     DNA();
 

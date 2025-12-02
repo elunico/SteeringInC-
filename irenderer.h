@@ -7,15 +7,15 @@ class IRenderer {
    public:
     // IRenderer(World* world, int W, int H) = 0;
 
-    virtual void clearScreen() = 0;
+    virtual void clear_screen() = 0;
 
-    // virtual void drawVehicle(Vehicle const& vehicle) = 0;
+    // virtual void draw_vehicle(Vehicle const& vehicle) = 0;
 
-    // virtual void drawFood(Food const& position) = 0;
+    // virtual void draw_food(Food const& position) = 0;
 
-    // virtual void drawLivingWorld() = 0;
+    // virtual void draw_living_world() = 0;
 
-    // virtual void drawDeadWorld() = 0;
+    // virtual void draw_dead_world() = 0;
 
     virtual void render() = 0;
 

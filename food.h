@@ -7,8 +7,8 @@
 struct Food {
     Vec2D position;
     // prevent the initial food from all disappearing at once
-    int  lifespan = randomInRange(850, 1750);  // lifespan in simulation ticks
-    bool wasEaten = false;
+    int  lifespan = random_in_range(850, 1750);  // lifespan in simulation ticks
+    bool was_eaten = false;
 
     Vec2D const& get_position() const;
 

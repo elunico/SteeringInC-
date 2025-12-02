@@ -51,7 +51,7 @@ Vec2D& Vec2D::operator/=(double scalar)
     return *this;
 }
 
-[[nodiscard]] double Vec2D::distanceTo(Vec2D const& other) const
+[[nodiscard]] double Vec2D::distance_to(Vec2D const& other) const
 {
     double dx = x - other.x;
     double dy = y - other.y;
@@ -115,19 +115,19 @@ void Vec2D::set_heading(double angle)
 
 void Vec2D::rotate(double angle)
 {
-    double cosA = cos(angle);
-    double sinA = sin(angle);
-    double newX = x * cosA - y * sinA;
-    double newY = x * sinA + y * cosA;
-    x           = newX;
-    y           = newY;
+    double cos_a = cos(angle);
+    double sin_a = sin(angle);
+    double new_x = x * cos_a - y * sin_a;
+    double new_y = x * sin_a + y * cos_a;
+    x            = new_x;
+    y            = new_y;
 }
 
 [[nodiscard]] Vec2D Vec2D::rotated(double angle) const
 {
-    double cosA = cos(angle);
-    double sinA = sin(angle);
-    return Vec2D(x * cosA - y * sinA, x * sinA + y * cosA);
+    double cos_a = cos(angle);
+    double sin_a = sin(angle);
+    return Vec2D(x * cos_a - y * sin_a, x * sin_a + y * cos_a);
 }
 
 void Vec2D::reset()
@@ -136,10 +136,10 @@ void Vec2D::reset()
     y = 0;
 }
 
-void Vec2D::set(double newX, double newY)
+void Vec2D::set(double new_x, double new_y)
 {
-    x = newX;
-    y = newY;
+    x = new_x;
+    y = new_y;
 }
 
 std::ostream& operator<<(std::ostream& os, Vec2D const& vec)

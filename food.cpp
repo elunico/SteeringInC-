@@ -5,13 +5,13 @@ void Food::update()
     if (lifespan > 0) {
         lifespan--;
     } else {
-        wasEaten = true;
+        was_eaten = true;
     }
 }
 
 void Food::mark_eaten()
 {
-    wasEaten = true;
+    was_eaten = true;
 }
 
 Vec2D const& Food::get_position() const

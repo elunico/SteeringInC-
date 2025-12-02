@@ -19,15 +19,15 @@ concept Positionable = requires(T a) {
     { a.get_position() } -> std::convertible_to<Vec2D>;
 };
 
-double randomDelta(double scale = 0.1);
+double random_delta(double scale = 0.1);
 
-double randomInRange(double min, double max);
+double random_in_range(double min, double max);
 
 void log(std::string const& message);
 
-constexpr bool doubleEqual(double a, double b, double epsilon = 0.001);
+constexpr bool double_equal(double a, double b, double epsilon = 0.001);
 
-constexpr bool doubleNearZero(double a, double epsilon = 0.001);
+constexpr bool double_near_zero(double a, double epsilon = 0.001);
 
 template <typename T>
 T remap(T value, T from1, T to1, T from2, T to2)

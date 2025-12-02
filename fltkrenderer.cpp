@@ -7,8 +7,8 @@
 #include "vehicle.h"
 #include "world.h"
 
-Fl_Window* FLTKRenderer::window        = nullptr;
-Fl_Window* FLTKRenderer::controlWindow = nullptr;
+Fl_Window* FLTKRenderer::window         = nullptr;
+Fl_Window* FLTKRenderer::control_window = nullptr;
 
 FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
 {
@@ -22,16 +22,16 @@ FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
     // FLTKRenderer?
     drawer = new FLTKCustomDrawer(world, W, H);
     Fl::set_atclose([](auto, auto) {
-        World::stopRunning(0);
+        World::stop_running(0);
         FLTKRenderer::teardown();
     });
     window->end();
     window->show();
 
-    controlWindow = new ControlWindow(world, W + 10, 200, H);
-    controlWindow->label("Controls");
-    controlWindow->end();
-    controlWindow->show();
+    control_window = new ControlWindow(world, W + 10, 200, H);
+    control_window->label("Controls");
+    control_window->end();
+    control_window->show();
 }
 
 FLTKRenderer::~FLTKRenderer()
@@ -41,7 +41,7 @@ FLTKRenderer::~FLTKRenderer()
     // See FLTKRenderer::FLTKRenderer
     // delete drawer;
     delete window;
-    delete controlWindow;
+    delete control_window;
 }
 
 void FLTKRenderer::render()
@@ -54,9 +54,9 @@ void FLTKRenderer::refresh()
     Fl::check();
 }
 
-void FLTKRenderer::clearScreen()
+void FLTKRenderer::clear_screen()
 {
-    drawer->clearScreen();
+    drawer->clear_screen();
 }
 
 FLTKCustomDrawer::FLTKCustomDrawer(World* world, int W, int H)
@@ -64,10 +64,10 @@ FLTKCustomDrawer::FLTKCustomDrawer(World* world, int W, int H)
 {
 }
 
-std::array displayColors = {FL_BLUE,   FL_CYAN, FL_GREEN,
-                            FL_YELLOW, FL_RED,  FL_MAGENTA};
+std::array display_colors = {FL_BLUE,   FL_CYAN, FL_GREEN,
+                             FL_YELLOW, FL_RED,  FL_MAGENTA};
 
-void FLTKCustomDrawer::clearScreen() const
+void FLTKCustomDrawer::clear_screen() const
 {
     fl_color(FL_WHITE);
     fl_rectf(x(), y(), w(), h());
@@ -76,12 +76,12 @@ void FLTKCustomDrawer::clearScreen() const
 int FLTKCustomDrawer::handle(int i)
 {
     if (i == FL_PUSH) {
-        if (World::killMode) {
+        if (World::kill_mode) {
             double x = Fl::event_x();
             double y = Fl::event_y();
             for (auto& [id, vehicle] : world->vehicles) {
-                if (vehicle.get_position().distanceTo(Vec2D{x, y}) <
-                    World::killRadius) {
+                if (vehicle.get_position().distance_to(Vec2D{x, y}) <
+                    World::kill_radius) {
                     vehicle.kill();
                 }
             }
@@ -90,7 +90,7 @@ int FLTKCustomDrawer::handle(int i)
         double x = Fl::event_x();
         double y = Fl::event_y();
         for (auto& [id, vehicle] : world->vehicles) {
-            if (vehicle.get_position().distanceTo(Vec2D{x, y}) < 10) {
+            if (vehicle.get_position().distance_to(Vec2D{x, y}) < 30) {
                 vehicle.verbose = !vehicle.verbose;
                 return 1;
             }
@@ -102,7 +102,7 @@ int FLTKCustomDrawer::handle(int i)
 
 FLTKCustomDrawer::~FLTKCustomDrawer() = default;
 
-void FLTKCustomDrawer::drawVehicle(Vehicle const& vehicle)
+void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
 {
     fl_color(FL_BLACK);
     if (vehicle.highlighted) {
@@ -112,7 +112,7 @@ void FLTKCustomDrawer::drawVehicle(Vehicle const& vehicle)
         fl_color(FL_BLUE);
     }
 
-    if (vehicle.get_age() < vehicle.getDNA().ageOfMaturity) {
+    if (vehicle.get_age() < vehicle.get_dna().age_of_maturity) {
         fl_color(FL_MAGENTA);
     }
 
@@ -137,7 +137,7 @@ void FLTKCustomDrawer::drawVehicle(Vehicle const& vehicle)
 
     // Draw an empty circle with a thin line to represent perception radius
     if (vehicle.verbose) {
-        auto diameter = vehicle.getDNA().perceptionRadius * 2;
+        auto diameter = vehicle.get_dna().perception_radius * 2;
         fl_color(FL_GREEN);
         fl_line_style(FL_SOLID, 2);
         fl_arc(pos.x - diameter / 2, pos.y - diameter / 2, diameter, diameter,
@@ -145,64 +145,64 @@ void FLTKCustomDrawer::drawVehicle(Vehicle const& vehicle)
     }
 
     // Draw  a line from the vehicle to its last sought vehicle if it exists
-    if (vehicle.lastSoughtVehicle && World::showSoughtVehicles) {
+    if (vehicle.last_sought_vehicle && World::show_sought_vehicles) {
         fl_color(FL_BLUE);
         auto& position =
-            world->vehicles[vehicle.lastSoughtVehicle].get_position();
+            world->vehicles[vehicle.last_sought_vehicle].get_position();
         fl_line(pos.x, pos.y, position.x, position.y);
         fl_rect(static_cast<int>(position.x) - 3,
                 static_cast<int>(position.y) - 3, 6, 6);
     }
 }
 
-void FLTKCustomDrawer::drawFood(Food const& position)
+void FLTKCustomDrawer::draw_food(Food const& position)
 {
     fl_color(FL_GREEN);
     fl_pie(static_cast<int>(position.position.x) - 2,
            static_cast<int>(position.position.y) - 2, 4, 4, 0, 360);
 }
 
-void FLTKCustomDrawer::drawLivingWorld()
+void FLTKCustomDrawer::draw_living_world()
 {
     for (auto& food : world->food) {
-        drawFood(food);
+        draw_food(food);
     }
 
     for (auto& [id, vehicle] : world->vehicles) {
-        drawVehicle(vehicle);
+        draw_vehicle(vehicle);
     }
 }
 
-void FLTKCustomDrawer::drawDeadWorld()
+void FLTKCustomDrawer::draw_dead_world()
 {
     fl_color(FL_RED);
     std::string message = "All vehicles have perished.";
     fl_font(FL_HELVETICA_BOLD, 24);
-    int textWidth = fl_width(message.c_str()) + 1;
-    fl_draw(message.c_str(), (w() - textWidth) / 2, h() / 2);
+    int text_width = fl_width(message.c_str()) + 1;
+    fl_draw(message.c_str(), (w() - text_width) / 2, h() / 2);
 }
 
 void FLTKCustomDrawer::draw()
 {
     assert(world != nullptr &&
            "World pointer is null. Did you forget to set it?");
-    clearScreen();
-    auto ss  = world->infoStream();
+    clear_screen();
+    auto ss  = world->info_stream();
     auto msg = ss.str();
     fl_font(FL_HELVETICA_BOLD, 14);
     fl_color(FL_BLACK);
     fl_draw(msg.c_str(), 0, 0, w(), h(), FL_ALIGN_TOP_LEFT | FL_ALIGN_WRAP);
     if (!world->vehicles.empty()) {
-        drawLivingWorld();
+        draw_living_world();
     } else {
-        drawDeadWorld();
+        draw_dead_world();
     }
 }
 
 void FLTKRenderer::teardown()
 {
-    if (controlWindow) {
-        controlWindow->hide();
+    if (control_window) {
+        control_window->hide();
     }
     if (window) {
         window->hide();

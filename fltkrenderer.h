@@ -18,15 +18,15 @@ struct FLTKCustomDrawer : public Fl_Box {
 
     void draw() override;
 
-    void drawVehicle(Vehicle const& vehicle);
+    void draw_vehicle(Vehicle const& vehicle);
 
-    void drawFood(Food const& position);
+    void draw_food(Food const& position);
 
-    void drawLivingWorld();
+    void draw_living_world();
 
-    void drawDeadWorld();
+    void draw_dead_world();
 
-    void clearScreen() const;
+    void clear_screen() const;
 
     int handle(int) override;
 
@@ -35,14 +35,14 @@ struct FLTKCustomDrawer : public Fl_Box {
 
 struct FLTKRenderer : public IRenderer {
     World*            world;
-    bool              hasControlWindow = false;
+    bool              has_control_window = false;
     FLTKCustomDrawer* drawer;
     static Fl_Window* window;
-    static Fl_Window* controlWindow;
+    static Fl_Window* control_window;
 
     FLTKRenderer(World* world, int W, int H);
 
-    void clearScreen() override;
+    void clear_screen() override;
 
     void render() override;
 

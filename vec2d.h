@@ -18,7 +18,7 @@ struct Vec2D {
     Vec2D& operator*=(double scalar);
     Vec2D& operator/=(double scalar);
 
-    [[nodiscard]] double distanceTo(Vec2D const& other) const;
+    [[nodiscard]] double distance_to(Vec2D const& other) const;
     [[nodiscard]] double magnitude() const;
     void                 set_mag(double mag);
     void                 normalize();
@@ -30,7 +30,7 @@ struct Vec2D {
     void                 rotate(double angle);
     [[nodiscard]] Vec2D  rotated(double angle) const;
     void                 reset();
-    void                 set(double newX, double newY);
+    void                 set(double new_x, double new_y);
 };
 
 std::ostream& operator<<(std::ostream& os, Vec2D const& v);

@@ -29,11 +29,11 @@ struct QtButtonBase {
     virtual ~QtButtonBase();
 };
 
-struct QtInput : QtButtonBase, Fl_Input {
-    QtInput(World*                  world,
-            int                     w,
-            char const*             label,
-            std::function<int(int)> callback);
+struct Qt_input : QtButtonBase, Fl_Input {
+    Qt_input(World*                  world,
+             int                     w,
+             char const*             label,
+             std::function<int(int)> callback);
     int handle(int event) override;
 };
 
@@ -57,7 +57,7 @@ struct ControlWindow : public Fl_Window {
     World*                                     world;
     std::vector<std::unique_ptr<QtButtonBase>> buttons;
 
-    ControlWindow(World* world, int startX, int W, int H);
+    ControlWindow(World* world, int start_x, int W, int H);
     int  handle(int event) override;
     void draw() override;
 };

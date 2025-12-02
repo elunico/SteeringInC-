@@ -17,11 +17,11 @@ class CursesRenderer : public IRenderer {
    public:
     CursesRenderer(World* world, int width, int height);
 
-    void clearScreen() override;
-    void drawFood(Food const& food);
-    void drawVehicle(Vehicle const& vehicle);
-    void drawLivingWorld(World* world);
-    void drawDeadWorld();
+    void clear_screen() override;
+    void draw_food(Food const& food);
+    void draw_vehicle(Vehicle const& vehicle);
+    void draw_living_world(World* world);
+    void draw_dead_world();
     void render() override;
 
     void refresh() override;

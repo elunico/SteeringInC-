@@ -23,48 +23,48 @@ CursesRenderer::~CursesRenderer()
     endwin();
 }
 
-void CursesRenderer::clearScreen()
+void CursesRenderer::clear_screen()
 {
     clear();
 }
 
-void CursesRenderer::drawFood(Food const& food)
+void CursesRenderer::draw_food(Food const& food)
 {
     mvaddch(food.position.y, food.position.x, ACS_DIAMOND);
 }
 
-void CursesRenderer::drawVehicle(Vehicle const& vehicle)
+void CursesRenderer::draw_vehicle(Vehicle const& vehicle)
 {
     mvaddch(vehicle.get_position().y, vehicle.get_position().x, ACS_CKBOARD);
 }
 
-void CursesRenderer::drawLivingWorld(World* world)
+void CursesRenderer::draw_living_world(World* world)
 {
-    auto ss = world->infoStream();
+    auto ss = world->info_stream();
     mvaddstr(0, 0, ss.str().c_str());
 
     for (auto& food : world->food) {
-        drawFood(food);
+        draw_food(food);
     }
 
     for (auto& [id, vehicle] : world->vehicles) {
-        drawVehicle(vehicle);
+        draw_vehicle(vehicle);
     }
 }
 
-void CursesRenderer::drawDeadWorld()
+void CursesRenderer::draw_dead_world()
 {
     mvaddstr(height / 2, width / 2, "All vehicles have perished.");
 }
 
 void CursesRenderer::render()
 {
-    clearScreen();
+    clear_screen();
 
     if (!world->vehicles.empty()) {
-        drawLivingWorld(world);
+        draw_living_world(world);
     } else {
-        drawDeadWorld();
+        draw_dead_world();
     }
 
     refresh();
