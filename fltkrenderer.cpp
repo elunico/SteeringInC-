@@ -135,21 +135,22 @@ void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
     fl_vertex(x3, y3);
     fl_end_polygon();
 
+    auto rad = vehicle.get_dna().perception_radius;
     // Draw an empty circle with a thin line to represent perception radius
     if (vehicle.verbose) {
-        auto diameter = vehicle.get_dna().perception_radius * 2;
+        auto diameter = rad * 2;
         fl_color(FL_GREEN);
         fl_line_style(FL_SOLID, 2);
-        fl_arc(pos.x - diameter / 2, pos.y - diameter / 2, diameter, diameter,
-               0, 360);
+        fl_arc(static_cast<int>(pos.x - rad), static_cast<int>(pos.y - rad),
+               static_cast<int>(diameter), static_cast<int>(diameter), 0, 360);
     }
 
     // Draw  a line from the vehicle to its last sought vehicle if it exists
-    if (vehicle.last_sought_vehicle && World::show_sought_vehicles) {
+    if (vehicle.get_last_sought_vehicle_id() && World::show_sought_vehicles) {
         fl_color(FL_BLUE);
-        auto& position =
-            world->vehicles[vehicle.last_sought_vehicle].get_position();
-        fl_line(pos.x, pos.y, position.x, position.y);
+        auto& position = vehicle.last_sought_vehicle().get_position();
+        fl_line(static_cast<int>(pos.x), static_cast<int>(pos.y),
+                static_cast<int>(position.x), static_cast<int>(position.y));
         fl_rect(static_cast<int>(position.x) - 3,
                 static_cast<int>(position.y) - 3, 6, 6);
     }
@@ -157,7 +158,11 @@ void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
 
 void FLTKCustomDrawer::draw_food(Food const& position)
 {
-    fl_color(FL_GREEN);
+    if (position.nutrition < 0) {
+        fl_color(FL_RED);
+    } else {
+        fl_color(FL_GREEN);
+    }
     fl_pie(static_cast<int>(position.position.x) - 2,
            static_cast<int>(position.position.y) - 2, 4, 4, 0, 360);
 }

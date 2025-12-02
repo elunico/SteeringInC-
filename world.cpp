@@ -1,7 +1,9 @@
 #include "world.h"
 #include <unistd.h>
+#include <chrono>
 #include <csignal>
 #include <iostream>
+#include <ratio>
 #include "food.h"
 #include "irenderer.h"
 #include "utils.h"
@@ -12,7 +14,10 @@ bool         World::is_paused            = false;
 bool         World::show_sought_vehicles = false;
 bool         World::kill_mode            = false;
 int          World::kill_radius          = 100;
+int          World::target_tps           = 120;
 double const World::edge_threshold       = 25.0;
+
+#define POISON_CHANCE 0.2
 
 World::World(long seed, int width, int height)
     : seed(seed), width(width), height(height)
@@ -49,10 +54,18 @@ Vec2D World::random_position(double margin) const
             random_in_range(margin, height - margin)};
 }
 
-Food const& World::new_food()
+Food const& World::new_random_food()
+{
+    double nutrition = random_in_range(0, 1) < POISON_CHANCE ? -10.0 : 5.0;
+    Vec2D  food_position(random_position(edge_threshold));
+    food.push_back(Food{food_position, nutrition});
+    return food.back();
+}
+
+Food const& World::new_food(double nutrition)
 {
     Vec2D food_position(random_position(edge_threshold));
-    food.push_back(Food{food_position});
+    food.push_back(Food{food_position, nutrition});
     return food.back();
 }
 
@@ -61,9 +74,9 @@ auto World::prune_dead_vehicles() -> typename decltype(vehicles)::size_type
     auto const initial_size = vehicles.size();
 
     for (auto& [id, v] : vehicles) {
-        if (v.last_sought_vehicle != 0 &&
-            vehicles[v.last_sought_vehicle].is_dead()) {
-            v.last_sought_vehicle = 0;
+        if (v.last_sought_vehicle_id != 0 &&
+            vehicles[v.last_sought_vehicle_id].is_dead()) {
+            v.last_sought_vehicle_id = 0;
         }
     }
 
@@ -82,7 +95,7 @@ auto World::prune_eaten_food() -> decltype(food)::size_type
 {
     auto initial_size = food.size();
     food.erase(std::remove_if(food.begin(), food.end(),
-                              [](Food const& f) { return f.was_eaten; }),
+                              [](Food const& f) { return f.consumed; }),
                food.end());
     return (initial_size - food.size());
 }
@@ -105,7 +118,7 @@ void World::setup(int vehicle_count, int food_count)
     }
 
     for (int i = 0; i < food_count; ++i) {
-        new_food();
+        new_random_food();
     }
 }
 
@@ -141,15 +154,27 @@ std::stringstream World::info_stream() const
     return ss;
 }
 
-void World::run(IRenderer* renderer)
+void World::run(IRenderer* renderer, int target_tps)
 {
     start_time = std::chrono::steady_clock::now();
     while (game_running) {
+        // if (tick_counter == target_tps) {
+        //     std::cout << "Completed " << target_tps << " ticks in "
+        //               <<
+        //               std::chrono::duration_cast<std::chrono::milliseconds>(
+        //                      std::chrono::steady_clock::now() - start_time)
+        //                      .count()
+        //               << " ms\n";
+        //     game_running = false;
+        //     break;
+        // }
         if (!is_paused) {
+            auto tick_start = std::chrono::steady_clock::now();
             if (!tick()) {
                 game_running = false;
                 break;
             }
+            tps_target_wait(tick_start, target_tps);
         }
         renderer->render();
     }
@@ -161,7 +186,7 @@ bool World::tick()
     static std::vector<Vehicle> offspring;
 
     if (rand() % 100 < FOOD_PCT_CHANCE && food.size() < MAX_FOOD) {
-        new_food();
+        new_random_food();
     }
 
     // build quadtree for spatial partitioning (optimize neighbor searches)

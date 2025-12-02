@@ -17,6 +17,7 @@ typename Vehicle::Id_type Vehicle::global_id_counter = 1;
 Vehicle::Vehicle() : Vehicle(Vec2D{0.0, 0.0})
 {
 }
+
 Vehicle::Vehicle(Vec2D const& position)
     : position(position),
       velocity(random_in_range(0, dna.max_speed),
@@ -72,25 +73,43 @@ Vehicle::Vehicle(Vec2D const& position)
     return generation;
 }
 
+[[nodiscard]] bool Vehicle::is_verbose() const
+{
+    return verbose;
+}
+
+[[nodiscard]] Vehicle::Id_type Vehicle::get_last_sought_vehicle_id() const
+{
+    return last_sought_vehicle_id;
+}
+
 void Vehicle::food_behaviors(Foods& food_positions)
 {
     double record;  // distance to nearest food
     auto   target_food = find_nearest(food_positions, record);
 
-    if (target_food != nullptr)
-        seek_for_eat(target_food, record);
+    if (target_food != nullptr) {
+        if (target_food->nutrition < 0) {
+            flee_poison(target_food, record);
+        } else {
+            seek_for_eat(target_food, record);
+        }
+    }
+}
+
+[[nodiscard]] Vehicle& Vehicle::last_sought_vehicle() const
+{
+    return world->vehicles[last_sought_vehicle_id];
 }
 
 void Vehicle::check_sought_vehicle()
 {
     // if their last sought vehicle is dead or out of range, reset it
     // so they can seek a new one
-    if (last_sought_vehicle != 0) {
-        if (auto d = position.distance_to(
-                world->vehicles[last_sought_vehicle].get_position());
-            d > dna.perception_radius ||
-            world->vehicles[last_sought_vehicle].is_dead()) {
-            last_sought_vehicle = 0;
+    if (last_sought_vehicle_id != 0) {
+        if (auto d = position.distance_to(last_sought_vehicle().get_position());
+            d > dna.perception_radius || last_sought_vehicle().is_dead()) {
+            last_sought_vehicle_id = 0;
         }
     }
 }
@@ -102,9 +121,9 @@ std::optional<Vehicle> Vehicle::vehicle_behaviors(Vehicles& vehicles)
     double record = -1.0;  // if we are pursing the same vehicle, assume we are
                            // close enough due to prior knowledge
                            // otherwise find the nearest vehicle
-    auto target_vehicle = last_sought_vehicle == 0
+    auto target_vehicle = last_sought_vehicle_id == 0
                               ? find_nearest(vehicles, record)
-                              : &world->vehicles[last_sought_vehicle];
+                              : &last_sought_vehicle();
 
     // if the *nearest* vehicle is too far too see, or there is no vehicle do
     // nothing
@@ -113,7 +132,7 @@ std::optional<Vehicle> Vehicle::vehicle_behaviors(Vehicles& vehicles)
     }
 
     // update the currently sought vehicle
-    last_sought_vehicle = target_vehicle->id;
+    last_sought_vehicle_id = target_vehicle->id;
 
     if (verbose) {
         target_vehicle->highlighted = true;
@@ -139,12 +158,28 @@ std::optional<Vehicle> Vehicle::vehicle_behaviors(Vehicles& vehicles)
     return vehicle_behaviors(vehicles);
 }
 
+void Vehicle::flee_poison(Food* target, double record)
+{
+    if (record < dna.perception_radius) {
+        Vec2D desired = position - target->position;
+        desired.normalize();
+        desired -= velocity;
+        desired *= dna.max_speed;
+
+        Vec2D steer = desired - velocity;
+        steer.limit(MAX_FORCE);
+        if (verbose)
+            output("Applying flee poison force: ", steer, "\n");
+        apply_force(steer);
+    }
+}
+
 void Vehicle::seek_for_eat(Food* target, double record)
 {
     if (record <= dna.max_speed) {
         // Already at target; captured food
         health += 5.0;  // Increase health on reaching target
-        target->mark_eaten();
+        target->consume(*this);
     } else if (record <= dna.perception_radius) {
         Vec2D steer = seek(target->position);
         if (verbose)

@@ -1,20 +1,40 @@
 #include "food.h"
 
+#include "vehicle.h"
+
 void Food::update()
 {
     if (lifespan > 0) {
         lifespan--;
     } else {
-        was_eaten = true;
+        consumed = true;
     }
 }
 
-void Food::mark_eaten()
+void Food::consume(Vehicle& consumer)
 {
-    was_eaten = true;
+    consumer.health += nutrition;
+    consumed = true;
 }
 
 Vec2D const& Food::get_position() const
 {
     return position;
+}
+
+Food::Food() : position(Vec2D{0.0, 0.0}), nutrition(5.0)
+{
+}
+
+Food::Food(double nutrition) : position(Vec2D{0.0, 0.0}), nutrition(nutrition)
+{
+}
+
+Food::Food(Vec2D const& pos) : position(pos), nutrition(5.0)
+{
+}
+
+Food::Food(Vec2D const& pos, double nutrition)
+    : position(pos), nutrition(nutrition)
+{
 }

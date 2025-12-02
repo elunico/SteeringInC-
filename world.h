@@ -1,6 +1,7 @@
 #ifndef WORLD_H
 #define WORLD_H
 
+#include <unistd.h>
 #include <chrono>
 #include <sstream>
 #include <unordered_map>
@@ -27,6 +28,7 @@ struct World {
     static bool                                  show_sought_vehicles;
     static bool                                  kill_mode;
     static int                                   kill_radius;
+    static int                                   target_tps;
     static double const                          edge_threshold;
     int                                          dead_counter = 0;
     int                                          born_counter = 0;
@@ -50,7 +52,9 @@ struct World {
 
     [[nodiscard]] Vec2D random_position(double margin = 0.0) const;
 
-    Food const& new_food();
+    Food const& new_random_food();
+
+    Food const& new_food(double nutrition);
 
     auto prune_dead_vehicles() -> typename decltype(vehicles)::size_type;
 
@@ -65,7 +69,7 @@ struct World {
 
     [[nodiscard]] std::stringstream info_stream() const;
 
-    void run(IRenderer* renderer);
+    void run(IRenderer* renderer, int target_tps = World::target_tps);
 
     static void pause()
     {
@@ -84,6 +88,23 @@ struct World {
     void clear_verbose_vehicles();
 
     ~World();
+
+   private:
+    inline static void tps_target_wait(
+        std::chrono::time_point<std::chrono::steady_clock> const& start_time,
+        int target_tps = World::target_tps)
+    {
+        auto tick_time = std::chrono::steady_clock::now() - start_time;
+        // TODO: targeting 60 tps results in about 27 ms per tick leading to
+        // more like ~37-40 tps in practice due to processing time?
+        auto target_tick_duration =
+            std::chrono::milliseconds(1000 / target_tps);
+        while (tick_time < target_tick_duration) {
+            // sleep to maintain target fps
+            usleep(1000);
+            tick_time = std::chrono::steady_clock::now() - start_time;
+        }
+    }
 };
 
 #endif  // WORLD_H

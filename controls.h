@@ -38,11 +38,19 @@ struct Qt_input : QtButtonBase, Fl_Input {
 };
 
 struct QtToggleButton : QtButtonBase, Fl_Button {
-    QtToggleButton(World*                  world,
-                   int                     w,
-                   char const*             label,
-                   std::function<int(int)> callback);
-    int handle(int event) override;
+    Fl_Color              on_color;
+    Fl_Color              text_color;
+    std::function<bool()> is_on;
+    QtToggleButton(
+        World*                  world,
+        int                     w,
+        char const*             label,
+        Fl_Color                text_color,
+        Fl_Color                on_color,
+        std::function<int(int)> callback,
+        std::function<bool()>   is_on = [] { return false; });
+    int  handle(int event) override;
+    void draw() override;
 };
 
 struct QtCheckButton : QtButtonBase, Fl_Check_Button {
