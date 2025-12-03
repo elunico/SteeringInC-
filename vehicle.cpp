@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <iostream>
 
+#include "food.h"
 #include "utils.h"
 #include "vec2d.h"
 #include "world.h"
@@ -12,7 +13,7 @@
 #define MAX_HEALTH 40.0
 
 // 0 is a sentinel value meaning no vehicle sought yet
-typename Vehicle::Id_type Vehicle::global_id_counter = 1;
+typename Vehicle::IdType Vehicle::global_id_counter = 1;
 
 Vehicle::Vehicle() : Vehicle(Vec2D{0.0, 0.0})
 {
@@ -78,17 +79,27 @@ Vehicle::Vehicle(Vec2D const& position)
     return verbose;
 }
 
-[[nodiscard]] Vehicle::Id_type Vehicle::get_last_sought_vehicle_id() const
+[[nodiscard]] Vehicle::IdType Vehicle::get_last_sought_vehicle_id() const
 {
     return last_sought_vehicle_id;
 }
 
 void Vehicle::food_behaviors(Foods& food_positions)
 {
+    check_sought_food();
+
     double record;  // distance to nearest food
-    auto   target_food = find_nearest(food_positions, record);
+    auto   target_food = last_sought_food_id == 0
+                             ? find_nearest(food_positions, record)
+                             : &last_sought_food();
 
     if (target_food != nullptr) {
+        if (verbose) {
+            std::cout << "Seeking food with ID: " << target_food->id
+                      << " at: " << target_food->get_position() << "\n";
+        }
+        // update the currently sought food
+        last_sought_food_id = target_food->id;
         if (target_food->nutrition < 0) {
             flee_poison(target_food, record);
         } else {
@@ -99,7 +110,14 @@ void Vehicle::food_behaviors(Foods& food_positions)
 
 [[nodiscard]] Vehicle& Vehicle::last_sought_vehicle() const
 {
-    return world->vehicles[last_sought_vehicle_id];
+    assert(last_sought_vehicle_id != 0);
+    return world->vehicles.at(last_sought_vehicle_id);
+}
+
+[[nodiscard]] Food& Vehicle::last_sought_food() const
+{
+    assert(last_sought_food_id != 0);
+        return world->food.at(last_sought_food_id);
 }
 
 void Vehicle::check_sought_vehicle()
@@ -107,17 +125,35 @@ void Vehicle::check_sought_vehicle()
     // if their last sought vehicle is dead or out of range, reset it
     // so they can seek a new one
     if (last_sought_vehicle_id != 0) {
-        if (auto d = position.distance_to(last_sought_vehicle().get_position());
-            d > dna.perception_radius || last_sought_vehicle().is_dead()) {
+        if (!world->knows_vehicle(last_sought_vehicle_id)) {
             last_sought_vehicle_id = 0;
+            return;
+        }
+        if (auto d = position.distance_to(last_sought_vehicle().get_position());
+            d > dna.perception_radius) {
+            last_sought_vehicle_id = 0;
+        }
+    }
+}
+
+void Vehicle::check_sought_food()
+{
+    // if their last sought vehicle is dead or out of range, reset it
+    // so they can seek a new one
+    if (last_sought_food_id != 0) {
+        if (!world->knows_food(last_sought_food_id)) {
+            last_sought_food_id = 0;
+            return;
+        }
+        if (auto d = position.distance_to(last_sought_food().get_position());
+            d > dna.perception_radius) {
+            last_sought_food_id = 0;
         }
     }
 }
 
 std::optional<Vehicle> Vehicle::vehicle_behaviors(Vehicles& vehicles)
 {
-    check_sought_vehicle();
-
     double record = -1.0;  // if we are pursing the same vehicle, assume we are
                            // close enough due to prior knowledge
                            // otherwise find the nearest vehicle
@@ -168,8 +204,6 @@ void Vehicle::flee_poison(Food* target, double record)
 
         Vec2D steer = desired - velocity;
         steer.limit(MAX_FORCE);
-        if (verbose)
-            output("Applying flee poison force: ", steer, "\n");
         apply_force(steer);
     }
 }
@@ -182,8 +216,6 @@ void Vehicle::seek_for_eat(Food* target, double record)
         target->consume(*this);
     } else if (record <= dna.perception_radius) {
         Vec2D steer = seek(target->position);
-        if (verbose)
-            output("Applying eat force: ", steer, "\n");
         apply_force(steer);
     }
 }
@@ -199,8 +231,6 @@ void Vehicle::seek_for_malice(Vehicle* target, double record)
             // if vehicle is far away, try to seek it
             Vec2D steer = seek(target->position);
             steer *= dna.malice_desire;
-            if (verbose)
-                output("Applying malice force: ", steer, "\n");
             apply_force(steer);
         }
     }
@@ -222,8 +252,6 @@ void Vehicle::seek_for_altruism(Vehicle* target, double record)
         } else if (record < dna.perception_radius) {
             Vec2D steer = seek(target->position);
             steer *= dna.altruism_desire;
-            if (verbose)
-                output("Applying altruism force: ", steer, "\n");
             apply_force(steer);
         }
     }
@@ -268,8 +296,6 @@ Vec2D Vehicle::seek(Vec2D const& target)
         return offspring;
     } else {
         auto steer = seek(target->position);
-        if (verbose)
-            output("Applying reproduction force: ", steer, "\n");
         apply_force(steer);
     }
 
@@ -292,29 +318,28 @@ bool Vehicle::is_dead() const
 
 void Vehicle::avoid_edges()
 {
-    Vec2D steer;
+    Vec2D steer = position;
+    bool active = false;
 
     if (position.x < World::edge_threshold) {
-        steer.x = dna.max_speed;
+        steer.x = world->width;
+        active = true;
     } else if (position.x > world->width - World::edge_threshold) {
-        steer.x = -dna.max_speed;
+        steer.x = 0;
+        active = true;
     }
+
+
     if (position.y < World::edge_threshold) {
-        steer.y = dna.max_speed;
+        steer.y = world->height;
+        active = true;
     } else if (position.y > world->height - World::edge_threshold) {
-        steer.y = -dna.max_speed;
+        steer.y = 0;
+        active = true;
     }
 
-    position.x = std::clamp(position.x, World::edge_threshold + 1,
-                            world->width - World::edge_threshold - 1);
-    position.y = std::clamp(position.y, World::edge_threshold + 1,
-                            world->height - World::edge_threshold - 1);
-
-    if (steer.x != 0 || steer.y != 0) {
+    if (active) {
         steer = seek(steer);
-        steer *= 2.0;  // stronger force to avoid edges
-        if (verbose)
-            output("Applying avoid edges force: ", steer, "\n");
         apply_force(steer, true);
     }
 }

@@ -18,6 +18,10 @@ struct QtButtonBase {
     static int           y;
     static constexpr int h = 30;
 
+    static Fl_Color default_on_color;
+    static Fl_Color default_off_color;
+    static Fl_Color default_warning_color;
+
     World*                  world;
     std::function<int(int)> callback;
 
@@ -29,15 +33,7 @@ struct QtButtonBase {
     virtual ~QtButtonBase();
 };
 
-struct Qt_input : QtButtonBase, Fl_Input {
-    Qt_input(World*                  world,
-             int                     w,
-             char const*             label,
-             std::function<int(int)> callback);
-    int handle(int event) override;
-};
-
-struct QtToggleButton : QtButtonBase, Fl_Button {
+struct QtToggleButton : public QtButtonBase, public Fl_Button {
     Fl_Color              on_color;
     Fl_Color              text_color;
     std::function<bool()> is_on;
@@ -51,14 +47,6 @@ struct QtToggleButton : QtButtonBase, Fl_Button {
         std::function<bool()>   is_on = [] { return false; });
     int  handle(int event) override;
     void draw() override;
-};
-
-struct QtCheckButton : QtButtonBase, Fl_Check_Button {
-    QtCheckButton(World*                  world,
-                  int                     w,
-                  char const*             label,
-                  std::function<int(int)> callback);
-    int handle(int event) override;
 };
 
 struct ControlWindow : public Fl_Window {

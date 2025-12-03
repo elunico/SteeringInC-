@@ -3,15 +3,15 @@
 
 #include <optional>
 #include <type_traits>
-#include <unordered_map>
+#include <vector>
 #include "dna.h"
+#include "utils.h"
 #include "vec2d.h"
-
 #include "world.h"
 
 class Vehicle {
    public:
-    using Id_type  = World::Vehicle_id_type;
+    using IdType   = World::Vehicle_id_type;
     using Vehicles = std::vector<Vehicle*>;
     using Foods    = std::vector<Food*>;
 
@@ -29,7 +29,8 @@ class Vehicle {
     [[nodiscard]] int                    get_generation() const;
     [[nodiscard]] Vec2D const&           get_acceleration() const;
     [[nodiscard]] Vehicle&               last_sought_vehicle() const;
-    [[nodiscard]] Id_type                get_last_sought_vehicle_id() const;
+    [[nodiscard]] Food&                  last_sought_food() const;
+    [[nodiscard]] IdType                 get_last_sought_vehicle_id() const;
     [[nodiscard]] bool                   is_verbose() const;
     void                                 update();
     void                                 kill();
@@ -61,7 +62,7 @@ class Vehicle {
     }
 
    private:
-    static Id_type         global_id_counter;
+    static IdType          global_id_counter;
     void                   seek_for_eat(Food* target, double record);
     void                   flee_poison(Food* target, double record);
     void                   seek_for_malice(Vehicle* target, double record);
@@ -69,6 +70,7 @@ class Vehicle {
     Vec2D                  seek(Vec2D const& target);
     void                   food_behaviors(Foods& food_positions);
     void                   check_sought_vehicle();
+    void                   check_sought_food();
     std::optional<Vehicle> vehicle_behaviors(Vehicles& vehicles);
     void                   apply_force(Vec2D& force, bool unlimited = false);
     [[nodiscard]] std::optional<Vehicle> reproduce(Vehicle* target,
@@ -87,10 +89,11 @@ class Vehicle {
     Vec2D acceleration{};
 
    public:
-    Id_type id;
-    Id_type last_sought_vehicle_id = 0;
-    bool    verbose                = false;
-    bool    highlighted            = false;
+    IdType              id;
+    IdType              last_sought_vehicle_id = 0;
+    World::Food_id_type last_sought_food_id    = 0;
+    bool                verbose                = false;
+    bool                highlighted            = false;
 
     friend struct World;
     friend struct Food;

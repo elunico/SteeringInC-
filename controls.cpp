@@ -8,6 +8,10 @@
 int QtButtonBase::x = 10;
 int QtButtonBase::y = 10;
 
+Fl_Color QtButtonBase::default_on_color      = fl_rgb_color(0, 225, 80);
+Fl_Color QtButtonBase::default_off_color     = fl_rgb_color(200, 200, 200);
+Fl_Color QtButtonBase::default_warning_color = fl_rgb_color(255, 30, 30);
+
 QtToggleButton::QtToggleButton(World*                  world,
                                int                     w,
                                char const*             label,
@@ -33,7 +37,7 @@ void QtToggleButton::draw()
     if (is_on()) {
         fl_color(on_color);
     } else {
-        fl_color(FL_GRAY);
+        fl_color(QtButtonBase::default_off_color);
     }
     fl_rectf(Fl_Button::x(), Fl_Button::y(), Fl_Button::w(), Fl_Button::h());
 
@@ -46,67 +50,10 @@ void QtToggleButton::draw()
 
 int QtToggleButton::handle(int event)
 {
-    if (event == FL_PUSH) {
-        if (QtButtonBase::callback) {
-            return QtButtonBase::callback(event);  // Example argument
-        }
-        return 0;
+    if (event == FL_PUSH && QtButtonBase::callback) {
+        return QtButtonBase::callback(event);  // Example argument
     }
-    return Fl_Button::handle(event);
-}
-
-QtCheckButton::QtCheckButton(World*                  world,
-                             int                     w,
-                             char const*             label,
-                             std::function<int(int)> callback)
-    : QtButtonBase(world, std::move(callback)),
-      Fl_Check_Button(QtButtonBase::x,
-                      QtButtonBase::y,
-                      w,
-                      QtButtonBase::h,
-                      label)
-{
-    box(FL_FLAT_BOX);
-    color(FL_GRAY);
-    align(FL_ALIGN_INSIDE | FL_ALIGN_CENTER);
-
-    QtButtonBase::y += QtButtonBase::h + 10;
-}
-
-int QtCheckButton::handle(int event)
-{
-    if (event == FL_PUSH) {
-        if (QtButtonBase::callback) {
-            return QtButtonBase::callback(event);  // Example argument
-        }
-        return 0;
-    }
-    return Fl_Check_Button::handle(event);
-}
-
-Qt_input::Qt_input(World*                  world,
-                   int                     w,
-                   char const*             label,
-                   std::function<int(int)> callback)
-    : QtButtonBase(world, std::move(callback)),
-      Fl_Input(QtButtonBase::x, QtButtonBase::y, w, QtButtonBase::h, label)
-{
-    box(FL_FLAT_BOX);
-    color(FL_WHITE);
-    align(FL_ALIGN_INSIDE | FL_ALIGN_CENTER);
-
-    QtButtonBase::y += QtButtonBase::h + 10;
-}
-
-int Qt_input::handle(int event)
-{
-    if (event == FL_PUSH) {
-        if (QtButtonBase::callback) {
-            return QtButtonBase::callback(event);  // Example argument
-        }
-        return 0;
-    }
-    return Fl_Input::handle(event);
+    return 0;
 }
 
 ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
@@ -119,7 +66,8 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
     static int const button_width = W - 20;
 
     buttons.push_back(std::make_unique<QtToggleButton>(
-        world, button_width, "Pause/Step", FL_BLACK, FL_BLUE,
+        world, button_width, "Pause/Step", FL_BLACK,
+        QtButtonBase::default_on_color,
         [world, this](int) {
             if (World::is_paused) {
                 world->tick();
@@ -149,7 +97,8 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
         }));
 
     buttons.push_back(std::make_unique<QtToggleButton>(
-        world, button_width, "Toggle Sought Vehicles", FL_BLACK, FL_BLUE,
+        world, button_width, "Toggle Sought Vehicles", FL_BLACK,
+        QtButtonBase::default_on_color,
         [this](int) {
             World::show_sought_vehicles = !World::show_sought_vehicles;
             redraw();
@@ -164,14 +113,16 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
         }));
 
     buttons.push_back(std::make_unique<QtToggleButton>(
-        world, button_width, "End Simulation", FL_RED, FL_GRAY, [](int) {
+        world, button_width, "End Simulation",
+        QtButtonBase::default_warning_color, FL_GRAY, [](int) {
             World::stop_running(0);
             FLTKRenderer::teardown();
             return 1;  // Indicate handled
         }));
 
     buttons.push_back(std::make_unique<QtToggleButton>(
-        world, button_width, "Kill Mode", FL_BLACK, FL_RED,
+        world, button_width, "Kill Mode", FL_BLACK,
+        QtButtonBase::default_warning_color,
         [this](int) {
             World::kill_mode = !World::kill_mode;
             if (!World::kill_mode) {

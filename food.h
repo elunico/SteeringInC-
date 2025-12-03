@@ -3,19 +3,20 @@
 
 #include "utils.h"
 #include "vec2d.h"
+#include "world.h"
 
 class Vehicle;
 
 struct Food {
-    Vec2D position;
+    using IdType = World::Food_id_type;
+    IdType id;
+    Vec2D  position;
     // prevent the initial food from all disappearing at once
     int  lifespan = random_in_range(850, 1750);  // lifespan in simulation ticks
     bool consumed = false;
     double nutrition;
 
     Food();
-
-    Food(double nutrition);
 
     Food(Vec2D const& pos);
 
@@ -28,6 +29,11 @@ struct Food {
     void update();
 
     void consume(Vehicle& consumer);
+
+    static  IdType next_id() { return ++global_id_counter; }
+
+   private:
+    static IdType global_id_counter;
 };
 
 #endif  // FOOD_H

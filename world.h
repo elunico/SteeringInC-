@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 #include "dna.h"
-#include "food.h"
+
 #include "irenderer.h"
 #include "vec2d.h"
 
@@ -15,14 +15,16 @@
 #define MAX_FOOD 400
 
 class Vehicle;
+struct Food;
 
 struct World {
     using Vehicle_id_type = unsigned long;
+    using Food_id_type    = unsigned long;
     long                                         seed;
     int                                          width;
     int                                          height;
     std::unordered_map<Vehicle_id_type, Vehicle> vehicles;
-    std::vector<Food>                            food;
+    std::unordered_map<Food_id_type, Food>       food;
     static bool                                  game_running;
     static bool                                  is_paused;
     static bool                                  show_sought_vehicles;
@@ -60,6 +62,10 @@ struct World {
 
     auto prune_eaten_food() -> typename decltype(food)::size_type;
 
+    [[nodiscard]] bool knows_vehicle(Vehicle_id_type id) const;
+
+    [[nodiscard]] bool knows_food(Food_id_type id) const;
+
     [[nodiscard]] std::chrono::duration<std::chrono::seconds::rep>
     elapsed_time() const;
 
@@ -90,6 +96,13 @@ struct World {
     ~World();
 
    private:
+    double current_tps;
+
+    void food_tick(std::vector<Food*>& food_neighbors);
+    void vehicle_tick(std::vector<Vehicle>&  offspring,
+                      std::vector<Vehicle*>& neighbors,
+                      std::vector<Food*>&    food_neighbors);
+
     inline static void tps_target_wait(
         std::chrono::time_point<std::chrono::steady_clock> const& start_time,
         int target_tps = World::target_tps)

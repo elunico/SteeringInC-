@@ -43,7 +43,7 @@ void CursesRenderer::draw_living_world(World* world)
     auto ss = world->info_stream();
     mvaddstr(0, 0, ss.str().c_str());
 
-    for (auto& food : world->food) {
+    for (auto& [id, food] : world->food) {
         draw_food(food);
     }
 

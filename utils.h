@@ -25,9 +25,15 @@ double random_in_range(double min, double max);
 
 void log(std::string const& message);
 
-constexpr bool double_equal(double a, double b, double epsilon = 0.001);
+constexpr bool double_equal(double a, double b, double epsilon = 0.001)
+{
+    return std::abs(a - b) <= epsilon;
+}
 
-constexpr bool double_near_zero(double a, double epsilon = 0.001);
+constexpr bool double_near_zero(double a, double epsilon = 0.001)
+{
+    return double_equal(a, 0.0, epsilon);
+}
 
 template <typename T>
 T remap(T value, T from1, T to1, T from2, T to2)

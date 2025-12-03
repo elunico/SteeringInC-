@@ -8,10 +8,13 @@ struct Vec2D {
 
     Vec2D();
     Vec2D(double x, double y);
+    Vec2D(Vec2D const& other) = default;
     [[nodiscard]] Vec2D operator+(Vec2D const& other) const;
     [[nodiscard]] Vec2D operator-(Vec2D const& other) const;
     [[nodiscard]] Vec2D operator*(double scalar) const;
     [[nodiscard]] Vec2D operator/(double scalar) const;
+
+    Vec2D& operator=(Vec2D const& other) = default;
 
     Vec2D& operator+=(Vec2D const& other);
     Vec2D& operator-=(Vec2D const& other);
@@ -31,6 +34,8 @@ struct Vec2D {
     [[nodiscard]] Vec2D  rotated(double angle) const;
     void                 reset();
     void                 set(double new_x, double new_y);
+
+    static Vec2D random(double magnitude = 1.0);
 };
 
 std::ostream& operator<<(std::ostream& os, Vec2D const& v);

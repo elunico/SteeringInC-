@@ -16,13 +16,3 @@ void log(std::string const& message)
     static std::ofstream log_file("simulation_log.txt", std::ios_base::app);
     log_file << message << std::endl;
 }
-
-constexpr bool double_equal(double a, double b, double epsilon)
-{
-    return std::abs(a - b) <= epsilon;
-}
-
-constexpr bool double_near_zero(double a, double epsilon)
-{
-    return double_equal(a, 0.0, epsilon);
-}

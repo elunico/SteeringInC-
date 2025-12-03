@@ -1,6 +1,13 @@
 #include "vec2d.h"
 #include <cmath>
 #include <iostream>
+#include "utils.h"
+
+Vec2D Vec2D::random(double magnitude)
+{
+    double angle = random_in_range(0, 2 * M_PI);
+    return Vec2D(cos(angle) * magnitude, sin(angle) * magnitude);
+}
 
 Vec2D::Vec2D() : x(0), y(0)
 {

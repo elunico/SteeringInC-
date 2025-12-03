@@ -2,11 +2,7 @@
 #include <FL/Fl_Window.H>
 #include <unistd.h>
 #include <cassert>
-#include <fstream>
-#include <ios>
 #include <iostream>
-#include <istream>
-#include <vector>
 #include "fltkrenderer.h"
 #include "utils.h"
 

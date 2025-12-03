@@ -1,14 +1,45 @@
 #include "fltkrenderer.h"
 #include <assert.h>
 #include <cmath>
-#include <iostream>
 #include <sstream>
 #include "controls.h"
+#include "utils.h"
 #include "vehicle.h"
 #include "world.h"
 
 Fl_Window* FLTKRenderer::window         = nullptr;
 Fl_Window* FLTKRenderer::control_window = nullptr;
+
+QtColor::QtColor(unsigned char r, unsigned char g, unsigned char b)
+    : r(r), g(g), b(b)
+{
+}
+
+QtColor::QtColor(QtColor const& other) : r(other.r), g(other.g), b(other.b)
+{
+}
+
+QtColor::QtColor() : r(0), g(0), b(0)
+{
+}
+
+bool QtColor::operator==(QtColor const& other) const
+{
+    return r == other.r && g == other.g && b == other.b;
+}
+
+bool QtColor::operator!=(QtColor const& other) const
+{
+    return !(*this == other);
+}
+
+QtColor& QtColor::operator=(QtColor const& other)
+{
+    r = other.r;
+    g = other.g;
+    b = other.b;
+    return *this;
+}
 
 FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
 {
@@ -154,6 +185,19 @@ void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
         fl_rect(static_cast<int>(position.x) - 3,
                 static_cast<int>(position.y) - 3, 6, 6);
     }
+
+    // Draw  a line from the vehicle to its last sought food if it exists
+    if (vehicle.last_sought_food_id != 0 && World::show_sought_vehicles) {
+        fl_color(FL_GREEN);
+        auto& position = vehicle.last_sought_food().get_position();
+        if (double_near_zero(position.x) && double_near_zero(position.y)) {
+            assert(!"That's bad");
+        }
+        fl_line(static_cast<int>(pos.x), static_cast<int>(pos.y),
+                static_cast<int>(position.x), static_cast<int>(position.y));
+        fl_rect(static_cast<int>(position.x) - 3,
+                static_cast<int>(position.y) - 3, 6, 6);
+    }
 }
 
 void FLTKCustomDrawer::draw_food(Food const& position)
@@ -169,7 +213,7 @@ void FLTKCustomDrawer::draw_food(Food const& position)
 
 void FLTKCustomDrawer::draw_living_world()
 {
-    for (auto& food : world->food) {
+    for (auto& [id, food] : world->food) {
         draw_food(food);
     }
 
