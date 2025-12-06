@@ -121,6 +121,32 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
         }));
 
     buttons.push_back(std::make_unique<QtToggleButton>(
+        world, button_width, "Feed Mode", FL_BLACK,
+        QtButtonBase::default_on_color,
+        [this, world](int) {
+            World::feed_mode = !World::feed_mode;
+            if (!World::feed_mode) {
+                redraw();
+                return 1;  // Indicate handled
+            }
+            auto s = fl_input("Enter amount of food");
+            if (s) {
+                try {
+                    world->feed_count = std::stoi(s);
+                } catch (std::exception&) {
+                    fl_alert("Invalid count. Using default 10.");
+                    world->feed_count = 10;
+                }
+                World::kill_mode = false;
+            } else {
+                World::feed_mode = false;
+            }
+            redraw();
+            return 1;  // Indicate handled
+        },
+        [] { return World::feed_mode; }));
+
+    buttons.push_back(std::make_unique<QtToggleButton>(
         world, button_width, "Kill Mode", FL_BLACK,
         QtButtonBase::default_warning_color,
         [this](int) {
@@ -137,6 +163,7 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
                     fl_alert("Invalid radius input. Using default 100.");
                     World::kill_radius = 100;
                 }
+                World::feed_mode = false;
             } else {
                 World::kill_mode = false;
             }

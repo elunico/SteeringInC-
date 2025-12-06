@@ -12,29 +12,6 @@
 #include "vehicle.h"
 #include "world.h"
 
-struct QtColor {
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-
-    QtColor(unsigned char r, unsigned char g, unsigned char b);
-
-    QtColor(QtColor const& other);
-
-    QtColor();
-
-    bool operator==(QtColor const& other) const;
-
-    bool operator!=(QtColor const& other) const;
-
-    QtColor& operator=(QtColor const& other);
-
-    inline void set_color() const
-    {
-        fl_color(fl_rgb_color(r, g, b));
-    }
-};
-
 struct FLTKCustomDrawer : public Fl_Box {
     World* world{};
     FLTKCustomDrawer(World* world, int W, int H);
@@ -67,9 +44,11 @@ struct FLTKRenderer : public IRenderer {
 
     void clear_screen() override;
 
-    void render() override;
+    void render(bool transient = false) override;
 
     void refresh() override;
+
+    void terminate() override;
 
     ~FLTKRenderer() override;
 

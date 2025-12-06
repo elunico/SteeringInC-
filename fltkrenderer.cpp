@@ -1,6 +1,7 @@
 #include "fltkrenderer.h"
 #include <assert.h>
 #include <cmath>
+#include <ranges>
 #include <sstream>
 #include "controls.h"
 #include "utils.h"
@@ -9,37 +10,6 @@
 
 Fl_Window* FLTKRenderer::window         = nullptr;
 Fl_Window* FLTKRenderer::control_window = nullptr;
-
-QtColor::QtColor(unsigned char r, unsigned char g, unsigned char b)
-    : r(r), g(g), b(b)
-{
-}
-
-QtColor::QtColor(QtColor const& other) : r(other.r), g(other.g), b(other.b)
-{
-}
-
-QtColor::QtColor() : r(0), g(0), b(0)
-{
-}
-
-bool QtColor::operator==(QtColor const& other) const
-{
-    return r == other.r && g == other.g && b == other.b;
-}
-
-bool QtColor::operator!=(QtColor const& other) const
-{
-    return !(*this == other);
-}
-
-QtColor& QtColor::operator=(QtColor const& other)
-{
-    r = other.r;
-    g = other.g;
-    b = other.b;
-    return *this;
-}
 
 FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
 {
@@ -65,6 +35,11 @@ FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
     control_window->show();
 }
 
+void FLTKRenderer::terminate()
+{
+    teardown();
+}
+
 FLTKRenderer::~FLTKRenderer()
 {
     while (Fl::wait())
@@ -75,9 +50,12 @@ FLTKRenderer::~FLTKRenderer()
     delete control_window;
 }
 
-void FLTKRenderer::render()
+void FLTKRenderer::render(bool transient)
 {
-    refresh();
+    drawer->redraw();
+    if (!transient) {
+        refresh();
+    }
 }
 void FLTKRenderer::refresh()
 {
@@ -107,9 +85,9 @@ void FLTKCustomDrawer::clear_screen() const
 int FLTKCustomDrawer::handle(int i)
 {
     if (i == FL_PUSH) {
+        double x = Fl::event_x();
+        double y = Fl::event_y();
         if (World::kill_mode) {
-            double x = Fl::event_x();
-            double y = Fl::event_y();
             for (auto& [id, vehicle] : world->vehicles) {
                 if (vehicle.get_position().distance_to(Vec2D{x, y}) <
                     World::kill_radius) {
@@ -118,9 +96,13 @@ int FLTKCustomDrawer::handle(int i)
             }
             return 1;
         }
-        double x = Fl::event_x();
-        double y = Fl::event_y();
-        for (auto& [id, vehicle] : world->vehicles) {
+        if (World::feed_mode) {
+            for (int idx = 0; idx < world->feed_count; idx++) {
+                world->new_food(Vec2D{x, y} + Vec2D::random(5), 5.0);
+            }
+            return 1;
+        }
+        for (auto& vehicle : world->vehicles | std::views::values) {
             if (vehicle.get_position().distance_to(Vec2D{x, y}) < 30) {
                 vehicle.verbose = !vehicle.verbose;
                 return 1;
@@ -139,6 +121,7 @@ void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
     if (vehicle.highlighted) {
         fl_color(FL_RED);
     }
+
     if (vehicle.verbose) {
         fl_color(FL_BLUE);
     }

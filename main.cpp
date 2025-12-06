@@ -2,7 +2,9 @@
 #include <FL/Fl_Window.H>
 #include <unistd.h>
 #include <cassert>
+#include <csignal>
 #include <iostream>
+#include "cursesrenderer.h"
 #include "fltkrenderer.h"
 #include "utils.h"
 
@@ -12,14 +14,19 @@ struct arguments {
     int          width             = 800;
     int          height            = 600;
     int          starting_vehicles = 10;
-    unsigned int random_seed       = 1764448905;
+    unsigned int random_seed       = static_cast<unsigned int>(time(nullptr));
+    double       edge_threshold    = 25.0;
+    // unsigned int random_seed       = 1764448905;
 };
 
 void parse_args(int argc, char* argv[], arguments& args)
 {
     int c;
-    while ((c = getopt(argc, argv, "w:h:s:cpr:")) != -1) {
+    while ((c = getopt(argc, argv, "w:h:s:cpr:e:")) != -1) {
         switch (c) {
+            case 'e':
+                World::edge_threshold = std::stod(optarg);
+                break;
             case 'p':
                 args.auto_start = false;
                 break;
@@ -69,22 +76,25 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
         World::is_paused = true;
     }
 
-    const int  width  = args.width;
-    const int  height = args.height;
-    auto const seed =
-        args.random_seed;  // static_cast<unsigned>(time(nullptr));
+    World::edge_threshold     = args.edge_threshold;
+    int const          width  = args.width;
+    int const          height = args.height;
+    unsigned int const seed   = args.random_seed;
     // srand(seed);  // Seed for random number generation
     srand(seed);  // Seed for random number generation
 
-    World world(seed, width, height);
-    auto  renderer = new FLTKRenderer(&world, width, height);
+    World       world(seed, width, height);
+    auto* const renderer =
+        args.use_curses
+            ? static_cast<IRenderer*>(new CursesRenderer(&world, width, height))
+            : static_cast<IRenderer*>(new FLTKRenderer(&world, width, height));
 
-    world.setup(args.starting_vehicles,
-                250);  // starting_vehicles vehicles, 250 food items
+    world.setup(args.starting_vehicles, 250);
 
     world.run(renderer);
 
-    renderer->render();
+    renderer->render(World::was_interrupted);
+    renderer->terminate();
     delete renderer;
 
     output("Simulation ended.\n");

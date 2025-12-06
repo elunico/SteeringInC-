@@ -8,7 +8,7 @@
 class Vehicle;
 
 struct Food {
-    using IdType = World::Food_id_type;
+    using IdType = World::FoodIdType;
     IdType id;
     Vec2D  position;
     // prevent the initial food from all disappearing at once
@@ -16,21 +16,23 @@ struct Food {
     bool consumed = false;
     double nutrition;
 
-    Food();
+    Food() noexcept;
 
-    Food(Vec2D const& pos);
+    Food(Vec2D const& pos) noexcept;
 
-    Food(Vec2D const& pos, double nutrition);
+    Food(Vec2D const& pos, double nutrition) noexcept;
+    [[nodiscard]] double get_nutrition() const noexcept;
 
-    [[nodiscard]] double get_nutrition() const;
+    [[nodiscard]] Vec2D const& get_position() const noexcept;
 
-    [[nodiscard]] Vec2D const& get_position() const;
+    void update() noexcept;
 
-    void update();
+    void consume(Vehicle& consumer) noexcept;
 
-    void consume(Vehicle& consumer);
-
-    static  IdType next_id() { return ++global_id_counter; }
+    static IdType next_id() noexcept
+    {
+        return ++global_id_counter;
+    }
 
    private:
     static IdType global_id_counter;

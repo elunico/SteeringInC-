@@ -1,12 +1,12 @@
 #include "utils.h"
 #include <fstream>
 
-double random_delta(double scale)
+double random_delta(double scale) noexcept
 {
     return ((rand() % 200) / 100.0 - 1.0) * scale;  // small random change
 }
 
-double random_in_range(double min, double max)
+double random_in_range(double min, double max) noexcept
 {
     return min + (rand() / (RAND_MAX / (max - min)));
 }

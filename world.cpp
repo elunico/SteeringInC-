@@ -1,22 +1,27 @@
 #include "world.h"
 #include <unistd.h>
+#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <csignal>
 #include <cstdlib>
 #include <iostream>
+#include <ranges>
+
 #include "food.h"
 #include "irenderer.h"
 #include "utils.h"
 #include "vehicle.h"
 
-bool         World::game_running         = true;
-bool         World::is_paused            = false;
-bool         World::show_sought_vehicles = false;
-bool         World::kill_mode            = false;
-int          World::kill_radius          = 100;
-int          World::target_tps           = 120;
-double const World::edge_threshold       = 25.0;
+bool   World::game_running         = true;
+bool   World::was_interrupted      = false;
+bool   World::is_paused            = false;
+bool   World::show_sought_vehicles = false;
+bool   World::kill_mode            = false;
+bool   World::feed_mode            = false;
+int    World::kill_radius          = 100;
+int    World::target_tps           = 120;
+double World::edge_threshold       = 25.0;
 
 #define POISON_CHANCE 0.1
 
@@ -60,15 +65,20 @@ Food const& World::new_random_food()
     return new_food(random_in_range(0, 1) < POISON_CHANCE ? -10.0 : 5.0);
 }
 
-Food const& World::new_food(double nutrition)
+Food const& World::new_food(Vec2D food_position, double nutrition)
 {
-    Vec2D food_position(random_position(edge_threshold));
     auto  id    = Food::next_id();
     Food& f     = food[id];
     f.position  = food_position;
     f.nutrition = nutrition;
     f.id        = id;
     return food[id];
+}
+
+Food const& World::new_food(double nutrition)
+{
+    Vec2D food_position(random_position(edge_threshold));
+    return new_food(food_position, nutrition);
 }
 
 auto World::prune_dead_vehicles() -> typename decltype(vehicles)::size_type
@@ -139,13 +149,6 @@ void World::setup(int vehicle_count, int food_count)
 
 double World::tps() const
 {
-    // using namespace std::chrono;
-    // auto now      = steady_clock::now();
-    // auto duration = duration_cast<seconds>(now - start_time).count();
-    // if (duration == 0) {
-    //     return static_cast<double>(tick_counter);
-    // }
-    // return static_cast<double>(tick_counter) / static_cast<double>(duration);
     return current_tps;
 }
 
@@ -164,8 +167,11 @@ std::stringstream World::info_stream() const
               .count()
        << "s"
        << " | Tick: " << tick_counter << " | TPS: " << tps();
-    if (World::kill_mode) {
+    if (kill_mode) {
         ss << "\n[KILL MODE ON (Radius: " << World::kill_radius << ")] ";
+    }
+    if (feed_mode) {
+        ss << "\n[FEED MODE ON (Count: " << World::feed_count << ")] ";
     }
     return ss;
 }
@@ -174,25 +180,17 @@ long double update_tps_from_tick_duration(
     std::chrono::steady_clock::time_point const tick_start,
     std::chrono::steady_clock::time_point const tick_end)
 {
-    return 1e6l / std::chrono::duration_cast<std::chrono::microseconds>( // NOLINT(*-narrowing-conversions)
-                      tick_end - tick_start)
-                      .count();
+    return 1e6l /
+           std::chrono::duration_cast<
+               std::chrono::microseconds>(  // NOLINT(*-narrowing-conversions)
+               tick_end - tick_start)
+               .count();
 }
 
 void World::run(IRenderer* renderer, int target_tps)
 {
     start_time = std::chrono::steady_clock::now();
     while (game_running) {
-        // if (tick_counter == target_tps) {
-        //     std::cout << "Completed " << target_tps << " ticks in "
-        //               <<
-        //               std::chrono::duration_cast<std::chrono::milliseconds>(
-        //                      std::chrono::steady_clock::now() - start_time)
-        //                      .count()
-        //               << " ms\n";
-        //     game_running = false;
-        //     break;
-        // }
         auto tick_start = std::chrono::steady_clock::now();
         if (!is_paused) {
             if (!tick()) {
@@ -241,19 +239,19 @@ void World::vehicle_tick(std::vector<Vehicle>&  offspring,
     }
 
     for (auto& [id, vehicle] : vehicles) {
-        if (auto child = vehicle.behaviors(neighbors, food_neighbors);
-            child.has_value()) {
-            offspring.push_back(std::move(child.value()));
-        }
+        vehicle.behaviors(offspring, neighbors, food_neighbors);
         vehicle.update();
         vehicle.avoid_edges();
     }
 
-    // Add offspring to the
     add_all_vehicles(std::move(offspring));
-    // static_assert(std::is_trivially_destructible<Vehicle>::value,
-    // "Vehicle must be trivially destructible for clear()");
-    offspring.clear();
+}
+
+template <typename... T>
+static consteval void require_trivially_destructible()
+{
+    static_assert((std::is_trivially_destructible_v<T> && ...),
+                  "T must be trivially destructible");
 }
 
 bool World::tick()
@@ -270,9 +268,11 @@ bool World::tick()
 
     neighbors.clear();
     food_neighbors.clear();
+    offspring.clear();
 
-    static_assert(
-        std::is_trivially_destructible_v<decltype(neighbors)::value_type>);
+    require_trivially_destructible<decltype(neighbors)::value_type,
+                                   decltype(food_neighbors)::value_type,
+                                   decltype(offspring)::value_type>();
 
     tick_counter++;
     return !vehicles.empty();
@@ -288,9 +288,8 @@ Vehicle& World::create_vehicle(Vec2D const& position)
 
 void World::clear_verbose_vehicles()
 {
-    for (auto& [id, v] : vehicles) {
-        v.verbose = false;
-    }
+    std::ranges::for_each(vehicles | std::views::values,
+                          [](auto& p) { p.verbose = false; });
 }
 
 World::~World()

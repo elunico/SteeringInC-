@@ -20,7 +20,7 @@ CursesRenderer::CursesRenderer(World* world, int width, int height)
 
 CursesRenderer::~CursesRenderer()
 {
-    endwin();
+    // endwin();
 }
 
 void CursesRenderer::clear_screen()
@@ -36,6 +36,11 @@ void CursesRenderer::draw_food(Food const& food)
 void CursesRenderer::draw_vehicle(Vehicle const& vehicle)
 {
     mvaddch(vehicle.get_position().y, vehicle.get_position().x, ACS_CKBOARD);
+}
+
+void CursesRenderer::terminate()
+{
+    endwin();
 }
 
 void CursesRenderer::draw_living_world(World* world)
@@ -57,7 +62,7 @@ void CursesRenderer::draw_dead_world()
     mvaddstr(height / 2, width / 2, "All vehicles have perished.");
 }
 
-void CursesRenderer::render()
+void CursesRenderer::render([[maybe_unused]] bool transient)
 {
     clear_screen();
 

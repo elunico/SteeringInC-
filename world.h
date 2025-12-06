@@ -18,30 +18,35 @@ class Vehicle;
 struct Food;
 
 struct World {
-    using Vehicle_id_type = unsigned long;
-    using Food_id_type    = unsigned long;
-    long                                         seed;
-    int                                          width;
-    int                                          height;
-    std::unordered_map<Vehicle_id_type, Vehicle> vehicles;
-    std::unordered_map<Food_id_type, Food>       food;
-    static bool                                  game_running;
-    static bool                                  is_paused;
-    static bool                                  show_sought_vehicles;
-    static bool                                  kill_mode;
-    static int                                   kill_radius;
-    static int                                   target_tps;
-    static double const                          edge_threshold;
-    int                                          dead_counter = 0;
-    int                                          born_counter = 0;
-    int                                          tick_counter = 0;
-    int                                          max_age      = 0;
-    std::chrono::steady_clock::time_point        start_time;
-    std::chrono::steady_clock::time_point        end_time;
+    static bool   game_running;
+    static bool   is_paused;
+    static bool   show_sought_vehicles;
+    static bool   kill_mode;
+    static bool   feed_mode;
+    static int    kill_radius;
+    static int    target_tps;
+    static double edge_threshold;
+    static bool   was_interrupted;
+
+    using VehicleIdType = unsigned long;
+    using FoodIdType    = unsigned long;
+    long                                       seed;
+    int                                        width;
+    int                                        height;
+    std::unordered_map<VehicleIdType, Vehicle> vehicles;
+    std::unordered_map<FoodIdType, Food>       food;
+    int                                        feed_count{};
+    int                                        dead_counter = 0;
+    int                                        born_counter = 0;
+    int                                        tick_counter = 0;
+    int                                        max_age      = 0;
+    std::chrono::steady_clock::time_point      start_time;
+    std::chrono::steady_clock::time_point      end_time;
 
     static void stop_running(int)
     {
-        game_running = false;
+        game_running    = false;
+        was_interrupted = true;
     }
 
     World(long seed, int width, int height);
@@ -56,15 +61,17 @@ struct World {
 
     Food const& new_random_food();
 
+    Food const& new_food(Vec2D food_position, double nutrition);
+
     Food const& new_food(double nutrition);
 
     auto prune_dead_vehicles() -> typename decltype(vehicles)::size_type;
 
     auto prune_eaten_food() -> typename decltype(food)::size_type;
 
-    [[nodiscard]] bool knows_vehicle(Vehicle_id_type id) const;
+    [[nodiscard]] bool knows_vehicle(VehicleIdType id) const;
 
-    [[nodiscard]] bool knows_food(Food_id_type id) const;
+    [[nodiscard]] bool knows_food(FoodIdType id) const;
 
     [[nodiscard]] std::chrono::duration<std::chrono::seconds::rep>
     elapsed_time() const;
@@ -96,13 +103,20 @@ struct World {
     ~World();
 
    private:
-    double current_tps;
+    double current_tps{};
 
     void food_tick(std::vector<Food*>& food_neighbors);
     void vehicle_tick(std::vector<Vehicle>&  offspring,
                       std::vector<Vehicle*>& neighbors,
                       std::vector<Food*>&    food_neighbors);
 
+#ifdef NO_TPS_LIMIT
+    constexpr static void tps_target_wait(auto const&...)
+    {
+        // do nothing
+    }
+
+#else
     inline static void tps_target_wait(
         std::chrono::time_point<std::chrono::steady_clock> const& start_time,
         int target_tps = World::target_tps)
@@ -118,6 +132,7 @@ struct World {
             tick_time = std::chrono::steady_clock::now() - start_time;
         }
     }
+#endif
 };
 
 #endif  // WORLD_H

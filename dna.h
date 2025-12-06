@@ -12,13 +12,15 @@ struct DNA {
     double altruism_probability;
     double malice_damage;
     double altruism_heal;
+    double explosion_chance;
+    double explosion_tries;
     int    reproduction_cooldown;
     int    age_of_maturity;
 
-    DNA();
+    DNA() noexcept;
 
-    [[nodiscard]] DNA crossover(DNA const& partner) const;
-    void              mutate();
+    [[nodiscard]] DNA crossover(DNA const& partner) const noexcept;
+    void              mutate() noexcept;
 };
 
 #endif  // DNA_H

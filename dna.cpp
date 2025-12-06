@@ -1,7 +1,7 @@
 #include "dna.h"
 #include "utils.h"
 
-DNA::DNA()
+DNA::DNA() noexcept
     : perception_radius(random_in_range(40, 100)),
       max_speed(random_in_range(1, 4)),
       mutation_rate(0.1),
@@ -12,12 +12,14 @@ DNA::DNA()
       altruism_probability(random_in_range(0.0, 0.1)),
       malice_damage(random_in_range(2.0, 5.0)),
       altruism_heal(random_in_range(2.0, 5.0)),
+      explosion_chance(random_in_range(0.001, 0.005)),
+      explosion_tries(random_in_range(2, 10)),
       reproduction_cooldown(random_in_range(500, 1000)),
       age_of_maturity(random_in_range(75, 200))
 {
 }
 
-[[nodiscard]] DNA DNA::crossover(DNA const& partner) const
+[[nodiscard]] DNA DNA::crossover(DNA const& partner) const noexcept
 {
     DNA child;
     child.perception_radius =
@@ -37,12 +39,16 @@ DNA::DNA()
         (rand() % 2) ? malice_probability : partner.malice_probability;
     child.altruism_probability =
         (rand() % 2) ? altruism_probability : partner.altruism_probability;
+    child.explosion_chance =
+        (rand() % 2) ? explosion_chance : partner.explosion_chance;
+    child.explosion_tries =
+        (rand() % 2) ? explosion_tries : partner.explosion_tries;
     child.malice_damage = (rand() % 2) ? malice_damage : partner.malice_damage;
     child.altruism_heal = (rand() % 2) ? altruism_heal : partner.altruism_heal;
     return child;
 }
 
-void DNA::mutate()
+void DNA::mutate() noexcept
 {
     if ((rand() % 100) / 100.0 < mutation_rate) {
         perception_radius += random_delta();
@@ -55,6 +61,13 @@ void DNA::mutate()
     }
     if ((rand() % 100) / 100.0 < mutation_rate) {
         altruism_desire += random_delta();
+    }
+
+    if ((rand() % 100) / 100.0 < mutation_rate) {
+        explosion_chance += random_delta() * 0.1;
+    }
+    if ((rand() % 100) / 100.0 < mutation_rate) {
+        explosion_tries += static_cast<int>(random_delta() * 5);
     }
 
     if ((rand() % 100) / 100.0 < mutation_rate) {

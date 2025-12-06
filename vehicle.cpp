@@ -79,6 +79,26 @@ Vehicle::Vehicle(Vec2D const& position)
     return verbose;
 }
 
+bool Vehicle::can_see(Vec2D const& target) const
+{
+    return can_see(position.distance_to(target));
+}
+
+bool Vehicle::can_touch(Vec2D const& target) const
+{
+    return can_touch(position.distance_to(target));
+}
+
+bool Vehicle::can_see(double distance) const
+{
+    return distance < dna.perception_radius;
+}
+
+bool Vehicle::can_touch(double distance) const
+{
+    return distance < dna.max_speed * 2;
+}
+
 [[nodiscard]] Vehicle::IdType Vehicle::get_last_sought_vehicle_id() const
 {
     return last_sought_vehicle_id;
@@ -88,15 +108,16 @@ void Vehicle::food_behaviors(Foods& food_positions)
 {
     check_sought_food();
 
-    double record;  // distance to nearest food
-    auto   target_food = last_sought_food_id == 0
-                             ? find_nearest(food_positions, record)
-                             : &last_sought_food();
+    double record =
+        std::numeric_limits<double>::max();  // distance to nearest food
+    auto target_food = last_sought_food_id == 0
+                           ? find_nearest(food_positions, record)
+                           : &last_sought_food(record);
 
     if (target_food != nullptr) {
         if (verbose) {
-            std::cout << "Seeking food with ID: " << target_food->id
-                      << " at: " << target_food->get_position() << "\n";
+            output("Seeking food with ID: ", target_food->id,
+                   " at: ", target_food->get_position(), "\n");
         }
         // update the currently sought food
         last_sought_food_id = target_food->id;
@@ -110,14 +131,22 @@ void Vehicle::food_behaviors(Foods& food_positions)
 
 [[nodiscard]] Vehicle& Vehicle::last_sought_vehicle() const
 {
+    double d{};
+    return last_sought_vehicle(d);
+}
+
+[[nodiscard]] Vehicle& Vehicle::last_sought_vehicle(double& record) const
+{
     assert(last_sought_vehicle_id != 0);
-    return world->vehicles.at(last_sought_vehicle_id);
+    Vehicle& v = world->vehicles.at(last_sought_vehicle_id);
+    record     = position.distance_to(v.position);
+    return v;
 }
 
 [[nodiscard]] Food& Vehicle::last_sought_food() const
 {
-    assert(last_sought_food_id != 0);
-        return world->food.at(last_sought_food_id);
+    double record;
+    return last_sought_food(record);
 }
 
 void Vehicle::check_sought_vehicle()
@@ -152,19 +181,20 @@ void Vehicle::check_sought_food()
     }
 }
 
-std::optional<Vehicle> Vehicle::vehicle_behaviors(Vehicles& vehicles)
+void Vehicle::vehicle_behaviors(std::vector<Vehicle>&  out_offspring,
+                                std::vector<Vehicle*>& vehicles)
 {
     double record = -1.0;  // if we are pursing the same vehicle, assume we are
                            // close enough due to prior knowledge
                            // otherwise find the nearest vehicle
     auto target_vehicle = last_sought_vehicle_id == 0
                               ? find_nearest(vehicles, record)
-                              : &last_sought_vehicle();
+                              : &last_sought_vehicle(record);
 
     // if the *nearest* vehicle is too far too see, or there is no vehicle do
     // nothing
-    if (record > dna.perception_radius || target_vehicle == nullptr) {
-        return std::nullopt;
+    if (!can_see(record) || target_vehicle == nullptr) {
+        return;
     }
 
     // update the currently sought vehicle
@@ -176,27 +206,61 @@ std::optional<Vehicle> Vehicle::vehicle_behaviors(Vehicles& vehicles)
 
     seek_for_malice(target_vehicle, record);
     seek_for_altruism(target_vehicle, record);
-    return reproduce(target_vehicle, record);
+    seek_for_reproduction(out_offspring, target_vehicle, record);
 }
 
-[[nodiscard]] std::optional<Vehicle> Vehicle::behaviors(Vehicles& vehicles,
-                                                        Foods& food_positions)
+void Vehicle::try_explosion(std::vector<Vehicle>& out_offspring,
+                            Vehicles&             vehicles)
+{
+    if (random_in_range(0, 1) < dna.explosion_chance) {
+        for (int i = 0; i < dna.explosion_tries; i++) {
+            // explode
+            Vehicle offspring(position);
+            offspring.dna = dna;
+            offspring.dna.mutate();
+            offspring.velocity   = velocity + Vec2D::random(2.0);
+            offspring.generation = generation + 1;
+            kill();
+            world->born_counter++;
+            out_offspring.push_back(offspring);
+        }
+
+        for (auto v : vehicles) {
+            if (v == this) {
+                continue;
+            }
+            double distance = position.distance_to(v->position);
+            if (can_see(distance)) {
+                v->kill();
+            }
+        }
+    }
+}
+
+void Vehicle::behaviors(std::vector<Vehicle>& out_offspring,
+                        Vehicles&             vehicles,
+                        Foods&                food_positions)
 {
     food_behaviors(food_positions);
 
     check_sought_vehicle();
 
-    // only search for vehicles if health is sufficient
-    if (health < 10.0) {
-        return std::nullopt;
+    if (health < 2.0) {
+        try_explosion(out_offspring, vehicles);
+        return;
     }
 
-    return vehicle_behaviors(vehicles);
+    // only search for vehicles if health is sufficient
+    if (health < 10.0) {
+        return;
+    }
+
+    vehicle_behaviors(out_offspring, vehicles);
 }
 
-void Vehicle::flee_poison(Food* target, double record)
+void Vehicle::flee_poison(Food const* target, double record)
 {
-    if (record < dna.perception_radius) {
+    if (can_see(record)) {
         Vec2D desired = position - target->position;
         desired.normalize();
         desired -= velocity;
@@ -210,11 +274,11 @@ void Vehicle::flee_poison(Food* target, double record)
 
 void Vehicle::seek_for_eat(Food* target, double record)
 {
-    if (record <= dna.max_speed) {
+    if (can_touch(record)) {
         // Already at target; captured food
         health += 5.0;  // Increase health on reaching target
         target->consume(*this);
-    } else if (record <= dna.perception_radius) {
+    } else if (can_see(record)) {
         Vec2D steer = seek(target->position);
         apply_force(steer);
     }
@@ -224,10 +288,10 @@ void Vehicle::seek_for_malice(Vehicle* target, double record)
 {
     if (random_in_range(0, 1) < dna.malice_probability) {
         // ATTACK!
-        if (record < dna.max_speed) {
+        if (can_touch(record)) {
             target->health -= dna.malice_damage;
             this->health += dna.malice_damage * 0.5;
-        } else if (record < dna.perception_radius) {
+        } else if (can_see(record)) {
             // if vehicle is far away, try to seek it
             Vec2D steer = seek(target->position);
             steer *= dna.malice_desire;
@@ -243,13 +307,13 @@ void Vehicle::seek_for_altruism(Vehicle* target, double record)
     }
 
     if (random_in_range(0, 1) < dna.altruism_probability) {
-        if (record < dna.max_speed) {
+        if (can_touch(record)) {
             if (random_in_range(0, 1) < dna.altruism_probability) {
                 target->health += dna.altruism_heal;
                 this->health -=
                     (dna.altruism_heal * 1.1);  // Slight cost to self
             }
-        } else if (record < dna.perception_radius) {
+        } else if (can_see(record)) {
             Vec2D steer = seek(target->position);
             steer *= dna.altruism_desire;
             apply_force(steer);
@@ -257,7 +321,7 @@ void Vehicle::seek_for_altruism(Vehicle* target, double record)
     }
 }
 
-Vec2D Vehicle::seek(Vec2D const& target)
+Vec2D Vehicle::seek(Vec2D const& target) const
 {
     Vec2D desired = target - position;
     desired.normalize();
@@ -265,11 +329,21 @@ Vec2D Vehicle::seek(Vec2D const& target)
     return desired;
 }
 
-[[nodiscard]] std::optional<Vehicle> Vehicle::reproduce(Vehicle* target,
-                                                        double   record)
+Food& Vehicle::last_sought_food(double& record) const
+{
+    assert(last_sought_food_id != 0);
+    record  = std::numeric_limits<double>::max();
+    auto& f = world->food.at(last_sought_food_id);
+    record  = position.distance_to(f.get_position());
+    return f;
+}
+
+void Vehicle::seek_for_reproduction(std::vector<Vehicle>& out_offspring,
+                                    Vehicle*              target,
+                                    double                record)
 {
     if (age < dna.age_of_maturity) {
-        return std::nullopt;
+        return;
     }
     if ((health < dna.reproduction_cost ||
          time_since_last_reproduction < dna.reproduction_cooldown) &&
@@ -277,9 +351,9 @@ Vec2D Vehicle::seek(Vec2D const& target)
         // reproduced before, allow reproduction
         time_since_last_reproduction != -1) {
         time_since_last_reproduction++;
-        return std::nullopt;
+        return;
     }
-    if (record < dna.max_speed) {
+    if (can_touch(record)) {
         // Close enough to reproduce
         DNA child_dna = dna.crossover(target->dna);
         child_dna.mutate();
@@ -293,7 +367,7 @@ Vec2D Vehicle::seek(Vec2D const& target)
         offspring.dna                = child_dna;
         time_since_last_reproduction = 0;
         world->born_counter++;
-        return offspring;
+        out_offspring.push_back(offspring);
     } else {
         auto steer = seek(target->position);
         apply_force(steer);
@@ -303,7 +377,7 @@ Vec2D Vehicle::seek(Vec2D const& target)
     // during the processing of each vehicle currently in the world
     // after all vehicles have been processed, the main loop will add the
     // offspring to the world's vehicle list
-    return std::nullopt;
+    return;
 }
 
 void Vehicle::kill()
@@ -318,24 +392,23 @@ bool Vehicle::is_dead() const
 
 void Vehicle::avoid_edges()
 {
-    Vec2D steer = position;
-    bool active = false;
+    Vec2D steer  = position;
+    bool  active = false;
 
     if (position.x < World::edge_threshold) {
         steer.x = world->width;
-        active = true;
+        active  = true;
     } else if (position.x > world->width - World::edge_threshold) {
         steer.x = 0;
-        active = true;
+        active  = true;
     }
-
 
     if (position.y < World::edge_threshold) {
         steer.y = world->height;
-        active = true;
+        active  = true;
     } else if (position.y > world->height - World::edge_threshold) {
         steer.y = 0;
-        active = true;
+        active  = true;
     }
 
     if (active) {
@@ -356,7 +429,7 @@ void Vehicle::update()
 
     if (position.x < 0 || position.x > world->width || position.y < 0 ||
         position.y > world->height) {
-        health = 0;  // Vehicle dies if it goes out of bounds
+        kill();
     }
 
     // Reset acceleration after each update
