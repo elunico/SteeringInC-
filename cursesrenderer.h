@@ -9,6 +9,8 @@
 #include "vehicle.h"
 #include "world.h"
 
+namespace tom::render {
+
 class CursesRenderer : public IRenderer {
     World* world;
     int    width;
@@ -32,3 +34,4 @@ class CursesRenderer : public IRenderer {
 };
 
 #endif  // CURSESRENDERER_H
+}

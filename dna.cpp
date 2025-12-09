@@ -1,6 +1,8 @@
 #include "dna.h"
 #include "utils.h"
 
+namespace tom {
+
 DNA::DNA() noexcept
     : perception_radius(random_in_range(40, 100)),
       max_speed(random_in_range(1, 4)),
@@ -92,3 +94,4 @@ void DNA::mutate() noexcept
         altruism_heal += random_delta();
     }
 }
+}  // namespace tom

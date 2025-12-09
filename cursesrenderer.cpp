@@ -6,6 +6,7 @@
 #include <ncurses.h>
 #include "world.h"
 
+namespace tom::render {
 CursesRenderer::CursesRenderer(World* world, int width, int height)
     : world(world), width(width), height(height)
 {
@@ -78,3 +79,5 @@ void CursesRenderer::refresh()
 {
     ::refresh();
 }
+
+}  // namespace tom::render

@@ -13,6 +13,8 @@
 #include "utils.h"
 #include "vehicle.h"
 
+namespace tom {
+
 bool   World::game_running         = true;
 bool   World::was_interrupted      = false;
 bool   World::is_paused            = false;
@@ -54,7 +56,7 @@ void World::add_all_vehicles(std::vector<Vehicle>&& new_vehicles)
     }
 }
 
-Vec2D World::random_position(double margin) const
+Vec2D World::rand_pos_in_bounds(double margin) const
 {
     return {random_in_range(margin, width - margin),
             random_in_range(margin, height - margin)};
@@ -67,17 +69,17 @@ Food const& World::new_random_food()
 
 Food const& World::new_food(Vec2D food_position, double nutrition)
 {
-    auto  id    = Food::next_id();
+    auto  id    = Environmental::next_id();
     Food& f     = food[id];
     f.position  = food_position;
     f.nutrition = nutrition;
     f.id        = id;
-    return food[id];
+    return food.at(id);
 }
 
 Food const& World::new_food(double nutrition)
 {
-    Vec2D food_position(random_position(edge_threshold));
+    Vec2D food_position(rand_pos_in_bounds(edge_threshold));
     return new_food(food_position, nutrition);
 }
 
@@ -108,8 +110,8 @@ auto World::prune_eaten_food() -> decltype(food)::size_type
     auto initial_size = food.size();
     std::erase_if(food,
                   [](auto const& p) {
-                      auto& f = p.second;
-                      return f.consumed;
+                      auto const& f = p.second;
+                      return f.is_expired();
                   }),
         food.end();
     return (initial_size - food.size());
@@ -138,7 +140,7 @@ std::chrono::duration<std::chrono::seconds::rep> World::elapsed_time() const
 void World::setup(int vehicle_count, int food_count)
 {
     for (int i = 0; i < vehicle_count; ++i) {
-        Vec2D pos = random_position();
+        Vec2D pos = rand_pos_in_bounds();
         create_vehicle(pos);
     }
 
@@ -187,7 +189,7 @@ long double update_tps_from_tick_duration(
                .count();
 }
 
-void World::run(IRenderer* renderer, int target_tps)
+void World::run(render::IRenderer* renderer, int target_tps)
 {
     start_time = std::chrono::steady_clock::now();
     while (game_running) {
@@ -200,7 +202,7 @@ void World::run(IRenderer* renderer, int target_tps)
         }
         renderer->render();
         tps_target_wait(tick_start, target_tps);
-        if (tick_counter % target_tps == 0) {
+        if (tick_counter % (target_tps / 2 + 1) == 0) {
             auto tick_end = std::chrono::steady_clock::now();
             current_tps   = update_tps_from_tick_duration(tick_start, tick_end);
         }
@@ -256,15 +258,13 @@ static consteval void require_trivially_destructible()
 
 bool World::tick()
 {
-    static std::vector<Vehicle> offspring;
-
+    static std::vector<Vehicle>  offspring;
     static std::vector<Vehicle*> neighbors;
     static std::vector<Food*>    food_neighbors;
 
     food_tick(food_neighbors);
 
     vehicle_tick(offspring, neighbors, food_neighbors);
-    // usleep(10000);
 
     neighbors.clear();
     food_neighbors.clear();
@@ -283,7 +283,7 @@ Vehicle& World::create_vehicle(Vec2D const& position)
     Vehicle v(position);
     v.world        = this;
     vehicles[v.id] = std::move(v);
-    return vehicles[v.id];
+    return vehicles.at(v.id);
 }
 
 void World::clear_verbose_vehicles()
@@ -292,8 +292,16 @@ void World::clear_verbose_vehicles()
                           [](auto& p) { p.verbose = false; });
 }
 
-World::~World()
+World::~World() = default;
+// {
+// World does not own renderer, so it should not be deleted here
+// delete renderer;
+// }
+
+std::ostream& operator<<(std::ostream& os, World const& world)
 {
-    // World does not own renderer, so it should not be deleted here
-    // delete renderer;
+    os << "WORLD " << world.info_stream().str();
+    return os;
 }
+
+}  // namespace tom

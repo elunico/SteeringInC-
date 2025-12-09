@@ -3,6 +3,8 @@
 #include <iostream>
 #include "utils.h"
 
+namespace tom {
+
 Vec2D Vec2D::random(double magnitude)
 {
     double angle = random_in_range(0, 2 * M_PI);
@@ -81,8 +83,7 @@ void Vec2D::normalize()
 {
     double mag = magnitude();
     if (mag != 0) {
-        x /= mag;
-        y /= mag;
+        set(x / mag, y / mag);
     }
 }
 
@@ -98,16 +99,14 @@ void Vec2D::limit(double max)
 {
     double mag = magnitude();
     if (mag > max) {
-        x = (x / mag) * max;
-        y = (y / mag) * max;
+        set((x / mag) * max, (y / mag) * max);
     }
 }
 
 void Vec2D::set_heading(double angle)
 {
     double mag = magnitude();
-    x          = cos(angle) * mag;
-    y          = sin(angle) * mag;
+    set(cos(angle) * mag, sin(angle) * mag);
 }
 
 [[nodiscard]] double Vec2D::heading() const
@@ -126,8 +125,7 @@ void Vec2D::rotate(double angle)
     double sin_a = sin(angle);
     double new_x = x * cos_a - y * sin_a;
     double new_y = x * sin_a + y * cos_a;
-    x            = new_x;
-    y            = new_y;
+    set(new_x, new_y);
 }
 
 [[nodiscard]] Vec2D Vec2D::rotated(double angle) const
@@ -154,3 +152,5 @@ std::ostream& operator<<(std::ostream& os, Vec2D const& vec)
     os << "(" << vec.x << ", " << vec.y << ")";
     return os;
 }
+
+}  // namespace tom

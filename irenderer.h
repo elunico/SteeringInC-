@@ -1,7 +1,10 @@
 #ifndef IRENDERER_H
 #define IRENDERER_H
 
+namespace tom {
 struct World;
+
+namespace render {
 
 class IRenderer {
    public:
@@ -17,5 +20,8 @@ class IRenderer {
 
     virtual ~IRenderer() = default;
 };
+
+}  // namespace render
+}  // namespace tom
 
 #endif  // IRENDERER_H

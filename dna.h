@@ -1,6 +1,8 @@
 #ifndef DNA_H
 #define DNA_H
 
+namespace tom {
+
 struct DNA {
     double perception_radius;
     double max_speed;
@@ -22,5 +24,7 @@ struct DNA {
     [[nodiscard]] DNA crossover(DNA const& partner) const noexcept;
     void              mutate() noexcept;
 };
+
+}  // namespace tom
 
 #endif  // DNA_H

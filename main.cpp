@@ -4,8 +4,11 @@
 #include <cassert>
 #include <csignal>
 #include <iostream>
+#include <ranges>
+#include <utility>
 #include "cursesrenderer.h"
 #include "fltkrenderer.h"
+#include "irenderer.h"
 #include "utils.h"
 
 struct arguments {
@@ -25,7 +28,7 @@ void parse_args(int argc, char* argv[], arguments& args)
     while ((c = getopt(argc, argv, "w:h:s:cpr:e:")) != -1) {
         switch (c) {
             case 'e':
-                World::edge_threshold = std::stod(optarg);
+                tom::World::edge_threshold = std::stod(optarg);
                 break;
             case 'p':
                 args.auto_start = false;
@@ -71,43 +74,45 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
     arguments args;
     parse_args(argc, argv, args);
     if (args.auto_start) {
-        World::is_paused = false;
+        tom::World::is_paused = false;
     } else {
-        World::is_paused = true;
+        tom::World::is_paused = true;
     }
 
-    World::edge_threshold     = args.edge_threshold;
-    int const          width  = args.width;
-    int const          height = args.height;
-    unsigned int const seed   = args.random_seed;
-    // srand(seed);  // Seed for random number generation
+    tom::World::edge_threshold = args.edge_threshold;
+    int const          width   = args.width;
+    int const          height  = args.height;
+    unsigned int const seed    = args.random_seed;
     srand(seed);  // Seed for random number generation
 
-    World       world(seed, width, height);
+    tom::World  world(seed, width, height);
     auto* const renderer =
         args.use_curses
-            ? static_cast<IRenderer*>(new CursesRenderer(&world, width, height))
-            : static_cast<IRenderer*>(new FLTKRenderer(&world, width, height));
+            ? static_cast<tom::render::IRenderer*>(
+                  new tom::render::CursesRenderer(&world, width, height))
+            : static_cast<tom::render::IRenderer*>(
+                  new tom::render::FLTKRenderer(&world, width, height));
 
     world.setup(args.starting_vehicles, 250);
 
     world.run(renderer);
 
-    renderer->render(World::was_interrupted);
+    renderer->render(tom::World::was_interrupted);
     renderer->terminate();
     delete renderer;
 
-    output("Simulation ended.\n");
+    tom::output("Simulation ended.\n");
 
     // report vehicle fitness at the end of simulation
     int count = 1;
-    for (auto [id, vehicle] : world.vehicles) {
-        output("Vehicle #", count++, " ID: ", id, " age: ", vehicle.get_age(),
-               " health: ", vehicle.get_health(),
-               " fitness: ", vehicle.get_fitness(), "\n");
+    for (auto vehicle : world.vehicles | std::views::values) {
+        tom::output("Vehicle #", count++, " ID: ", vehicle.id,
+                    " age: ", vehicle.get_age(),
+                    " health: ", vehicle.get_health(),
+                    " fitness: ", vehicle.get_fitness(), "\n");
     }
 
-    output(world.info_stream().str(), "\n");
+    output(world, "\n");
 
     return 0;
 }

@@ -8,6 +8,7 @@
 #include "vehicle.h"
 #include "world.h"
 
+namespace tom::render {
 Fl_Window* FLTKRenderer::window         = nullptr;
 Fl_Window* FLTKRenderer::control_window = nullptr;
 
@@ -17,13 +18,13 @@ FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
     window->label("Vehicle Simulation");
 
     // am i to understand that this Fl_Window owns the drawer bc it is a
-    // subclass of Fl_Box? Therefore when the window is destroyed the drawer is
-    // deleted since it is an Fl object in the window and therefore my double
-    // free is caused by calling delete drawer after the destructor runs for
-    // FLTKRenderer?
+    // subclass of Fl_Box? Therefore when the window is destroyed the drawer
+    // is deleted since it is an Fl object in the window and therefore my
+    // double free is caused by calling delete drawer after the destructor
+    // runs for FLTKRenderer?
     drawer = new FLTKCustomDrawer(world, W, H);
     Fl::set_atclose([](auto, auto) {
-        World::stop_running(0);
+        tom::World::stop_running(0);
         FLTKRenderer::teardown();
     });
     window->end();
@@ -115,6 +116,16 @@ int FLTKCustomDrawer::handle(int i)
 
 FLTKCustomDrawer::~FLTKCustomDrawer() = default;
 
+void FLTKCustomDrawer::draw_vehicle_target(Fl_Color     color,
+                                           Vec2D const& start,
+                                           Vec2D const& pos)
+{
+    fl_color(color);
+    fl_line(static_cast<int>(start.x), static_cast<int>(start.y),
+            static_cast<int>(pos.x), static_cast<int>(pos.y));
+    fl_rect(static_cast<int>(pos.x) - 3, static_cast<int>(pos.y) - 3, 6, 6);
+}
+
 void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
 {
     fl_color(FL_BLACK);
@@ -161,25 +172,14 @@ void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
 
     // Draw  a line from the vehicle to its last sought vehicle if it exists
     if (vehicle.get_last_sought_vehicle_id() && World::show_sought_vehicles) {
-        fl_color(FL_BLUE);
-        auto& position = vehicle.last_sought_vehicle().get_position();
-        fl_line(static_cast<int>(pos.x), static_cast<int>(pos.y),
-                static_cast<int>(position.x), static_cast<int>(position.y));
-        fl_rect(static_cast<int>(position.x) - 3,
-                static_cast<int>(position.y) - 3, 6, 6);
+        auto& target = vehicle.last_sought_vehicle().get_position();
+        draw_vehicle_target(FL_BLUE, pos, target);
     }
 
     // Draw  a line from the vehicle to its last sought food if it exists
     if (vehicle.last_sought_food_id != 0 && World::show_sought_vehicles) {
-        fl_color(FL_GREEN);
-        auto& position = vehicle.last_sought_food().get_position();
-        if (double_near_zero(position.x) && double_near_zero(position.y)) {
-            assert(!"That's bad");
-        }
-        fl_line(static_cast<int>(pos.x), static_cast<int>(pos.y),
-                static_cast<int>(position.x), static_cast<int>(position.y));
-        fl_rect(static_cast<int>(position.x) - 3,
-                static_cast<int>(position.y) - 3, 6, 6);
+        auto& target = vehicle.last_sought_food().get_position();
+        draw_vehicle_target(FL_GREEN, pos, target);
     }
 }
 
@@ -240,3 +240,5 @@ void FLTKRenderer::teardown()
         window->hide();
     }
 }
+
+}  // namespace tom::render

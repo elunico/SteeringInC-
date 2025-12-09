@@ -14,6 +14,8 @@
 #define UNREACHABLE() std::unreachable();
 #endif
 
+namespace tom {
+
 template <typename T>
 concept Positionable = requires(T a) {
     { a.get_position() } -> std::convertible_to<Vec2D>;
@@ -51,9 +53,11 @@ T remap(T value, T from1, T to1, T from2, T to2)
 }
 
 template <typename... Args>
-void output(Args... args)
+void output(Args&&... args)
 {
     ((std::cout << std::forward<Args>(args)), ...);
 }
+
+}  // namespace tom
 
 #endif  // UTILS_H

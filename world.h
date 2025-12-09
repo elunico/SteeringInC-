@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 #include <chrono>
+#include <ostream>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
@@ -13,6 +14,8 @@
 
 #define FOOD_PCT_CHANCE 20
 #define MAX_FOOD 400
+
+namespace tom {
 
 class Vehicle;
 struct Food;
@@ -57,7 +60,7 @@ struct World {
 
     void add_all_vehicles(std::vector<Vehicle>&& new_vehicles);
 
-    [[nodiscard]] Vec2D random_position(double margin = 0.0) const;
+    [[nodiscard]] Vec2D rand_pos_in_bounds(double margin = 0.0) const;
 
     Food const& new_random_food();
 
@@ -82,7 +85,7 @@ struct World {
 
     [[nodiscard]] std::stringstream info_stream() const;
 
-    void run(IRenderer* renderer, int target_tps = World::target_tps);
+    void run(render::IRenderer* renderer, int target_tps = World::target_tps);
 
     static void pause()
     {
@@ -135,4 +138,7 @@ struct World {
 #endif
 };
 
+std::ostream& operator<<(std::ostream& os, World const& world);
+
+}  // namespace tom
 #endif  // WORLD_H

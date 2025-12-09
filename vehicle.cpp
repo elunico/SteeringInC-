@@ -12,6 +12,8 @@
 #define MAX_FORCE 0.2
 #define MAX_HEALTH 40.0
 
+namespace tom {
+
 // 0 is a sentinel value meaning no vehicle sought yet
 typename Vehicle::IdType Vehicle::global_id_counter = 1;
 
@@ -440,11 +442,13 @@ void Vehicle::update()
     health         = std::min(health, MAX_HEALTH);
 }
 
-void Vehicle::apply_force(Vec2D& force, bool unlimited)
+void Vehicle::apply_force(Vec2D force, bool unlimited)
 {
-    force /= mass;
+    auto pforce = force / mass;
     if (!unlimited) {
-        force.limit(MAX_FORCE);
+        pforce.limit(MAX_FORCE);
     }
-    acceleration += force;
+    acceleration += pforce;
 }
+
+}  // namespace tom

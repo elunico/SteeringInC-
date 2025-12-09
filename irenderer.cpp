@@ -3,7 +3,12 @@
 //
 
 #include "irenderer.h"
+
+namespace tom::render {
+
 void IRenderer::render()
 {
     render(false);
 }
+
+}  // namespace tom::render

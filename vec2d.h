@@ -2,6 +2,8 @@
 #define VEC2D_H
 #include <iostream>
 
+namespace tom {
+
 struct Vec2D {
     double x;
     double y;
@@ -39,5 +41,7 @@ struct Vec2D {
 };
 
 std::ostream& operator<<(std::ostream& os, Vec2D const& v);
+
+}  // namespace tom
 
 #endif  // VEC2D_H

@@ -12,9 +12,12 @@
 #include "vehicle.h"
 #include "world.h"
 
+namespace tom::render {
 struct FLTKCustomDrawer : public Fl_Box {
     World* world{};
     FLTKCustomDrawer(World* world, int W, int H);
+    FLTKCustomDrawer(FLTKCustomDrawer const&)            = delete;
+    FLTKCustomDrawer& operator=(FLTKCustomDrawer const&) = delete;
 
     void draw() override;
 
@@ -29,6 +32,10 @@ struct FLTKCustomDrawer : public Fl_Box {
     void clear_screen() const;
 
     int handle(int) override;
+
+    void draw_vehicle_target(Fl_Color     color,
+                             Vec2D const& start,
+                             Vec2D const& pos);
 
     ~FLTKCustomDrawer() override;
 };
@@ -54,5 +61,7 @@ struct FLTKRenderer : public IRenderer {
 
     static void teardown();
 };
+
+}  // namespace tom::render
 
 #endif  // RENDERER_H
