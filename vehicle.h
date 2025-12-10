@@ -53,9 +53,7 @@ class Vehicle {
     void                       update();
     void                       kill();
     void                       avoid_edges();
-    void                       behaviors(std::vector<Vehicle>& out_offspring,
-                                         Vehicles&             vehicles,
-                                         Foods&                food_positions);
+    void behaviors(Vehicles& vehicles, Foods& food_positions);
 
     template <Positionable T>
     T* find_nearest(std::vector<T*>& items, double& out_distance)
@@ -86,18 +84,15 @@ class Vehicle {
     void          flee_poison(Food const* target, double record);
     void          seek_for_malice(Vehicle* target, double record);
     void          seek_for_altruism(Vehicle* target, double record);
-    void          seek_for_reproduction(std::vector<Vehicle>& out_offspring,
-                                        Vehicle*              target,
-                                        double                record);
+    void          seek_for_reproduction(Vehicle* target, double record);
     Vec2D         seek(Vec2D const& target) const;
     Food&         last_sought_food(double& record) const;
     void          food_behaviors(Foods& food_positions);
     void          check_sought_vehicle();
     void          check_sought_food();
-    void          vehicle_behaviors(std::vector<Vehicle>&  out_offspring,
-                                    std::vector<Vehicle*>& vehicles);
-    void try_explosion(std::vector<Vehicle>& out_offspring, Vehicles& vehicles);
-    void apply_force(Vec2D force, bool unlimited = false);
+    void          vehicle_behaviors(std::vector<Vehicle*>& vehicles);
+    void          try_explosion(Vehicles& vehicles);
+    void          apply_force(Vec2D force, bool unlimited = false);
 
     template <typename Getter>
     void check_helper(IdType& sought_id, Getter getter)

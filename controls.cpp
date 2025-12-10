@@ -1,6 +1,7 @@
 #include "controls.h"
 
 #include <FL/fl_ask.H>
+#include <string>
 #include <utility>
 #include "fltkrenderer.h"
 #include "utils.h"
@@ -184,6 +185,19 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
         },
         [] { return World::feed_mode; });
 
+    create_button(button_width, "Add a Lot of Feed", FL_BLACK, FL_BLACK,
+                  [world](int) {
+                      auto s = fl_input("Enter amount of food to add");
+                      if (s == nullptr) {
+                          return 0;
+                      }
+                      int count = std::stol(s);
+                      for (int i = 0; i < count; i++) {
+                          world->new_random_food();
+                      }
+                      return 1;  // Indicate handled
+                  });
+
     create_button(
         button_width, "Kill Mode", FL_BLACK,
         QtButtonBase::default_warning_color,
@@ -212,6 +226,43 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
 
     create_separator(button_width);
     // buttons.push_back(std::make_unique<QtSeparator>(button_width));
+
+    create_button(
+        button_width, "Change Food Spawn Chance", FL_BLACK, FL_BLACK,
+        [world](int) {
+            auto s = fl_input("Enter new food spawn chance (0-100)");
+            if (s) {
+                try {
+                    auto pct = std::stod(s);
+                    if (pct < 0.0 || pct > 100.0) {
+                        throw std::out_of_range("Out of range");
+                    }
+                    world->food_pct_chance = pct;
+                    return 1;
+                } catch (std::exception&) {
+                    fl_alert(
+                        "Invalid input. Must be a number between 0 and 100");
+                }
+            }
+            return 0;
+        });
+
+    create_button(
+        button_width, "Change Max Food", FL_BLACK, FL_BLACK, [world](int) {
+            auto s = fl_input("Enter new maximum food amount");
+            if (s) {
+                try {
+                    auto count      = std::stoul(s);
+                    world->max_food = count;
+                    return 1;
+                } catch (std::exception&) {
+                    fl_alert("Invalid input. Must be a positive number");
+                }
+            }
+            return 0;
+        });
+
+    create_separator(button_width);
 
     create_button(button_width, "End Simulation",
                   QtButtonBase::default_warning_color, FL_GRAY, [](int) {

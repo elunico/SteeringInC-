@@ -1,8 +1,10 @@
 #include "food.h"
 #include <cassert>
 
+#include "utils.h"
 #include "vec2d.h"
 #include "vehicle.h"
+#include "world.h"
 
 namespace tom {
 
@@ -59,6 +61,27 @@ Lifespan::~Lifespan() = default;
 
 void Food::update() noexcept
 {
+    position += velocity;
+    if (position.x < World::edge_threshold ||
+        position.x > world->width - World::edge_threshold) {
+        velocity.x *= -1;
+    }
+    if (position.y < World::edge_threshold ||
+        position.y > world->height - World::edge_threshold) {
+        velocity.y *= -1;
+    }
+    if (nutrition > 0) {
+        // dont let the poison food create more food
+        // TODO: feels hacky, maybe subclass Environmental for poison but world
+        // has only a map of Food
+        if (random_in_range(0, 1) <
+                (world->food_pct_chance / 100.0 / world->target_tps) &&
+            world->food.size() < world->max_food) {
+            world->dispatch(
+                Event<Food, Food>{Event<Food, Food>::Type::FOOD_CREATED,
+                                  position, world, this, nullptr});
+        }
+    }
     lifespan.update();
 }
 
@@ -67,8 +90,10 @@ bool Environmental::is_expired() const noexcept
     return lifespan.is_expired();
 }
 
-Environmental::Environmental(Vec2D const& pos, Lifespan ls) noexcept
-    : id(next_id()), position(pos), lifespan(ls)
+Environmental::Environmental(World*       world,
+                             Vec2D const& pos,
+                             Lifespan     ls) noexcept
+    : id(next_id()), world(world), position(pos), lifespan(ls)
 {
 }
 
@@ -79,7 +104,14 @@ Environmental::Environmental(Vec2D const& pos, Lifespan ls) noexcept
 
 void Food::consume(Vehicle& consumer) noexcept
 {
+    if (is_expired()) {
+        return;
+    }
     consumer.health += nutrition;
+    if (consumer.verbose)
+        output("Was eaten by Vehicle ID: ", consumer.id,
+               " at position: ", consumer.get_position(),
+               " | Nutrition: ", nutrition, "\n");
     lifespan.expire();
 }
 
@@ -89,18 +121,19 @@ Vec2D const& Food::get_position() const noexcept
 }
 
 Food::Food() noexcept
-    : Environmental(Vec2D::random(100), Lifespan::random(750, 1500)),
+    : Environmental(nullptr, Vec2D::random(100), Lifespan::random(750, 1500)),
       nutrition(5.0)
 {
 }
 
-Food::Food(Vec2D const& pos) noexcept
-    : Environmental(pos, Lifespan::random(750, 1500)), nutrition(5.0)
+Food::Food(World* world, Vec2D const& pos) noexcept
+    : Environmental(world, pos, Lifespan::random(750, 1500)), nutrition(5.0)
 {
 }
 
-Food::Food(Vec2D const& pos, double nutrition) noexcept
-    : Environmental(pos, Lifespan::random(750, 1500)), nutrition(nutrition)
+Food::Food(World* world, Vec2D const& pos, double nutrition) noexcept
+    : Environmental(world, pos, Lifespan::random(750, 1500)),
+      nutrition(nutrition)
 {
 }
 

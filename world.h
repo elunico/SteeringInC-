@@ -4,16 +4,16 @@
 #include <unistd.h>
 #include <chrono>
 #include <ostream>
+#include <queue>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
+#include "cyclic_num.h"
 #include "dna.h"
 
+#include "event.h"
 #include "irenderer.h"
 #include "vec2d.h"
-
-#define FOOD_PCT_CHANCE 20
-#define MAX_FOOD 400
 
 namespace tom {
 
@@ -21,15 +21,34 @@ class Vehicle;
 struct Food;
 
 struct World {
-    static bool   game_running;
-    static bool   is_paused;
-    static bool   show_sought_vehicles;
-    static bool   kill_mode;
-    static bool   feed_mode;
-    static int    kill_radius;
-    static int    target_tps;
-    static double edge_threshold;
-    static bool   was_interrupted;
+    static constexpr int target_tps = 120;
+    static bool          game_running;
+    static bool          is_paused;
+    static bool          show_sought_vehicles;
+    static bool          kill_mode;
+    static bool          feed_mode;
+    static int           kill_radius;
+    static double        edge_threshold;
+    static bool          was_interrupted;
+
+    static constexpr int day_tick_length() noexcept
+    {
+        constexpr auto l = day_night_cycle_length * (6.0 / 10.0);
+        static_assert(l != 0 && l != day_night_cycle_length,
+                      "Total length too short!");
+        return l;
+    }
+
+    static constexpr int night_tick_length() noexcept
+    {
+        constexpr auto l = day_night_cycle_length * (4.0 / 10.0);
+        static_assert(l != 0 && l != day_night_cycle_length,
+                      "Total length too short!");
+        return l;
+    }
+
+    /*                                              2 minute days */
+    static constexpr int day_night_cycle_length = target_tps * 2 * 60;
 
     using VehicleIdType = unsigned long;
     using FoodIdType    = unsigned long;
@@ -38,13 +57,18 @@ struct World {
     int                                        height;
     std::unordered_map<VehicleIdType, Vehicle> vehicles;
     std::unordered_map<FoodIdType, Food>       food;
+    std::queue<AnyEvent>                       events;
     int                                        feed_count{};
-    int                                        dead_counter = 0;
-    int                                        born_counter = 0;
-    int                                        tick_counter = 0;
-    int                                        max_age      = 0;
+    int                                        dead_counter    = 0;
+    int                                        born_counter    = 0;
+    int                                        tick_counter    = 0;
+    int                                        max_age         = 0;
+    unsigned int                               max_food        = 500;
+    double                                     food_pct_chance = 5.0;
     std::chrono::steady_clock::time_point      start_time;
     std::chrono::steady_clock::time_point      end_time;
+    cyclic<decltype(World::tick_counter), World::day_night_cycle_length>
+        daytime;
 
     static void stop_running(int)
     {
@@ -53,6 +77,12 @@ struct World {
     }
 
     World(long seed, int width, int height);
+
+    template <typename Source, typename Target>
+    void dispatch(Event<Source, Target> const& event)
+    {
+        events.push(AnyEvent(event));
+    }
 
     void add_vehicle(Vehicle&& vehicle);
 
@@ -71,6 +101,10 @@ struct World {
     auto prune_dead_vehicles() -> typename decltype(vehicles)::size_type;
 
     auto prune_eaten_food() -> typename decltype(food)::size_type;
+
+    bool is_day() const noexcept;
+
+    bool is_night() const noexcept;
 
     [[nodiscard]] bool knows_vehicle(VehicleIdType id) const;
 
@@ -109,9 +143,9 @@ struct World {
     double current_tps{};
 
     void food_tick(std::vector<Food*>& food_neighbors);
-    void vehicle_tick(std::vector<Vehicle>&  offspring,
-                      std::vector<Vehicle*>& neighbors,
+    void vehicle_tick(std::vector<Vehicle*>& neighbors,
                       std::vector<Food*>&    food_neighbors);
+    void process_events();
 
 #ifdef NO_TPS_LIMIT
     constexpr static void tps_target_wait(auto const&...)

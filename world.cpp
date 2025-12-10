@@ -6,6 +6,7 @@
 #include <csignal>
 #include <cstdlib>
 #include <iostream>
+#include <numeric>
 #include <ranges>
 
 #include "food.h"
@@ -22,7 +23,6 @@ bool   World::show_sought_vehicles = false;
 bool   World::kill_mode            = false;
 bool   World::feed_mode            = false;
 int    World::kill_radius          = 100;
-int    World::target_tps           = 120;
 double World::edge_threshold       = 25.0;
 
 #define POISON_CHANCE 0.1
@@ -35,6 +35,7 @@ World::World(long seed, int width, int height)
 
 void World::add_vehicle(Vehicle&& vehicle)
 {
+    // output("adding vehicle at position: ", vehicle.get_position(), "\n");
     vehicle.world        = this;
     vehicles[vehicle.id] = std::move(vehicle);
 }
@@ -71,6 +72,7 @@ Food const& World::new_food(Vec2D food_position, double nutrition)
 {
     auto  id    = Environmental::next_id();
     Food& f     = food[id];
+    f.world     = this;
     f.position  = food_position;
     f.nutrition = nutrition;
     f.id        = id;
@@ -168,7 +170,8 @@ std::stringstream World::info_stream() const
               std::chrono::steady_clock::now() - start_time)
               .count()
        << "s"
-       << " | Tick: " << tick_counter << " | TPS: " << tps();
+       << " | Tick: " << tick_counter << " | TPS: " << tps() << " | "
+       << (*daytime > (day_tick_length()) ? "Night" : "Day");
     if (kill_mode) {
         ss << "\n[KILL MODE ON (Radius: " << World::kill_radius << ")] ";
     }
@@ -176,6 +179,16 @@ std::stringstream World::info_stream() const
         ss << "\n[FEED MODE ON (Count: " << World::feed_count << ")] ";
     }
     return ss;
+}
+
+bool World::is_day() const noexcept
+{
+    return *daytime <= day_tick_length();
+}
+
+bool World::is_night() const noexcept
+{
+    return *daytime > day_tick_length();
 }
 
 long double update_tps_from_tick_duration(
@@ -212,15 +225,11 @@ void World::run(render::IRenderer* renderer, int target_tps)
 
 void World::food_tick(std::vector<Food*>& food_neighbors)
 {
-    if (rand() % 100 < FOOD_PCT_CHANCE && food.size() < MAX_FOOD) {
-        new_random_food();
-    }
+    prune_eaten_food();
 
     for (auto& [id, food] : food) {
         food.update();
     }
-
-    prune_eaten_food();
 
     food_neighbors.reserve(food.size());
     for (auto& [id, food] : food) {
@@ -228,8 +237,7 @@ void World::food_tick(std::vector<Food*>& food_neighbors)
     }
 }
 
-void World::vehicle_tick(std::vector<Vehicle>&  offspring,
-                         std::vector<Vehicle*>& neighbors,
+void World::vehicle_tick(std::vector<Vehicle*>& neighbors,
                          std::vector<Food*>&    food_neighbors)
 {
     prune_dead_vehicles();
@@ -241,12 +249,12 @@ void World::vehicle_tick(std::vector<Vehicle>&  offspring,
     }
 
     for (auto& [id, vehicle] : vehicles) {
-        vehicle.behaviors(offspring, neighbors, food_neighbors);
+        vehicle.behaviors(neighbors, food_neighbors);
         vehicle.update();
         vehicle.avoid_edges();
     }
 
-    add_all_vehicles(std::move(offspring));
+    // add_all_vehicles(std::move(offspring));
 }
 
 template <typename... T>
@@ -256,25 +264,103 @@ static consteval void require_trivially_destructible()
                   "T must be trivially destructible");
 }
 
+void World::process_events()
+{
+    while (!events.empty()) {
+        AnyEvent event = std::move(events.front());
+        events.pop();
+        auto vv = event.get<Vehicle, Vehicle>();
+        if (vv) {
+            auto start_pos = vv->position;
+            if (vv->type == Event<Vehicle, Vehicle>::Type::VEHICLE_BORN) {
+                if (vv->target == nullptr) {
+                    // Explosion-born vehicle
+                    DNA child_dna = vv->source->dna;
+                    child_dna.mutate();
+                    Vec2D   child_pos = start_pos + Vec2D::random(5.0);
+                    Vehicle offspring(child_pos);
+                    offspring.generation = vv->source->generation + 1;
+                    // move away from parent slightly
+                    offspring.dna      = child_dna;
+                    offspring.velocity = Vec2D::random(2.0);
+                    offspring.health =
+                        vv->source->health + 0.5;  // bonus for splitting
+                    born_counter++;
+                    if (vv->source->verbose ||
+                        (vv->target != nullptr && vv->target->verbose))
+                        output("Adding explosion-born vehicle at position: ",
+                               child_pos, "\n");
+                    add_vehicle(std::move(offspring));
+                    continue;
+                }
+                // TODO: less efficient for explosions because each new vehicle
+                // is given its own event and added one at a time, but simpler
+                // to implement for now Should optimize later if performance
+                // becomes an issue
+                // Close enough to reproduce
+                auto other_pos = vv->target->position;
+
+                DNA child_dna = vv->source->dna.crossover(vv->target->dna);
+                child_dna.mutate();
+                Vec2D   child_pos = midpoint(start_pos, other_pos);
+                Vehicle offspring(child_pos);
+                offspring.generation =
+                    std::max(vv->source->generation, vv->target->generation) +
+                    1;
+                // move away from parents slightly
+                offspring.dna      = child_dna;
+                offspring.velocity = Vec2D::random(2.0);
+                offspring.health =
+                    midpoint(vv->source->health, vv->target->health);
+                born_counter++;
+                add_vehicle(std::move(offspring));
+            }
+        }
+        auto vf = event.get<Vehicle, Food>();
+        if (vf) {
+            // TODO: handle vehicle-food event
+        }
+        auto fv = event.get<Food, Vehicle>();
+        if (fv) {
+            // TODO: handle food-vehicle event
+        }
+        auto ff = event.get<Food, Food>();
+        if (ff) {
+            // using ThisEvent = Event<Food, Food>;
+            // assert(ff->type == ThisEvent::Type::FOOD_CREATED);
+            auto& start_pos = ff->position;
+            new_food(start_pos,
+                     ff->source->get_nutrition() + random_delta(1.0));
+        }
+    }
+}
+
 bool World::tick()
 {
-    static std::vector<Vehicle>  offspring;
+    // static std::vector<Vehicle>  offspring;
     static std::vector<Vehicle*> neighbors;
     static std::vector<Food*>    food_neighbors;
 
+    // events are adding during ticks to be processed at the next tick, but
+    // they should be thought about as belonging to the world of the prior tick
+    // so they must be processed before the tick starts
+    process_events();
+
     food_tick(food_neighbors);
 
-    vehicle_tick(offspring, neighbors, food_neighbors);
+    vehicle_tick(neighbors, food_neighbors);
 
     neighbors.clear();
     food_neighbors.clear();
-    offspring.clear();
+    // offspring.clear();
 
     require_trivially_destructible<decltype(neighbors)::value_type,
-                                   decltype(food_neighbors)::value_type,
-                                   decltype(offspring)::value_type>();
+                                   decltype(food_neighbors)::value_type
+                                   // decltype(offspring)::value_type
+                                   >();
 
     tick_counter++;
+    daytime++;
     return !vehicles.empty();
 }
 
@@ -293,10 +379,6 @@ void World::clear_verbose_vehicles()
 }
 
 World::~World() = default;
-// {
-// World does not own renderer, so it should not be deleted here
-// delete renderer;
-// }
 
 std::ostream& operator<<(std::ostream& os, World const& world)
 {

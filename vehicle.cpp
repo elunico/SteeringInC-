@@ -9,7 +9,7 @@
 #include "vec2d.h"
 #include "world.h"
 
-#define MAX_FORCE 0.2
+#define MAX_FORCE 0.45
 #define MAX_HEALTH 40.0
 
 namespace tom {
@@ -183,8 +183,7 @@ void Vehicle::check_sought_food()
     }
 }
 
-void Vehicle::vehicle_behaviors(std::vector<Vehicle>&  out_offspring,
-                                std::vector<Vehicle*>& vehicles)
+void Vehicle::vehicle_behaviors(std::vector<Vehicle*>& vehicles)
 {
     double record = -1.0;  // if we are pursing the same vehicle, assume we are
                            // close enough due to prior knowledge
@@ -208,23 +207,23 @@ void Vehicle::vehicle_behaviors(std::vector<Vehicle>&  out_offspring,
 
     seek_for_malice(target_vehicle, record);
     seek_for_altruism(target_vehicle, record);
-    seek_for_reproduction(out_offspring, target_vehicle, record);
+    seek_for_reproduction(target_vehicle, record);
 }
 
-void Vehicle::try_explosion(std::vector<Vehicle>& out_offspring,
-                            Vehicles&             vehicles)
+void Vehicle::try_explosion(Vehicles& vehicles)
 {
     if (random_in_range(0, 1) < dna.explosion_chance) {
         for (int i = 0; i < dna.explosion_tries; i++) {
-            // explode
-            Vehicle offspring(position);
-            offspring.dna = dna;
-            offspring.dna.mutate();
-            offspring.velocity   = velocity + Vec2D::random(2.0);
-            offspring.generation = generation + 1;
+            // TODO: kill should be an event so other vehicles can respond
+            // should vehicles have an event handler for being killed?
+            // that would be called when the event is processed?
+            // maybe it should cause them to flee the exploding vehicle area?
             kill();
-            world->born_counter++;
-            out_offspring.push_back(offspring);
+            // TODO: exploding is basically mating with self; ineffecient but
+            // simple to implement
+            world->dispatch(Event<Vehicle, Vehicle>{
+                Event<Vehicle, Vehicle>::Type::VEHICLE_BORN, position, world,
+                this, nullptr});
         }
 
         for (auto v : vehicles) {
@@ -233,22 +232,22 @@ void Vehicle::try_explosion(std::vector<Vehicle>& out_offspring,
             }
             double distance = position.distance_to(v->position);
             if (can_see(distance)) {
+                // TODO: dispatch an event instead of directly killing and maybe
+                // scale by distance?
                 v->kill();
             }
         }
     }
 }
 
-void Vehicle::behaviors(std::vector<Vehicle>& out_offspring,
-                        Vehicles&             vehicles,
-                        Foods&                food_positions)
+void Vehicle::behaviors(Vehicles& vehicles, Foods& food_positions)
 {
     food_behaviors(food_positions);
 
     check_sought_vehicle();
 
     if (health < 2.0) {
-        try_explosion(out_offspring, vehicles);
+        try_explosion(vehicles);
         return;
     }
 
@@ -257,7 +256,7 @@ void Vehicle::behaviors(std::vector<Vehicle>& out_offspring,
         return;
     }
 
-    vehicle_behaviors(out_offspring, vehicles);
+    vehicle_behaviors(vehicles);
 }
 
 void Vehicle::flee_poison(Food const* target, double record)
@@ -340,9 +339,7 @@ Food& Vehicle::last_sought_food(double& record) const
     return f;
 }
 
-void Vehicle::seek_for_reproduction(std::vector<Vehicle>& out_offspring,
-                                    Vehicle*              target,
-                                    double                record)
+void Vehicle::seek_for_reproduction(Vehicle* target, double record)
 {
     if (age < dna.age_of_maturity) {
         return;
@@ -356,20 +353,14 @@ void Vehicle::seek_for_reproduction(std::vector<Vehicle>& out_offspring,
         return;
     }
     if (can_touch(record)) {
-        // Close enough to reproduce
-        DNA child_dna = dna.crossover(target->dna);
-        child_dna.mutate();
-        Vec2D child_pos = (position + target->position) / 2;
-        health -= 0.5;  // Cost of reproduction
-        Vehicle offspring(child_pos);
-        offspring.generation = std::max(generation, target->generation) + 1;
-        // move away from parents slightly
-        offspring.velocity =
-            Vec2D(random_in_range(-1, 1), random_in_range(-1, 1));
-        offspring.dna                = child_dna;
+        // Reproduce
+        health -= dna.reproduction_cost;
         time_since_last_reproduction = 0;
-        world->born_counter++;
-        out_offspring.push_back(offspring);
+        // world->born_counter++;
+        world->dispatch(
+            Event<Vehicle, Vehicle>{Event<Vehicle, Vehicle>::Type::VEHICLE_BORN,
+                                    position, world, this, target});
+        // out_offspring.push_back(offspring);
     } else {
         auto steer = seek(target->position);
         apply_force(steer);

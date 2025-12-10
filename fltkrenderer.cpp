@@ -218,7 +218,15 @@ void FLTKCustomDrawer::draw()
 {
     assert(world != nullptr &&
            "World pointer is null. Did you forget to set it?");
+
     clear_screen();
+    if (world->is_day()) {
+        fl_color(FL_WHITE);
+    } else {
+        fl_color(FL_GRAY);
+    }
+    fl_rectf(x(), y(), w(), h());
+
     auto ss  = world->info_stream();
     auto msg = ss.str();
     fl_font(FL_HELVETICA_BOLD, 14);

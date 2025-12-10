@@ -5,11 +5,13 @@
 #include <csignal>
 #include <iostream>
 #include <ranges>
+#include <tuple>
 #include <utility>
 #include "cursesrenderer.h"
 #include "fltkrenderer.h"
 #include "irenderer.h"
 #include "utils.h"
+#include "vec2d.h"
 
 struct arguments {
     bool         use_curses        = false;
@@ -17,6 +19,8 @@ struct arguments {
     int          width             = 800;
     int          height            = 600;
     int          starting_vehicles = 10;
+    unsigned int max_food          = 1000;
+    double       food_pct_chance   = 45.0;
     unsigned int random_seed       = static_cast<unsigned int>(time(nullptr));
     double       edge_threshold    = 25.0;
     // unsigned int random_seed       = 1764448905;
@@ -25,10 +29,16 @@ struct arguments {
 void parse_args(int argc, char* argv[], arguments& args)
 {
     int c;
-    while ((c = getopt(argc, argv, "w:h:s:cpr:e:")) != -1) {
+    while ((c = getopt(argc, argv, "w:h:s:cpr:e:f:x:")) != -1) {
         switch (c) {
             case 'e':
                 tom::World::edge_threshold = std::stod(optarg);
+                break;
+            case 'f':
+                args.food_pct_chance = std::stod(optarg);
+                break;
+            case 'x':
+                args.max_food = std::stoul(optarg);
                 break;
             case 'p':
                 args.auto_start = false;
@@ -85,7 +95,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
     unsigned int const seed    = args.random_seed;
     srand(seed);  // Seed for random number generation
 
-    tom::World  world(seed, width, height);
+    tom::World world(seed, width, height);
+    world.max_food        = args.max_food;
+    world.food_pct_chance = args.food_pct_chance;
     auto* const renderer =
         args.use_curses
             ? static_cast<tom::render::IRenderer*>(

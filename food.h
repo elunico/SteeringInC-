@@ -44,12 +44,14 @@ class Lifespan {
 };
 
 struct Environmental {
-    using IdType = World::FoodIdType;
+    virtual ~Environmental() = default;
+    using IdType             = World::FoodIdType;
     IdType   id;
+    World*   world;
     Vec2D    position;
     Lifespan lifespan;
 
-    Environmental(Vec2D const& pos, Lifespan ls) noexcept;
+    Environmental(World* world, Vec2D const& pos, Lifespan ls) noexcept;
 
     [[nodiscard]] virtual Vec2D const& get_position() const noexcept;
 
@@ -72,11 +74,12 @@ template <typename UpdateFn, typename ConsumeFn>
 struct CustomEnvironmental : public Environmental {
     UpdateFn  update_fn;
     ConsumeFn consume_fn;
-    CustomEnvironmental(Vec2D const& pos,
+    CustomEnvironmental(World*       world,
+                        Vec2D const& pos,
                         Lifespan     ls,
                         UpdateFn     uf,
                         ConsumeFn    cf) noexcept
-        : Environmental(pos, ls),
+        : Environmental(world, pos, ls),
           update_fn(std::move(uf)),
           consume_fn(std::move(cf))
     {
@@ -95,15 +98,13 @@ struct CustomEnvironmental : public Environmental {
 
 struct Food : public Environmental {
     // prevent the initial food from all disappearing at once
-    Lifespan lifespan =
-        Lifespan::random(850, 1750);  // lifespan in simulation ticks
     double nutrition;
 
     Food() noexcept;
 
-    Food(Vec2D const& pos) noexcept;
+    Food(World* world, Vec2D const& pos) noexcept;
 
-    Food(Vec2D const& pos, double nutrition) noexcept;
+    Food(World* world, Vec2D const& pos, double nutrition) noexcept;
 
     [[nodiscard]] double get_nutrition() const noexcept;
 
@@ -119,6 +120,7 @@ struct Food : public Environmental {
     }
 
    private:
+    Vec2D         velocity = Vec2D::random(0.25);
     static IdType global_id_counter;
 };
 
