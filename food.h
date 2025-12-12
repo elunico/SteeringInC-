@@ -35,6 +35,8 @@ class Lifespan {
 
     void update() noexcept;
 
+    [[nodiscard]] int remaining() const noexcept;
+
     virtual void expire() noexcept;
     virtual void expire(bool force) noexcept;
 
@@ -51,7 +53,7 @@ struct Environmental {
     Vec2D    position;
     Lifespan lifespan;
 
-    Environmental(World* world, Vec2D const& pos, Lifespan ls) noexcept;
+    Environmental(World* world, Vec2D const& pos, const Lifespan& ls) noexcept;
 
     [[nodiscard]] virtual Vec2D const& get_position() const noexcept;
 
@@ -99,20 +101,28 @@ struct CustomEnvironmental : public Environmental {
 struct Food : public Environmental {
     // prevent the initial food from all disappearing at once
     double nutrition;
+    DNA    dna{};
 
     Food() noexcept;
 
     Food(World* world, Vec2D const& pos) noexcept;
 
-    Food(World* world, Vec2D const& pos, double nutrition) noexcept;
+    Food(World*       world,
+         Vec2D const& pos,
+         double       nutrition,
+         DNA const&   dna) noexcept;
 
     [[nodiscard]] double get_nutrition() const noexcept;
 
-    [[nodiscard]] Vec2D const& get_position() const noexcept;
+    [[nodiscard]] Vec2D const& get_position() const noexcept override;
 
-    void update() noexcept;
+    void update() noexcept override;
 
-    void consume(Vehicle& consumer) noexcept;
+    void consume(Vehicle& consumer) noexcept override;
+
+    void perform_explosion(World* world);
+
+    void perform_spawn(World* world);
 
     static IdType next_id() noexcept
     {

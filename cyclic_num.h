@@ -21,6 +21,7 @@ class cyclic {
     cyclic(T initial) : value(initial % maximum)
     {
     }
+
     void set(T new_value)
     {
         value = new_value % maximum;
@@ -57,6 +58,16 @@ class cyclic {
         return temp;
     }
 
+    cyclic operator+(T rhs) const
+    {
+        return value + rhs;
+    }
+
+    cyclic operator-(T rhs) const
+    {
+        return value - rhs;
+    }
+
     auto& operator+=(T rhs)
     {
         value = (value + rhs) % maximum;
@@ -81,4 +92,5 @@ class cyclic {
 };
 
 }  // namespace tom
+
 #endif  // CYCLIC_NUM_H

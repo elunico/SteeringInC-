@@ -2,7 +2,6 @@
 #include "vehicle.h"
 
 #include <cstddef>
-#include <iostream>
 
 #include "food.h"
 #include "utils.h"
@@ -19,6 +18,26 @@ typename Vehicle::IdType Vehicle::global_id_counter = 1;
 
 Vehicle::Vehicle() : Vehicle(Vec2D{0.0, 0.0})
 {
+    // output("Default constructor called. Vehicle id is ", id, "\n");
+}
+
+void Vehicle::populate_in_place(typename Vehicle::IdType id,
+                                World*                   world,
+                                Vec2D const&             position,
+                                Vec2D const&             velocity,
+                                DNA const&               dna,
+                                int                      generation,
+                                double                   health,
+                                bool                     verbose)
+{
+    this->world      = world;
+    this->health     = health;
+    this->generation = generation;
+    this->dna        = dna;
+    this->position   = position;
+    this->velocity   = velocity;
+    this->id         = id;
+    this->verbose    = verbose;
 }
 
 Vehicle::Vehicle(Vec2D const& position)
@@ -27,7 +46,7 @@ Vehicle::Vehicle(Vec2D const& position)
                random_in_range(0, dna.max_speed)),
       id(global_id_counter++)
 {
-    if (auto const changer = rand() % 3; changer == 0) {
+    if (auto const changer = random_int(1, 3) % 3; changer == 0) {
         // flip x-velocity
         velocity.x *= -1;
     } else if (changer == 1) {
@@ -210,33 +229,45 @@ void Vehicle::vehicle_behaviors(std::vector<Vehicle*>& vehicles)
     seek_for_reproduction(target_vehicle, record);
 }
 
-void Vehicle::try_explosion(Vehicles& vehicles)
+void Vehicle::perform_explosion(World* world)
+{
+    Vec2D start_pos = this->position;
+    // Explosion-born vehicle
+    unsigned long count = this->dna.explosion_tries;
+    if (this->verbose)
+        output("Adding ", count,
+               " explosion-born vehicle around position: ", start_pos, "\n");
+
+    for (auto& [id, v] : world->vehicles) {
+        if (this->position.distance_to(v.position) <
+            this->dna.perception_radius) {
+            v.kill();
+        }
+    }
+    std::vector children{count, Vehicle(start_pos)};
+    for (unsigned long i = 0; i < count; i++) {
+        Vehicle& offspring = children[i];
+        DNA      child_dna = this->dna;
+        child_dna.mutate();
+        // reduce the likelihood of chained explosions
+        child_dna.explosion_chance /= 2;
+        offspring.populate_in_place(Vehicle::next_id(), this->world, start_pos,
+                                    Vec2D::random(2.0), child_dna,
+                                    this->generation + 1,
+                                    std::max(this->health, 2.0), this->verbose);
+        world->born_counter++;
+        if (offspring.verbose)
+            output("Vehicle ", offspring.id,
+                   " born at position: ", offspring.position, "\n");
+    }
+    world->add_all_vehicles(std::move(children));
+}
+
+void Vehicle::try_explosion([[maybe_unused]] Vehicles& vehicles)
 {
     if (random_in_range(0, 1) < dna.explosion_chance) {
-        for (int i = 0; i < dna.explosion_tries; i++) {
-            // TODO: kill should be an event so other vehicles can respond
-            // should vehicles have an event handler for being killed?
-            // that would be called when the event is processed?
-            // maybe it should cause them to flee the exploding vehicle area?
-            kill();
-            // TODO: exploding is basically mating with self; ineffecient but
-            // simple to implement
-            world->dispatch(Event<Vehicle, Vehicle>{
-                Event<Vehicle, Vehicle>::Type::VEHICLE_BORN, position, world,
-                this, nullptr});
-        }
-
-        for (auto v : vehicles) {
-            if (v == this) {
-                continue;
-            }
-            double distance = position.distance_to(v->position);
-            if (can_see(distance)) {
-                // TODO: dispatch an event instead of directly killing and maybe
-                // scale by distance?
-                v->kill();
-            }
-        }
+        kill();
+        world->delay([this](auto* world) { this->perform_explosion(world); });
     }
 }
 
@@ -339,6 +370,24 @@ Food& Vehicle::last_sought_food(double& record) const
     return f;
 }
 
+void Vehicle::perform_reproduction(Vehicle* mom, Vehicle* dad)
+{
+    Vec2D start_pos = mom->position;
+    auto  other_pos = dad->position;
+    DNA   child_dna = mom->dna.crossover(dad->dna);
+    child_dna.mutate();
+    Vec2D   child_pos = midpoint(start_pos, other_pos);
+    Vehicle offspring(child_pos);
+    offspring.populate_in_place(
+        Vehicle::next_id(), mom->world, child_pos, Vec2D::random(2.0),
+        child_dna, std::max(mom->generation, dad->generation) + 1,
+        midpoint(mom->health, dad->health) * 1.2, mom->verbose || dad->verbose);
+    world->born_counter++;
+    if (mom->verbose || (dad != nullptr && dad->verbose))
+        output("Adding reproduced vehicle: ", child_pos, "\n");
+    world->add_vehicle(std::move(offspring));
+}
+
 void Vehicle::seek_for_reproduction(Vehicle* target, double record)
 {
     if (age < dna.age_of_maturity) {
@@ -356,11 +405,9 @@ void Vehicle::seek_for_reproduction(Vehicle* target, double record)
         // Reproduce
         health -= dna.reproduction_cost;
         time_since_last_reproduction = 0;
-        // world->born_counter++;
-        world->dispatch(
-            Event<Vehicle, Vehicle>{Event<Vehicle, Vehicle>::Type::VEHICLE_BORN,
-                                    position, world, this, target});
-        // out_offspring.push_back(offspring);
+        world->delay([this, mom = this, dad = target](auto*) {
+            this->perform_reproduction(mom, dad);
+        });
     } else {
         auto steer = seek(target->position);
         apply_force(steer);
@@ -412,8 +459,19 @@ void Vehicle::avoid_edges()
 
 void Vehicle::update()
 {
+    if (health == 0)
+        return;
+
     age++;
     health -= 0.05;
+
+    if (health <= 0) {
+        world->delay(
+            [position = this->position, age = this->age](World* world) {
+                world->new_food(position, age / 1000.0);
+            });
+        return;
+    }
 
     velocity += acceleration;
     velocity.set_mag(dna.max_speed);

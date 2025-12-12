@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 #include <chrono>
+#include <functional>
 #include <ostream>
 #include <queue>
 #include <sstream>
@@ -11,7 +12,6 @@
 #include "cyclic_num.h"
 #include "dna.h"
 
-#include "event.h"
 #include "irenderer.h"
 #include "vec2d.h"
 
@@ -21,7 +21,7 @@ class Vehicle;
 struct Food;
 
 struct World {
-    static constexpr int target_tps = 120;
+    static constexpr int target_tps = 90;
     static bool          game_running;
     static bool          is_paused;
     static bool          show_sought_vehicles;
@@ -57,16 +57,19 @@ struct World {
     int                                        height;
     std::unordered_map<VehicleIdType, Vehicle> vehicles;
     std::unordered_map<FoodIdType, Food>       food;
-    std::queue<AnyEvent>                       events;
-    int                                        feed_count{};
-    int                                        dead_counter    = 0;
-    int                                        born_counter    = 0;
-    int                                        tick_counter    = 0;
-    int                                        max_age         = 0;
-    unsigned int                               max_food        = 500;
-    double                                     food_pct_chance = 5.0;
-    std::chrono::steady_clock::time_point      start_time;
-    std::chrono::steady_clock::time_point      end_time;
+
+    // some things must wait until the end of the tick
+    // like pushing back to the list of vehicles etc.
+    std::queue<std::function<void(World*)>> actions;
+    int                                     feed_count{};
+    int                                     dead_counter    = 0;
+    int                                     born_counter    = 0;
+    int                                     tick_counter    = 0;
+    int                                     max_age         = 0;
+    unsigned int                            max_food        = 500;
+    double                                  food_pct_chance = 5.0;
+    std::chrono::steady_clock::time_point   start_time;
+    std::chrono::steady_clock::time_point   end_time;
     cyclic<decltype(World::tick_counter), World::day_night_cycle_length>
         daytime;
 
@@ -78,10 +81,26 @@ struct World {
 
     World(long seed, int width, int height);
 
-    template <typename Source, typename Target>
-    void dispatch(Event<Source, Target> const& event)
+    /**
+        Perform an action between ticks.
+
+        Any callable passed to this function must have the signature void(World
+       \*)
+
+        These functions are called and passed this after the conclusion of the
+       tick during which they are queued but before the start of the subsequent
+       tick
+
+        This method is good for delaying things that cannot happen concurrent
+       with the world update such as increasing the list of Food or Vehicles
+       etc.
+
+       @param c A callable object with signature auto c(World *) -> void;
+    */
+    template <typename Callable>
+    void delay(Callable c)
     {
-        events.push(AnyEvent(event));
+        actions.push(c);
     }
 
     void add_vehicle(Vehicle&& vehicle);
@@ -94,7 +113,7 @@ struct World {
 
     Food const& new_random_food();
 
-    Food const& new_food(Vec2D food_position, double nutrition);
+    Food& new_food(Vec2D food_position, double nutrition);
 
     Food const& new_food(double nutrition);
 
@@ -113,7 +132,7 @@ struct World {
     [[nodiscard]] std::chrono::duration<std::chrono::seconds::rep>
     elapsed_time() const;
 
-    void setup(int vehicle_count, int food_count);
+    void populate_world(int vehicle_count, int food_count);
 
     [[nodiscard]] double tps() const;
 
@@ -145,6 +164,11 @@ struct World {
     void food_tick(std::vector<Food*>& food_neighbors);
     void vehicle_tick(std::vector<Vehicle*>& neighbors,
                       std::vector<Food*>&    food_neighbors);
+
+    // void handle_explosion_born_vehicles(Event<Vehicle, Vehicle>* vv);
+    // void handle_vehicle_offspring(Event<Vehicle, Vehicle>* vv);
+    // void handle_food_mitosis(Event<Food, Food>* ff);
+    // void handle_food_explode(Event<Food, Food>* ff);
     void process_events();
 
 #ifdef NO_TPS_LIMIT

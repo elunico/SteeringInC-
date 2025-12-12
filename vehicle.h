@@ -1,8 +1,6 @@
 #ifndef VEHICLE_H
 #define VEHICLE_H
 
-#include <optional>
-#include <type_traits>
 #include <vector>
 #include "dna.h"
 #include "utils.h"
@@ -54,6 +52,14 @@ class Vehicle {
     void                       kill();
     void                       avoid_edges();
     void behaviors(Vehicles& vehicles, Foods& food_positions);
+    void populate_in_place(IdType       id,
+                           World*       world,
+                           Vec2D const& position,
+                           Vec2D const& velocity,
+                           DNA const&   dna,
+                           int          generation,
+                           double       health,
+                           bool         verbose);
 
     template <Positionable T>
     T* find_nearest(std::vector<T*>& items, double& out_distance)
@@ -93,6 +99,8 @@ class Vehicle {
     void          vehicle_behaviors(std::vector<Vehicle*>& vehicles);
     void          try_explosion(Vehicles& vehicles);
     void          apply_force(Vec2D force, bool unlimited = false);
+    void          perform_reproduction(Vehicle* mom, Vehicle* dad);
+    void          perform_explosion(World* world);
 
     template <typename Getter>
     void check_helper(IdType& sought_id, Getter getter)
@@ -124,6 +132,11 @@ class Vehicle {
     Vec2D acceleration{};
 
    public:
+    static decltype(Vehicle::global_id_counter) next_id()
+    {
+        return ++global_id_counter;
+    }
+
     IdType            id;
     IdType            last_sought_vehicle_id = 0;
     World::FoodIdType last_sought_food_id    = 0;
@@ -131,6 +144,7 @@ class Vehicle {
     bool              highlighted            = false;
 
     friend struct World;
+    friend class Action;
     friend struct Food;
 };
 

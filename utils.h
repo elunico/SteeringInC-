@@ -7,6 +7,7 @@
 #include <iostream>
 #include <numeric>
 #include <string>
+#include <type_traits>
 #include "vec2d.h"
 
 #ifndef NDEBUG
@@ -22,9 +23,13 @@ concept Positionable = requires(T a) {
     { a.get_position() } -> std::convertible_to<Vec2D>;
 };
 
+bool random_bool() noexcept;
+
 double random_delta(double scale = 0.1) noexcept;
 
 double random_in_range(double min, double max) noexcept;
+
+int random_int(int min, int max) noexcept;
 
 void log(std::string const& message);
 
@@ -59,6 +64,14 @@ void output(Args&&... args)
     ((std::cout << std::forward<Args>(args)), ...);
 }
 
+#ifdef NDEBUG
+#define debug_output(...) ((void) 0)
+#define DEBUG_USE(...) ((void) 0)
+#else
+#define debug_output(...) ::tom::output(__VA_ARGS__)
+#define DEBUG_USE(...) __VA_ARGS__
+#endif
+
 template <int n>
 auto get(tom::Vec2D const& v) -> decltype(auto)
 {
@@ -69,6 +82,23 @@ auto get(tom::Vec2D const& v) -> decltype(auto)
 }
 
 std::vector<std::string> split(std::string const& str, char delimiter);
+
+std::vector<std::string> split(std::string const& str,
+                               char               delimiter,
+                               int                limit);
+
+// std::string replace(std::string const& str, std::string const& from,
+// std::string const& to);
+
+template <typename T, typename R = T>
+R constrain(T value, T min, T max)
+{
+    if (value < min)
+        return min;
+    if (value > max)
+        return max;
+    return value;
+}
 
 template <typename T>
 // fallback to std::midpoint when available
@@ -81,6 +111,22 @@ template <>
 inline Vec2D midpoint(Vec2D a, Vec2D b)
 {
     return Vec2D{std::midpoint(a.x, b.x), std::midpoint(a.y, b.y)};
+}
+
+template <typename T, typename R>
+    requires std::same_as<T, std::string>
+inline R midpoint(T s)
+{
+    return (s.length() + 1) / 2;
+}
+
+template <typename T, typename R = size_t>
+    requires std::same_as<
+        std::add_pointer_t<std::remove_cv_t<std::remove_pointer_t<T> > >,
+        char*>
+inline R midpoint(T s)
+{
+    return (strlen(s) + 1) / 2;
 }
 
 }  // namespace tom

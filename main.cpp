@@ -4,14 +4,10 @@
 #include <cassert>
 #include <csignal>
 #include <iostream>
-#include <ranges>
-#include <tuple>
-#include <utility>
 #include "cursesrenderer.h"
 #include "fltkrenderer.h"
 #include "irenderer.h"
 #include "utils.h"
-#include "vec2d.h"
 
 struct arguments {
     bool         use_curses        = false;
@@ -105,7 +101,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
             : static_cast<tom::render::IRenderer*>(
                   new tom::render::FLTKRenderer(&world, width, height));
 
-    world.setup(args.starting_vehicles, 250);
+    world.populate_world(args.starting_vehicles, 250);
 
     world.run(renderer);
 
@@ -116,15 +112,18 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
     tom::output("Simulation ended.\n");
 
     // report vehicle fitness at the end of simulation
-    int count = 1;
-    for (auto vehicle : world.vehicles | std::views::values) {
-        tom::output("Vehicle #", count++, " ID: ", vehicle.id,
-                    " age: ", vehicle.get_age(),
-                    " health: ", vehicle.get_health(),
-                    " fitness: ", vehicle.get_fitness(), "\n");
-    }
+    // int count = 1;
+    // for (auto vehicle : world.vehicles | std::views::values) {
+    //     tom::output("Vehicle #", count++, " ID: ", vehicle.id,
+    //                 " age: ", vehicle.get_age(),
+    //                 " health: ", vehicle.get_health(),
+    //                 " fitness: ", vehicle.get_fitness(), "\n");
+    // }
 
-    output(world, "\n");
+    std::string s = world.info_stream().str();
+    transform(std::begin(s), std::end(s), std::begin(s),
+              [](auto const& c) { return c == '|' ? '\n' : c; });
+    tom::output(s);
 
     return 0;
 }
