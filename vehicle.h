@@ -8,21 +8,11 @@
 
 namespace tom {
 
-template <typename T, typename U>
-bool is_equal([[maybe_unused]] T* t, [[maybe_unused]] U* u)
-{
-    return false;
-}
 
-template <typename T>
-bool is_equal(T* t, T* u)
-{
-    return t == u;
-}
 
-double find_distance(Vec2D const& a, Positionable auto const* p)
+double find_distance(Vec2D const& a, Positionable auto const p)
 {
-    return a.distance_to(p->get_position());
+    return a.distance_to(p.get_position());
 }
 
 template <Positionable Obj, typename ID = typename Obj::IdType>
@@ -72,15 +62,18 @@ class Vehicle {
                            double       health,
                            bool         verbose);
 
-    template <class Container, typename T = Container::value_type>
+    template <class Container, typename T = Container::value_type::second_type>
     T* find_nearest(Container& items, double& out_distance)
     {
         T*     nearest = nullptr;
         double record  = std::numeric_limits<double>::infinity();
 
-        for (auto& item : items) {
-            if (is_equal(&item, this))  // if (item == this)
-                continue;
+        for (auto& [item_id, item] : items) {
+            if constexpr (std::is_same_v<T, decltype(item)>) {
+                if (item_id == id) {
+                    continue;
+                };
+            }
             auto distance = find_distance(position, item);
             if (distance < record) {
                 record  = distance;
@@ -109,7 +102,7 @@ class Vehicle {
     void                vehicle_behaviors(Vehicles& vehicles);
     void                try_explosion();
     void                apply_force(Vec2D force, bool unlimited = false);
-    void                perform_reproduction(Vehicle* mom, Vehicle* dad);
+    void                perform_reproduction(Vehicle* mom, Vehicle* dad) const;
     void                perform_explosion(World* world);
 
     World* world                        = nullptr;

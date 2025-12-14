@@ -265,12 +265,37 @@ void World::vehicle_tick(
     }
 }
 
+void World::check_time_of_day()
+{
+    if (daytime == day_tick_length()) {
+        for (auto& [id, vehicle] : vehicles) {
+            // see less at night
+            vehicle.dna.max_speed /= 2;
+            vehicle.dna.perception_radius /= 2;
+            vehicle.dna.malice_desire /= 2;
+            vehicle.dna.altruism_desire *= 2;
+            vehicle.dna.altruism_probability *= 2;
+            vehicle.dna.reproduction_cost /= 2;
+        }
+    } else if (daytime == 0) {
+        for (auto& [id, vehicle] : vehicles) {
+            vehicle.dna.max_speed *= 2;
+            vehicle.dna.perception_radius *= 2;
+            vehicle.dna.malice_desire *= 2;
+            vehicle.dna.altruism_desire /= 2;
+            vehicle.dna.altruism_probability /= 2;
+            vehicle.dna.reproduction_cost *= 2;
+        }
+    }
+}
 bool World::tick()
 {
     // events are adding during ticks to be processed at the next tick, but
     // they should be thought about as belonging to the world of the prior tick
     // so they must be processed before the tick starts
     process_events();
+
+    check_time_of_day();
     food_tick(food);
     vehicle_tick(vehicles, food);
     tick_counter++;

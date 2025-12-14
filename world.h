@@ -78,8 +78,8 @@ struct World {
         return l;
     }
 
-    /*                                              2 minute days */
-    static constexpr int day_night_cycle_length = target_tps * 2 * 60;
+    /*                                              1 minute days */
+    static constexpr int day_night_cycle_length = target_tps * 60;
 
     using VehicleIdType = unsigned long;
     using FoodIdType    = unsigned long;
@@ -182,6 +182,7 @@ struct World {
         is_paused = false;
     }
 
+    void  check_time_of_day();
     bool tick();
 
     Vehicle& create_vehicle(Vec2D const& position);
@@ -212,8 +213,6 @@ struct World {
         int target_tps = World::target_tps)
     {
         auto tick_time = std::chrono::steady_clock::now() - start_time;
-        // TODO: targeting 60 tps results in about 27 ms per tick leading to
-        // more like ~37-40 tps in practice due to processing time?
         auto target_tick_duration =
             std::chrono::milliseconds(1000 / target_tps);
         while (tick_time < target_tick_duration) {

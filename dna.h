@@ -19,6 +19,7 @@ struct DNA {
     int    reproduction_cooldown;
     int    age_of_maturity;
 
+
     DNA() noexcept;
 
     [[nodiscard]] DNA crossover(DNA const& partner) const noexcept;
