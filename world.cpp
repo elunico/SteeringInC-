@@ -17,14 +17,22 @@
 #include "vehicle.h"
 
 namespace tom {
-bool   World::game_running         = true;
-bool   World::is_paused            = false;
-bool   World::show_sought_vehicles = false;
-bool   World::kill_mode            = false;
-bool   World::feed_mode            = false;
-int    World::kill_radius          = 100;
-double World::edge_threshold       = 25.0;
-bool   World::was_interrupted      = false;
+
+World::ViewMode const World::ViewMode::PLAIN           = 0;
+World::ViewMode const World::ViewMode::FOOD_SEEKING    = 1;
+World::ViewMode const World::ViewMode::VEHICLE_SEEKING = 2;
+
+World::InteractMode const World::InteractMode::NONE = 0;
+World::InteractMode const World::InteractMode::FEED = 1;
+World::InteractMode const World::InteractMode::KILL = 2;
+
+bool                World::game_running    = true;
+bool                World::is_paused       = false;
+int                 World::kill_radius     = 100;
+double              World::edge_threshold  = 25.0;
+bool                World::was_interrupted = false;
+World::ViewMode     World::view_mode       = ViewMode::PLAIN;
+World::InteractMode World::interact_mode   = InteractMode::NONE;
 
 #define POISON_CHANCE 0.1
 
@@ -121,6 +129,16 @@ auto World::prune_eaten_food() -> decltype(food)::size_type
     return (initial_size - food.size());
 }
 
+bool World::is_day() const noexcept
+{
+    return *daytime <= day_tick_length();
+}
+
+bool World::is_night() const noexcept
+{
+    return *daytime > day_tick_length();
+}
+
 bool World::knows_vehicle(Vehicle::IdType id) const
 {
     return vehicles.contains(id);
@@ -131,7 +149,8 @@ bool World::knows_food(Food::IdType id) const
     return food.contains(id);
 }
 
-std::chrono::duration<std::chrono::seconds::rep> World::elapsed_time() const
+auto World::elapsed_time() const
+    -> std::chrono::duration<std::chrono::seconds::rep>
 {
     if (game_running) {
         return std::chrono::duration_cast<std::chrono::seconds>(
@@ -164,33 +183,27 @@ std::stringstream World::info_stream() const
     ss << "(World: [" << width << "x" << height << "] " << " seed: " << seed
        << ") ";
 
-    ss << "Vehicles: " << vehicles.size() << " | Food: " << food.size()
-       << " | Dead Vehicles: " << dead_counter
-       << " | Born Vehicles: " << born_counter
-       << " | Oldest Vehicle: " << max_age << " | Time Elapsed: "
+    ss << "Vehicles: " << vehicles.size()
+       << " ; Dead Vehicles: " << dead_counter
+       << " ; Born Vehicles: " << born_counter
+       << " ; Oldest Vehicle: " << max_age << " | Food: " << food.size()
+       << " ; Spawn Chance " << food_pct_chance << "% ; Max: " << max_food
+       << " | Time Elapsed: "
        << std::chrono::duration_cast<std::chrono::seconds>(
               std::chrono::steady_clock::now() - start_time)
               .count()
        << "s"
-       << " | Tick: " << tick_counter << " | TPS: " << tps() << " | "
+       << " ; Tick: " << tick_counter << " ; TPS: " << tps() << " | "
        << (*daytime > (day_tick_length()) ? "Night" : "Day");
-    if (kill_mode) {
+    if (interact_mode.is_set(
+            static_cast<Enumeration<int>>(InteractMode::KILL))) {
         ss << "\n[KILL MODE ON (Radius: " << World::kill_radius << ")] ";
     }
-    if (feed_mode) {
-        ss << "\n[FEED MODE ON (Count: " << World::feed_count << ")] ";
+    if (interact_mode.is_set(
+            static_cast<Enumeration<int>>(InteractMode::FEED))) {
+        ss << "\n[FEED MODE ON (Count: " << feed_count << ")] ";
     }
     return ss;
-}
-
-bool World::is_day() const noexcept
-{
-    return *daytime <= day_tick_length();
-}
-
-bool World::is_night() const noexcept
-{
-    return *daytime > day_tick_length();
 }
 
 long double update_tps_from_tick_duration(
@@ -216,6 +229,10 @@ void World::run(render::IRenderer* renderer, int target_tps)
             }
         }
         renderer->render();
+        if (was_interrupted) {
+            renderer->terminate();
+            break;
+        }
         tps_target_wait(tick_start, target_tps);
         if (tick_counter % (target_tps / 2 + 1) == 0) {
             auto tick_end = std::chrono::steady_clock::now();
@@ -225,80 +242,37 @@ void World::run(render::IRenderer* renderer, int target_tps)
     end_time = std::chrono::steady_clock::now();
 }
 
-void World::food_tick(std::vector<Food*>& food_neighbors)
+void World::food_tick(std::unordered_map<FoodIdType, Food>& food)
 {
     prune_eaten_food();
 
     for (auto& [id, food] : food) {
         food.update();
     }
-
-    food_neighbors.reserve(food.size());
-    for (auto& [id, food] : food) {
-        food_neighbors.push_back(&food);
-    }
 }
 
-void World::vehicle_tick(std::vector<Vehicle*>& neighbors,
-                         std::vector<Food*>&    food_neighbors)
+void World::vehicle_tick(
+    std::unordered_map<World::VehicleIdType, Vehicle>& neighbors,
+    std::unordered_map<World::FoodIdType, Food>&       food_neighbors)
 {
     prune_dead_vehicles();
 
-    neighbors.reserve(vehicles.size());
-    for (auto& [id, v] : vehicles) {
-        v.highlighted = false;
-        neighbors.push_back(&v);
-    }
-
     for (auto& [id, vehicle] : vehicles) {
+        vehicle.highlighted = false;
         vehicle.behaviors(neighbors, food_neighbors);
         vehicle.update();
         vehicle.avoid_edges();
-    }
-
-    // add_all_vehicles(std::move(offspring));
-}
-
-template <typename... T>
-static consteval void require_trivially_destructible()
-{
-    static_assert((std::is_trivially_destructible_v<T> && ...),
-                  "T must be trivially destructible");
-}
-
-void World::process_events()
-{
-    while (!actions.empty()) {
-        auto f = std::move(actions.front());
-        actions.pop();
-        f(this);
     }
 }
 
 bool World::tick()
 {
-    // static std::vector<Vehicle>  offspring;
-    static std::vector<Vehicle*> neighbors;
-    static std::vector<Food*>    food_neighbors;
-
     // events are adding during ticks to be processed at the next tick, but
     // they should be thought about as belonging to the world of the prior tick
     // so they must be processed before the tick starts
     process_events();
-
-    food_tick(food_neighbors);
-
-    vehicle_tick(neighbors, food_neighbors);
-
-    neighbors.clear();
-    food_neighbors.clear();
-    // offspring.clear();
-
-    require_trivially_destructible<decltype(neighbors)::value_type,
-                                   decltype(food_neighbors)::value_type
-                                   // decltype(offspring)::value_type
-                                   >();
-
+    food_tick(food);
+    vehicle_tick(vehicles, food);
     tick_counter++;
     daytime++;
     return !vehicles.empty();
@@ -319,6 +293,15 @@ void World::clear_verbose_vehicles()
 }
 
 World::~World() = default;
+
+void World::process_events()
+{
+    while (!actions.empty()) {
+        auto f = std::move(actions.front());
+        actions.pop();
+        f(this);
+    }
+}
 
 std::ostream& operator<<(std::ostream& os, World const& world)
 {

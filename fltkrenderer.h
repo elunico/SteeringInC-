@@ -42,8 +42,8 @@ struct FLTKCustomDrawer : public Fl_Box {
 
 struct FLTKRenderer : public IRenderer {
     World*            world;
-    bool              has_control_window = false;
     FLTKCustomDrawer* drawer;
+    bool              has_control_window = false;
     static Fl_Window* window;
     static Fl_Window* control_window;
 
@@ -51,7 +51,7 @@ struct FLTKRenderer : public IRenderer {
 
     void clear_screen() override;
 
-    void render(bool transient = false) override;
+    void render(bool transient) override;
 
     void refresh() override;
 

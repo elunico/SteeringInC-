@@ -19,11 +19,6 @@ CursesRenderer::CursesRenderer(World* world, int width, int height)
     refresh();
 }
 
-CursesRenderer::~CursesRenderer()
-{
-    // endwin();
-}
-
 void CursesRenderer::clear_screen()
 {
     clear();
@@ -37,11 +32,6 @@ void CursesRenderer::draw_food(Food const& food)
 void CursesRenderer::draw_vehicle(Vehicle const& vehicle)
 {
     mvaddch(vehicle.get_position().y, vehicle.get_position().x, ACS_CKBOARD);
-}
-
-void CursesRenderer::terminate()
-{
-    endwin();
 }
 
 void CursesRenderer::draw_living_world(World* world)
@@ -75,9 +65,19 @@ void CursesRenderer::render([[maybe_unused]] bool transient)
 
     refresh();
 }
+
+void CursesRenderer::terminate()
+{
+    endwin();
+}
+
 void CursesRenderer::refresh()
 {
     ::refresh();
+}
+CursesRenderer::~CursesRenderer()
+{
+    // endwin();
 }
 
 }  // namespace tom::render

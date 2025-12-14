@@ -47,7 +47,7 @@ struct QtSeparator : QtBase, Fl_Box {
     void draw() override;
 };
 
-struct QtToggleButton : public QtButtonBase, public Fl_Button {
+struct QtToggleButton : QtButtonBase, Fl_Button {
     Fl_Color              on_color;
     Fl_Color              text_color;
     std::function<bool()> is_on;

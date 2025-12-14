@@ -1,7 +1,6 @@
 #ifndef VEHICLE_H
 #define VEHICLE_H
 
-#include <vector>
 #include "dna.h"
 #include "utils.h"
 #include "vec2d.h"
@@ -21,11 +20,22 @@ bool is_equal(T* t, T* u)
     return t == u;
 }
 
+double find_distance(Vec2D const& a, Positionable auto const* p)
+{
+    return a.distance_to(p->get_position());
+}
+
+template <Positionable Obj, typename ID = typename Obj::IdType>
+double find_distance(const Vec2D& a, std::pair<ID, Obj>& b)
+{
+    return a.distance_to(b.second.get_position());
+}
+
 class Vehicle {
    public:
     using IdType   = World::VehicleIdType;
-    using Vehicles = std::vector<Vehicle*>;
-    using Foods    = std::vector<Food*>;
+    using Foods    = std::unordered_map<World::FoodIdType, Food>;
+    using Vehicles = std::unordered_map<World::VehicleIdType, Vehicle>;
 
     explicit Vehicle(Vec2D const& position);
     Vehicle();
@@ -44,6 +54,7 @@ class Vehicle {
     [[nodiscard]] IdType       get_last_sought_vehicle_id() const;
     [[nodiscard]] bool         is_verbose() const;
     [[nodiscard]] bool         can_see(Vec2D const& target) const;
+    [[nodiscard]] bool         will_seek_vehicle() const;
     [[nodiscard]] bool         can_touch(Vec2D const& target) const;
     [[nodiscard]] bool         can_see(double distance) const;
     [[nodiscard]] bool         can_touch(double distance) const;
@@ -61,22 +72,19 @@ class Vehicle {
                            double       health,
                            bool         verbose);
 
-    template <Positionable T>
-    T* find_nearest(std::vector<T*>& items, double& out_distance)
+    template <class Container, typename T = Container::value_type>
+    T* find_nearest(Container& items, double& out_distance)
     {
         T*     nearest = nullptr;
         double record  = std::numeric_limits<double>::infinity();
 
         for (auto& item : items) {
-            // if constexpr (std::is_same_v<std::remove_cvref<decltype(*this)>,
-            // T>) {
-            if (is_equal(item, this))  // if (item == this)
+            if (is_equal(&item, this))  // if (item == this)
                 continue;
-            // }
-            double distance = position.distance_to(item->position);
+            auto distance = find_distance(position, item);
             if (distance < record) {
                 record  = distance;
-                nearest = item;
+                nearest = &item;
             }
         }
 
@@ -84,40 +92,25 @@ class Vehicle {
         return nearest;
     }
 
-   private:
-    static IdType global_id_counter;
-    void          seek_for_eat(Food* target, double record);
-    void          flee_poison(Food const* target, double record);
-    void          seek_for_malice(Vehicle* target, double record);
-    void          seek_for_altruism(Vehicle* target, double record);
-    void          seek_for_reproduction(Vehicle* target, double record);
-    Vec2D         seek(Vec2D const& target) const;
-    Food&         last_sought_food(double& record) const;
-    void          food_behaviors(Foods& food_positions);
-    void          check_sought_vehicle();
-    void          check_sought_food();
-    void          vehicle_behaviors(std::vector<Vehicle*>& vehicles);
-    void          try_explosion(Vehicles& vehicles);
-    void          apply_force(Vec2D force, bool unlimited = false);
-    void          perform_reproduction(Vehicle* mom, Vehicle* dad);
-    void          perform_explosion(World* world);
+    [[nodiscard]] bool is_less_fit(Vehicle const& other) const;
 
-    template <typename Getter>
-    void check_helper(IdType& sought_id, Getter getter)
-    {
-        // if their last sought vehicle is dead or out of range, reset it
-        // so they can seek a new one
-        if (sought_id != 0) {
-            if (!world->knows_vehicle(sought_id)) {
-                sought_id = 0;
-                return;
-            }
-            if (auto d = position.distance_to(getter().get_position());
-                d > dna.perception_radius) {
-                sought_id = 0;
-            }
-        }
-    }
+   private:
+    static IdType       global_id_counter;
+    void                seek_for_eat(Food* target, double record);
+    void                flee_poison(Food const* target, double record);
+    void                seek_for_malice(Vehicle* target, double record);
+    void                seek_for_altruism(Vehicle* target, double record);
+    void                seek_for_reproduction(Vehicle* target, double record);
+    [[nodiscard]] Vec2D seek(Vec2D const& target) const;
+    Food&               last_sought_food(double& record) const;
+    void                food_behaviors(Foods& food_positions);
+    void                check_sought_vehicle();
+    void                check_sought_food();
+    void                vehicle_behaviors(Vehicles& vehicles);
+    void                try_explosion();
+    void                apply_force(Vec2D force, bool unlimited = false);
+    void                perform_reproduction(Vehicle* mom, Vehicle* dad);
+    void                perform_explosion(World* world);
 
     World* world                        = nullptr;
     double health                       = 20.0;
@@ -132,7 +125,7 @@ class Vehicle {
     Vec2D acceleration{};
 
    public:
-    static decltype(Vehicle::global_id_counter) next_id()
+    static decltype(global_id_counter) next_id()
     {
         return ++global_id_counter;
     }
@@ -144,7 +137,6 @@ class Vehicle {
     bool              highlighted            = false;
 
     friend struct World;
-    friend class Action;
     friend struct Food;
 };
 

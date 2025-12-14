@@ -5,15 +5,8 @@
 
 namespace tom {
 
-static std::random_device rd;
-static std::mt19937       gen(rd());
 
-template <typename T>
-    requires requires(T t) { gen(t); }
-void set_seed(T seed)
-{
-    gen.seed(seed);
-}
+
 
 bool random_bool() noexcept
 {
@@ -47,7 +40,7 @@ void log(std::string const& message)
     log_file << message << std::endl;
 }
 
-std::vector<std::string> split(std::string const& str, char delimiter)
+[[nodiscard]]  std::vector<std::string> split(std::string const& str, char delimiter)
 {
     std::vector<std::string> parts;
     std::string              current;
@@ -63,9 +56,9 @@ std::vector<std::string> split(std::string const& str, char delimiter)
     return parts;
 }
 
-std::vector<std::string> split(std::string const& str,
-                               char               delimiter,
-                               int                limit)
+ std::vector<std::string> split(std::string const& str,
+                                         char               delimiter,
+                                         size_t             limit)
 {
     std::vector<std::string> parts;
     std::string              current;
@@ -75,6 +68,7 @@ std::vector<std::string> split(std::string const& str,
     if (limit == 1) {
         return {str};
     }
+    std::size_t char_count = 0;
     for (char c : str) {
         if (c == delimiter) {
             parts.push_back(current);
@@ -82,8 +76,10 @@ std::vector<std::string> split(std::string const& str,
         } else {
             current += c;
         }
-        if (limit > 0 && parts.size() >= static_cast<size_t>(limit - 1)) {
-            break;
+        char_count++;
+        if (parts.size() >= static_cast<size_t>(limit - 1)) {
+            parts.emplace_back(str.begin() + char_count, str.end());
+            return parts;
         }
     }
     parts.push_back(current);

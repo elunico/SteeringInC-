@@ -24,7 +24,7 @@ class CursesRenderer : public IRenderer {
     void draw_vehicle(Vehicle const& vehicle);
     void draw_living_world(World* world);
     void draw_dead_world();
-    void render(bool transient = false) override;
+    void render(bool transient) override;
 
     void terminate() override;
 

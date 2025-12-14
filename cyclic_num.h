@@ -6,86 +6,109 @@
 namespace tom {
 
 template <typename T, T maximum>
-    requires std::is_arithmetic<T>::value
+    requires std::is_arithmetic_v<T>
+/**
+ *  Class representing modular arithmetic using the underlying value of type T
+ *
+ *  The class will force the value to be in the interval [0, maximum)
+ */
 class cyclic {
     using NumberType = T;
     using max        = std::integral_constant<T, maximum>;
-    // T maximum;
     T value;
 
    public:
-    cyclic() : value(0)
+    constexpr cyclic() : value(0)
     {
     }
 
-    cyclic(T initial) : value(initial % maximum)
+    /**
+     * @brief Constructs a cyclic object with the initial value.
+     *
+     * This constructor initializes the cyclic object with the provided initial
+     * value. The value is adjusted to ensure it stays within the specified
+     * modulus range [0, maximum), using the modulo operation.
+     *
+     * @tparam T The arithmetic type of the cyclic value.
+     * @param initial The initial value to assign to the cyclic object.
+     *                It will be reduced modulo the maximum value.
+     */
+    constexpr cyclic(T initial) : value(initial % maximum)
     {
     }
 
-    void set(T new_value)
+    /**
+     * Set a new value which wraps around in the range [0, maximum)
+     *
+     * @param new_value the new value which will be wrapped into the interval
+     * [0, maximum)
+     */
+    constexpr void set(T new_value)
     {
         value = new_value % maximum;
     }
 
-    T get() const
+    constexpr T get() const
     {
         return value;
     }
 
-    auto& operator++()
+    constexpr auto& operator++()
     {
         value = (value + 1) % maximum;
         return *this;
     }
 
-    auto operator++(int)
+
+    constexpr auto operator++(int)
     {
         auto temp = *this;
         value     = (value + 1) % maximum;
         return temp;
     }
 
-    auto& operator--()
+
+    constexpr auto& operator--()
     {
         value = (value - 1 + maximum) % maximum;
         return *this;
     }
 
-    auto operator--(int)
+    constexpr auto operator--(int)
     {
         auto temp = *this;
         value     = (value - 1 + maximum) % maximum;
         return temp;
     }
 
-    cyclic operator+(T rhs) const
+    constexpr cyclic operator+(T rhs) const
     {
         return value + rhs;
     }
 
-    cyclic operator-(T rhs) const
+    constexpr cyclic operator-(T rhs) const
     {
         return value - rhs;
     }
 
-    auto& operator+=(T rhs)
+    constexpr auto& operator+=(T rhs)
     {
         value = (value + rhs) % maximum;
         return *this;
     }
 
-    auto& operator-=(T rhs)
+    constexpr auto& operator-=(T rhs)
     {
         value = (value - rhs + maximum) % maximum;
         return *this;
     }
 
-    operator T() const
+    constexpr operator T() const
     {
         return value;
     }
 
-    T operator*() const
+    constexpr T operator*() const
     {
         return value;
     }

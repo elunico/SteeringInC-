@@ -36,6 +36,8 @@ struct Vec2D {
     [[nodiscard]] Vec2D  rotated(double angle) const;
     void                 reset();
     void                 set(double new_x, double new_y);
+    [[nodiscard]] double dot(Vec2D const& other) const;
+    [[nodiscard]] double angle_between(Vec2D const& other) const;
 
     static Vec2D random(double magnitude = 1.0);
 };

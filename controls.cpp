@@ -13,15 +13,15 @@ namespace tom::render {
 int QtBase::x = 10;
 int QtBase::y = 10;
 
-Fl_Color QtButtonBase::default_on_color      = fl_rgb_color(0, 225, 80);
-Fl_Color QtButtonBase::default_off_color     = fl_rgb_color(200, 200, 200);
-Fl_Color QtButtonBase::default_warning_color = fl_rgb_color(255, 30, 30);
-
 QtBase::QtBase(int h) : h(h)
 {
     // output("Increasing y from ", QtBase::y, " by ", QtBase::h, " + 10, for ",
     //        this, "\n");
 }
+Fl_Color QtButtonBase::default_on_color  = fl_rgb_color(0, 225, 80);
+Fl_Color QtButtonBase::default_off_color = fl_rgb_color(200, 200, 200);
+
+Fl_Color QtButtonBase::default_warning_color = fl_rgb_color(255, 30, 30);
 
 QtButtonBase::QtButtonBase(World* world, std::function<int(int)> callback)
     : QtBase(QtButtonBase::button_height),
@@ -29,6 +29,8 @@ QtButtonBase::QtButtonBase(World* world, std::function<int(int)> callback)
       callback(std::move(callback))
 {
 }
+
+QtButtonBase::~QtButtonBase() = default;
 
 QtSeparator::QtSeparator(int w)
     : QtBase(4), Fl_Box(QtBase::x, QtBase::y, w, QtBase::h, "")
@@ -75,6 +77,14 @@ QtToggleButton::QtToggleButton(World*                  world,
     QtBase::y += QtBase::h + 10;
 }
 
+int QtToggleButton::handle(int event)
+{
+    if (event == FL_PUSH && QtButtonBase::callback) {
+        return QtButtonBase::callback(event);  // Example argument
+    }
+    return 0;
+}
+
 void QtToggleButton::draw()
 {
     debug_output("Drawing QtToggleButton... ");
@@ -114,31 +124,6 @@ void QtToggleButton::draw()
                       end - start););
     debug_output("Time to draw QtToggleButton: ", duration.count(),
                  " microseconds\n");
-}
-
-int QtToggleButton::handle(int event)
-{
-    if (event == FL_PUSH && QtButtonBase::callback) {
-        return QtButtonBase::callback(event);  // Example argument
-    }
-    return 0;
-}
-
-void ControlWindow::create_button(int                     button_width,
-                                  char const*             label,
-                                  Fl_Color                text_color,
-                                  Fl_Color                on_color,
-                                  std::function<int(int)> callback,
-                                  std::function<bool()>   is_on)
-{
-    buttons.push_back(std::make_unique<QtToggleButton>(
-        world, button_width, label, text_color, on_color, std::move(callback),
-        std::move(is_on)));
-}
-
-void ControlWindow::create_separator(int button_width)
-{
-    buttons.push_back(std::make_unique<QtSeparator>(button_width));
 }
 
 ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
@@ -184,11 +169,23 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
         button_width, "Toggle Sought Vehicles", FL_BLACK,
         QtButtonBase::default_on_color,
         [this](int) {
-            World::show_sought_vehicles = !World::show_sought_vehicles;
+            World::view_mode.toggle(World::ViewMode::VEHICLE_SEEKING);
             redraw();
             return 1;  // Indicate handled
         },
-        [] { return World::show_sought_vehicles; });
+        [] {
+            return World::view_mode.is_set(World::ViewMode::VEHICLE_SEEKING);
+        });
+
+    create_button(
+        button_width, "Toggle Sought Food", FL_BLACK,
+        QtButtonBase::default_on_color,
+        [this](int) {
+            World::view_mode.toggle(World::ViewMode::FOOD_SEEKING);
+            redraw();
+            return 1;  // Indicate handled
+        },
+        [] { return World::view_mode.is_set(World::ViewMode::FOOD_SEEKING); });
 
     create_separator(button_width);
 
@@ -200,8 +197,8 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
     create_button(
         button_width, "Feed Mode", FL_BLACK, QtButtonBase::default_on_color,
         [this, world](int) {
-            World::feed_mode = !World::feed_mode;
-            if (!World::feed_mode) {
+            World::interact_mode.toggle(World::InteractMode::FEED);
+            if (!World::interact_mode.is_set(World::InteractMode::FEED)) {
                 redraw();
                 return 1;  // Indicate handled
             }
@@ -213,14 +210,14 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
                     fl_alert("Invalid count. Using default 10.");
                     world->feed_count = 10;
                 }
-                World::kill_mode = false;
+                World::interact_mode.unset(World::InteractMode::KILL);
             } else {
-                World::feed_mode = false;
+                World::interact_mode.unset(World::InteractMode::FEED);
             }
             redraw();
             return 1;  // Indicate handled
         },
-        [] { return World::feed_mode; });
+        [] { return World::interact_mode.is_set(World::InteractMode::FEED); });
 
     create_button(button_width, "Add a Lot of Feed", FL_BLACK, FL_BLACK,
                   [world](int) {
@@ -239,8 +236,8 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
         button_width, "Kill Mode", FL_BLACK,
         QtButtonBase::default_warning_color,
         [this](int) {
-            World::kill_mode = !World::kill_mode;
-            if (!World::kill_mode) {
+            World::interact_mode.toggle(World::InteractMode::KILL);
+            if (!World::interact_mode.is_set(World::InteractMode::KILL)) {
                 redraw();
                 return 1;  // Indicate handled
             }
@@ -252,14 +249,14 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
                     fl_alert("Invalid radius input. Using default 100.");
                     World::kill_radius = 100;
                 }
-                World::feed_mode = false;
+                World::interact_mode.unset(World::InteractMode::FEED);
             } else {
-                World::kill_mode = false;
+                World::interact_mode.unset(World::InteractMode::KILL);
             }
             redraw();
             return 1;  // Indicate handled
         },
-        [] { return World::kill_mode; });
+        [] { return World::interact_mode.is_set(World::InteractMode::KILL); });
 
     create_separator(button_width);
     // buttons.push_back(std::make_unique<QtSeparator>(button_width));
@@ -320,6 +317,21 @@ void ControlWindow::draw()
     Fl_Window::draw();
 }
 
-QtButtonBase::~QtButtonBase() = default;
+void ControlWindow::create_button(int                     button_width,
+                                  char const*             label,
+                                  Fl_Color                text_color,
+                                  Fl_Color                on_color,
+                                  std::function<int(int)> callback,
+                                  std::function<bool()>   is_on)
+{
+    buttons.push_back(std::make_unique<QtToggleButton>(
+        world, button_width, label, text_color, on_color, std::move(callback),
+        std::move(is_on)));
+}
+
+void ControlWindow::create_separator(int button_width)
+{
+    buttons.push_back(std::make_unique<QtSeparator>(button_width));
+}
 
 }  // namespace tom::render

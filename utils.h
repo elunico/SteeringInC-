@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <numeric>
+#include <random>
 #include <string>
 #include <type_traits>
 #include "vec2d.h"
@@ -22,6 +23,17 @@ template <typename T>
 concept Positionable = requires(T a) {
     { a.get_position() } -> std::convertible_to<Vec2D>;
 };
+
+static std::random_device rd;
+static std::mt19937       gen(rd());
+
+
+template <typename T>
+    requires requires(T t) { gen.seed(t); }
+void set_seed(T seed)
+{
+    gen.seed(seed);
+}
 
 bool random_bool() noexcept;
 
@@ -81,11 +93,11 @@ auto get(tom::Vec2D const& v) -> decltype(auto)
         return v.y;
 }
 
-std::vector<std::string> split(std::string const& str, char delimiter);
+[[nodiscard]]  std::vector<std::string> split(std::string const& str, char delimiter);
 
-std::vector<std::string> split(std::string const& str,
-                               char               delimiter,
-                               int                limit);
+[[nodiscard]]  std::vector<std::string> split(std::string const& str,
+                                                       char   delimiter,
+                                                       size_t limit);
 
 // std::string replace(std::string const& str, std::string const& from,
 // std::string const& to);

@@ -98,7 +98,7 @@ struct CustomEnvironmental : public Environmental {
     }
 };
 
-struct Food : public Environmental {
+struct Food : Environmental {
     // prevent the initial food from all disappearing at once
     double nutrition;
     DNA    dna{};
@@ -120,9 +120,9 @@ struct Food : public Environmental {
 
     void consume(Vehicle& consumer) noexcept override;
 
-    void perform_explosion(World* world);
+    void perform_explosion(World* world) const;
 
-    void perform_spawn(World* world);
+    void perform_spawn(World* world) const;
 
     static IdType next_id() noexcept
     {

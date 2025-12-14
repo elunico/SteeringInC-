@@ -9,7 +9,12 @@
 #include "world.h"
 
 namespace tom::render {
-Fl_Window* FLTKRenderer::window         = nullptr;
+FLTKCustomDrawer::FLTKCustomDrawer(World* world, int W, int H)
+    : Fl_Box(0, 0, W, H, nullptr), world(world)
+{
+}
+Fl_Window* FLTKRenderer::window = nullptr;
+
 Fl_Window* FLTKRenderer::control_window = nullptr;
 
 FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
@@ -36,19 +41,9 @@ FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
     control_window->show();
 }
 
-void FLTKRenderer::terminate()
+void FLTKRenderer::clear_screen()
 {
-    teardown();
-}
-
-FLTKRenderer::~FLTKRenderer()
-{
-    while (Fl::wait())
-        ;
-    // See FLTKRenderer::FLTKRenderer
-    // delete drawer;
-    delete window;
-    delete control_window;
+    drawer->clear_screen();
 }
 
 void FLTKRenderer::render(bool transient)
@@ -64,14 +59,19 @@ void FLTKRenderer::refresh()
     Fl::check();
 }
 
-void FLTKRenderer::clear_screen()
+void FLTKRenderer::terminate()
 {
-    drawer->clear_screen();
+    teardown();
 }
 
-FLTKCustomDrawer::FLTKCustomDrawer(World* world, int W, int H)
-    : Fl_Box(0, 0, W, H, nullptr), world(world)
+FLTKRenderer::~FLTKRenderer()
 {
+    while (Fl::wait())
+        ;
+    // See FLTKRenderer::FLTKRenderer
+    // delete drawer;
+    delete window;
+    delete control_window;
 }
 
 std::array display_colors = {FL_BLUE,   FL_CYAN, FL_GREEN,
@@ -88,7 +88,7 @@ int FLTKCustomDrawer::handle(int i)
     if (i == FL_PUSH) {
         double x = Fl::event_x();
         double y = Fl::event_y();
-        if (World::kill_mode) {
+        if (World::interact_mode.is_set(World::InteractMode::KILL)) {
             for (auto& [id, vehicle] : world->vehicles) {
                 if (vehicle.get_position().distance_to(Vec2D{x, y}) <
                     World::kill_radius) {
@@ -97,7 +97,7 @@ int FLTKCustomDrawer::handle(int i)
             }
             return 1;
         }
-        if (World::feed_mode) {
+        if (World::interact_mode.is_set(World::InteractMode::FEED)) {
             for (int idx = 0; idx < world->feed_count; idx++) {
                 world->new_food(Vec2D{x, y} + Vec2D::random(5), 5.0);
             }
@@ -171,13 +171,15 @@ void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
     }
 
     // Draw  a line from the vehicle to its last sought vehicle if it exists
-    if (vehicle.get_last_sought_vehicle_id() && World::show_sought_vehicles) {
+    if (vehicle.get_last_sought_vehicle_id() &&
+        World::view_mode.is_set(World::ViewMode::VEHICLE_SEEKING)) {
         auto& target = vehicle.last_sought_vehicle().get_position();
         draw_vehicle_target(FL_BLUE, pos, target);
     }
 
     // Draw  a line from the vehicle to its last sought food if it exists
-    if (vehicle.last_sought_food_id != 0 && World::show_sought_vehicles) {
+    if (vehicle.last_sought_food_id != 0 &&
+        World::view_mode.is_set(World::ViewMode::FOOD_SEEKING)) {
         auto& target = vehicle.last_sought_food().get_position();
         draw_vehicle_target(FL_GREEN, pos, target);
     }

@@ -1,25 +1,26 @@
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
 #include <unistd.h>
+#include <algorithm>
 #include <cassert>
 #include <csignal>
 #include <iostream>
+#include <ranges>
 #include "cursesrenderer.h"
 #include "fltkrenderer.h"
 #include "irenderer.h"
 #include "utils.h"
 
 struct arguments {
-    bool         use_curses        = false;
-    bool         auto_start        = true;
+    double       food_pct_chance   = 45.0;
+    double       edge_threshold    = 25.0;
     int          width             = 800;
     int          height            = 600;
     int          starting_vehicles = 10;
     unsigned int max_food          = 1000;
-    double       food_pct_chance   = 45.0;
     unsigned int random_seed       = static_cast<unsigned int>(time(nullptr));
-    double       edge_threshold    = 25.0;
-    // unsigned int random_seed       = 1764448905;
+    bool         use_curses        = false;
+    bool         auto_start        = true;
 };
 
 void parse_args(int argc, char* argv[], arguments& args)
@@ -75,25 +76,37 @@ void parse_args(int argc, char* argv[], arguments& args)
     }
 }
 
+template <typename X>
+struct This2Param {
+    X meth;
+
+    This2Param(X meth) : meth(meth)
+    {
+    }
+
+    template <typename T, typename... Args>
+    constexpr auto operator()(T self, Args... args) const
+        -> decltype((self.*meth)(args...))
+    {
+        return (self.*meth)(args...);
+    }
+};
+
 int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 {
     arguments args;
     parse_args(argc, argv, args);
-    if (args.auto_start) {
-        tom::World::is_paused = false;
-    } else {
-        tom::World::is_paused = true;
-    }
+    unsigned int const seed   = args.random_seed;
+    int const          width  = args.width;
+    int const          height = args.height;
 
+    tom::set_seed(seed);
+    tom::World::is_paused      = !(args.auto_start);
     tom::World::edge_threshold = args.edge_threshold;
-    int const          width   = args.width;
-    int const          height  = args.height;
-    unsigned int const seed    = args.random_seed;
-    srand(seed);  // Seed for random number generation
-
     tom::World world(seed, width, height);
     world.max_food        = args.max_food;
     world.food_pct_chance = args.food_pct_chance;
+
     auto* const renderer =
         args.use_curses
             ? static_cast<tom::render::IRenderer*>(
@@ -102,27 +115,26 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
                   new tom::render::FLTKRenderer(&world, width, height));
 
     world.populate_world(args.starting_vehicles, 250);
-
     world.run(renderer);
-
     renderer->render(tom::World::was_interrupted);
-    renderer->terminate();
     delete renderer;
 
     tom::output("Simulation ended.\n");
 
-    // report vehicle fitness at the end of simulation
-    // int count = 1;
-    // for (auto vehicle : world.vehicles | std::views::values) {
-    //     tom::output("Vehicle #", count++, " ID: ", vehicle.id,
-    //                 " age: ", vehicle.get_age(),
-    //                 " health: ", vehicle.get_health(),
-    //                 " fitness: ", vehicle.get_fitness(), "\n");
-    // }
+    if (!world.vehicles.empty()) {
+        auto max_fitness_vehicle =
+            std::ranges::max_element(world.vehicles | std::views::values,
+                                     This2Param{&tom::Vehicle::is_less_fit})
+                .base()
+                ->second;
+
+        tom::output("Max fitness vehicle ID: ", max_fitness_vehicle.id,
+                    " fitness: ", max_fitness_vehicle.get_fitness(), "\n");
+    }
 
     std::string s = world.info_stream().str();
-    transform(std::begin(s), std::end(s), std::begin(s),
-              [](auto const& c) { return c == '|' ? '\n' : c; });
+    std::ranges::transform(s, std::begin(s),
+                           [](auto const& c) { return c == '|' ? '\n' : c; });
     tom::output(s);
 
     return 0;

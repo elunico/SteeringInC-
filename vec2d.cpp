@@ -5,61 +5,55 @@
 
 namespace tom {
 
-Vec2D Vec2D::random(double magnitude)
-{
-    double angle = random_in_range(0, 2 * M_PI);
-    return Vec2D(cos(angle) * magnitude, sin(angle) * magnitude);
-}
-
 Vec2D::Vec2D() : x(0), y(0)
 {
 }
+
 Vec2D::Vec2D(double x, double y) : x(x), y(y)
 {
 }
 [[nodiscard]] Vec2D Vec2D::operator+(Vec2D const& other) const
 {
-    return Vec2D(x + other.x, y + other.y);
+    return {x + other.x, y + other.y};
 }
 [[nodiscard]] Vec2D Vec2D::operator-(Vec2D const& other) const
 {
-    return Vec2D(x - other.x, y - other.y);
+    return {x - other.x, y - other.y};
 }
 [[nodiscard]] Vec2D Vec2D::operator*(double scalar) const
 {
-    return Vec2D(x * scalar, y * scalar);
+    return {x * scalar, y * scalar};
 }
 [[nodiscard]] Vec2D Vec2D::operator/(double scalar) const
 {
-    return Vec2D(x / scalar, y / scalar);
+    return {x / scalar, y / scalar};
 }
-
 Vec2D& Vec2D::operator+=(Vec2D const& other)
 {
     x += other.x;
     y += other.y;
     return *this;
 }
+
 Vec2D& Vec2D::operator-=(Vec2D const& other)
 {
     x -= other.x;
     y -= other.y;
     return *this;
 }
-
 Vec2D& Vec2D::operator*=(double scalar)
 {
     x *= scalar;
     y *= scalar;
     return *this;
 }
+
 Vec2D& Vec2D::operator/=(double scalar)
 {
     x /= scalar;
     y /= scalar;
     return *this;
 }
-
 [[nodiscard]] double Vec2D::distance_to(Vec2D const& other) const
 {
     double dx = x - other.x;
@@ -91,8 +85,8 @@ void Vec2D::normalize()
 {
     double mag = magnitude();
     if (mag == 0)
-        return Vec2D(0, 0);
-    return Vec2D(x / mag, y / mag);
+        return {0, 0};
+    return {x / mag, y / mag};
 }
 
 void Vec2D::limit(double max)
@@ -116,7 +110,7 @@ void Vec2D::set_heading(double angle)
 
 [[nodiscard]] Vec2D Vec2D::copy() const
 {
-    return Vec2D(x, y);
+    return {x, y};
 }
 
 void Vec2D::rotate(double angle)
@@ -132,7 +126,7 @@ void Vec2D::rotate(double angle)
 {
     double cos_a = cos(angle);
     double sin_a = sin(angle);
-    return Vec2D(x * cos_a - y * sin_a, x * sin_a + y * cos_a);
+    return {x * cos_a - y * sin_a, x * sin_a + y * cos_a};
 }
 
 void Vec2D::reset()
@@ -145,6 +139,22 @@ void Vec2D::set(double new_x, double new_y)
 {
     x = new_x;
     y = new_y;
+}
+
+[[nodiscard]] double Vec2D::dot(Vec2D const& other) const
+{
+    return x * other.x + y * other.y;
+}
+
+[[nodiscard]] double Vec2D::angle_between(Vec2D const& other) const
+{
+    return acos(dot(other) / (magnitude() * other.magnitude()));
+}
+
+Vec2D Vec2D::random(double magnitude)
+{
+    double angle = random_in_range(0, 2 * M_PI);
+    return {cos(angle) * magnitude, sin(angle) * magnitude};
 }
 
 std::ostream& operator<<(std::ostream& os, Vec2D const& vec)

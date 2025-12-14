@@ -12,7 +12,9 @@
 #include "cyclic_num.h"
 #include "dna.h"
 
+#include "enumeration.h"
 #include "irenderer.h"
+#include "utils.h"
 #include "vec2d.h"
 
 namespace tom {
@@ -20,13 +22,42 @@ namespace tom {
 class Vehicle;
 struct Food;
 
+template <typename Callable, typename... Args>
+concept CallableWith = requires(Callable c, Args... args) { c(args...); };
+
 struct World {
+    struct ViewMode : Enumeration<int> {
+        const static ViewMode PLAIN;
+        const static ViewMode FOOD_SEEKING;
+        const static ViewMode VEHICLE_SEEKING;
+
+        constexpr ViewMode(int v) : Enumeration(v)
+        {
+        }
+
+        constexpr ViewMode(ViewMode const& other) = default;
+    };
+
+    struct InteractMode : Enumeration<int> {
+        const static InteractMode NONE;
+        const static InteractMode FEED;
+        const static InteractMode KILL;
+
+        constexpr InteractMode(int v) : Enumeration(v)
+        {
+        }
+
+        constexpr InteractMode(InteractMode const& other)
+            : Enumeration(other.value)
+        {
+        }
+    };
+
     static constexpr int target_tps = 90;
     static bool          game_running;
     static bool          is_paused;
-    static bool          show_sought_vehicles;
-    static bool          kill_mode;
-    static bool          feed_mode;
+    static ViewMode      view_mode;
+    static InteractMode  interact_mode;
     static int           kill_radius;
     static double        edge_threshold;
     static bool          was_interrupted;
@@ -75,6 +106,7 @@ struct World {
 
     static void stop_running(int)
     {
+        output("Interrupting world...");
         game_running    = false;
         was_interrupted = true;
     }
@@ -97,7 +129,7 @@ struct World {
 
        @param c A callable object with signature auto c(World *) -> void;
     */
-    template <typename Callable>
+    template <CallableWith<World*> Callable>
     void delay(Callable c)
     {
         actions.push(c);
@@ -121,16 +153,16 @@ struct World {
 
     auto prune_eaten_food() -> typename decltype(food)::size_type;
 
-    bool is_day() const noexcept;
+    [[nodiscard]] bool is_day() const noexcept;
 
-    bool is_night() const noexcept;
+    [[nodiscard]] bool is_night() const noexcept;
 
     [[nodiscard]] bool knows_vehicle(VehicleIdType id) const;
 
     [[nodiscard]] bool knows_food(FoodIdType id) const;
 
-    [[nodiscard]] std::chrono::duration<std::chrono::seconds::rep>
-    elapsed_time() const;
+    [[nodiscard]] auto elapsed_time() const
+        -> std::chrono::duration<std::chrono::seconds::rep>;
 
     void populate_world(int vehicle_count, int food_count);
 
@@ -161,14 +193,11 @@ struct World {
    private:
     double current_tps{};
 
-    void food_tick(std::vector<Food*>& food_neighbors);
-    void vehicle_tick(std::vector<Vehicle*>& neighbors,
-                      std::vector<Food*>&    food_neighbors);
+    void food_tick(std::unordered_map<World::FoodIdType, Food>& food_neighbors);
+    void vehicle_tick(
+        std::unordered_map<World::VehicleIdType, Vehicle>& neighbors,
+        std::unordered_map<World::FoodIdType, Food>&       food_neighbors);
 
-    // void handle_explosion_born_vehicles(Event<Vehicle, Vehicle>* vv);
-    // void handle_vehicle_offspring(Event<Vehicle, Vehicle>* vv);
-    // void handle_food_mitosis(Event<Food, Food>* ff);
-    // void handle_food_explode(Event<Food, Food>* ff);
     void process_events();
 
 #ifdef NO_TPS_LIMIT

@@ -100,6 +100,11 @@ Vehicle::Vehicle(Vec2D const& position)
     return verbose;
 }
 
+[[nodiscard]] bool Vehicle::will_seek_vehicle() const
+{
+    return health >= 7.5;
+}
+
 bool Vehicle::can_see(Vec2D const& target) const
 {
     return can_see(position.distance_to(target));
@@ -125,14 +130,15 @@ bool Vehicle::can_touch(double distance) const
     return last_sought_vehicle_id;
 }
 
-void Vehicle::food_behaviors(Foods& food_positions)
+void Vehicle::food_behaviors(
+    std::unordered_map<World::FoodIdType, Food>& food_positions)
 {
     check_sought_food();
 
     double record =
         std::numeric_limits<double>::max();  // distance to nearest food
     auto target_food = last_sought_food_id == 0
-                           ? find_nearest(food_positions, record)
+                           ? &find_nearest(food_positions, record)->second
                            : &last_sought_food(record);
 
     if (target_food != nullptr) {
@@ -172,6 +178,11 @@ void Vehicle::food_behaviors(Foods& food_positions)
 
 void Vehicle::check_sought_vehicle()
 {
+    // if they are too unhealthy to seek a vehicle, they should forget
+    if (!will_seek_vehicle()) {
+        last_sought_vehicle_id = 0;
+        return;
+    }
     // if their last sought vehicle is dead or out of range, reset it
     // so they can seek a new one
     if (last_sought_vehicle_id != 0) {
@@ -202,13 +213,14 @@ void Vehicle::check_sought_food()
     }
 }
 
-void Vehicle::vehicle_behaviors(std::vector<Vehicle*>& vehicles)
+void Vehicle::vehicle_behaviors(
+    std::unordered_map<World::VehicleIdType, Vehicle>& vehicles)
 {
     double record = -1.0;  // if we are pursing the same vehicle, assume we are
                            // close enough due to prior knowledge
                            // otherwise find the nearest vehicle
     auto target_vehicle = last_sought_vehicle_id == 0
-                              ? find_nearest(vehicles, record)
+                              ? &find_nearest(vehicles, record)->second
                               : &last_sought_vehicle(record);
 
     // if the *nearest* vehicle is too far too see, or there is no vehicle do
@@ -262,8 +274,12 @@ void Vehicle::perform_explosion(World* world)
     }
     world->add_all_vehicles(std::move(children));
 }
+bool Vehicle::is_less_fit(Vehicle const& other) const
+{
+    return get_fitness() < other.get_fitness();
+}
 
-void Vehicle::try_explosion([[maybe_unused]] Vehicles& vehicles)
+void Vehicle::try_explosion()
 {
     if (random_in_range(0, 1) < dna.explosion_chance) {
         kill();
@@ -271,23 +287,24 @@ void Vehicle::try_explosion([[maybe_unused]] Vehicles& vehicles)
     }
 }
 
-void Vehicle::behaviors(Vehicles& vehicles, Foods& food_positions)
+void Vehicle::behaviors(
+    std::unordered_map<World::VehicleIdType, Vehicle>& vehicles,
+    std::unordered_map<World::FoodIdType, Food>&       food_positions)
 {
     food_behaviors(food_positions);
 
+    // if health is too low to seek vehicle, we still want to update the drawing
     check_sought_vehicle();
 
     if (health < 2.0) {
-        try_explosion(vehicles);
+        try_explosion();
         return;
     }
 
     // only search for vehicles if health is sufficient
-    if (health < 10.0) {
-        return;
+    if (will_seek_vehicle()) {
+        vehicle_behaviors(vehicles);
     }
-
-    vehicle_behaviors(vehicles);
 }
 
 void Vehicle::flee_poison(Food const* target, double record)
@@ -417,7 +434,6 @@ void Vehicle::seek_for_reproduction(Vehicle* target, double record)
     // during the processing of each vehicle currently in the world
     // after all vehicles have been processed, the main loop will add the
     // offspring to the world's vehicle list
-    return;
 }
 
 void Vehicle::kill()
@@ -468,7 +484,7 @@ void Vehicle::update()
     if (health <= 0) {
         world->delay(
             [position = this->position, age = this->age](World* world) {
-                world->new_food(position, age / 1000.0);
+                world->new_food(position, age / 1000.0 + 1.0);
             });
         return;
     }
@@ -481,6 +497,7 @@ void Vehicle::update()
     if (position.x < 0 || position.x > world->width || position.y < 0 ||
         position.y > world->height) {
         kill();
+        return;
     }
 
     // Reset acceleration after each update
@@ -493,11 +510,11 @@ void Vehicle::update()
 
 void Vehicle::apply_force(Vec2D force, bool unlimited)
 {
-    auto pforce = force / mass;
+    force /= mass;
     if (!unlimited) {
-        pforce.limit(MAX_FORCE);
+        force.limit(MAX_FORCE);
     }
-    acceleration += pforce;
+    acceleration += force;
 }
 
 }  // namespace tom

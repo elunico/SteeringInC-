@@ -102,30 +102,6 @@ Vec2D const& Food::get_position() const noexcept
     return position;
 }
 
-void Food::perform_explosion(World* world)
-{
-    if (world->food.size() >= world->max_food)
-        return;
-    for (int i = this->dna.explosion_tries; i > 0; i--) {
-        Food& f = world->new_food(this->position, this->get_nutrition());
-        f.dna   = this->dna;
-        f.dna.mutate();
-        if (random_in_range(0, 1) < this->dna.mutation_rate) {
-            f.nutrition *= -random_in_range(1.0, 3.0);
-        }
-    }
-}
-
-void Food::perform_spawn(World* world)
-{
-    Food& f = world->new_food(position, this->get_nutrition());
-    f.dna   = this->dna;
-    f.dna.mutate();
-    if (random_in_range(0, 1) < f.dna.mutation_rate) {
-        f.nutrition *= -random_in_range(1.0, 3.0);
-    }
-}
-
 void Food::update() noexcept
 {
     // velocity.limit(dna.max_speed);
@@ -134,10 +110,14 @@ void Food::update() noexcept
     if (position.x < World::edge_threshold ||
         position.x > world->width - World::edge_threshold) {
         velocity.x *= -1;
+        position.x = constrain(position.x, World::edge_threshold,
+                               world->width - World::edge_threshold);
     }
     if (position.y < World::edge_threshold ||
         position.y > world->height - World::edge_threshold) {
         velocity.y *= -1;
+        position.y = constrain(position.y, World::edge_threshold,
+                               world->height - World::edge_threshold);
     }
 
     if (lifespan.remaining() < 10 &&
@@ -170,5 +150,29 @@ void Food::consume(Vehicle& consumer) noexcept
                " at position: ", consumer.get_position(),
                " | Nutrition: ", nutrition, "\n");
     lifespan.expire();
+}
+
+void Food::perform_explosion(World* world) const
+{
+    if (world->food.size() >= world->max_food)
+        return;
+    for (int i = this->dna.explosion_tries; i > 0; i--) {
+        Food& f = world->new_food(this->position, this->get_nutrition());
+        f.dna   = this->dna;
+        f.dna.mutate();
+        if (random_in_range(0, 1) < this->dna.mutation_rate) {
+            f.nutrition *= -random_in_range(1.0, 3.0);
+        }
+    }
+}
+
+void Food::perform_spawn(World* world) const
+{
+    Food& f = world->new_food(position, this->get_nutrition());
+    f.dna   = this->dna;
+    f.dna.mutate();
+    if (random_in_range(0, 1) < f.dna.mutation_rate) {
+        f.nutrition *= -random_in_range(1.0, 3.0);
+    }
 }
 }  // namespace tom
