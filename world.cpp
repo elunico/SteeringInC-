@@ -1,5 +1,4 @@
 #include "world.h"
-#include <unistd.h>
 #include <algorithm>
 #include <cassert>
 #include <chrono>
@@ -7,7 +6,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <ranges>
-#include <type_traits>
 #include <vector>
 
 #include "food.h"
@@ -107,14 +105,13 @@ auto World::prune_dead_vehicles() -> typename decltype(vehicles)::size_type
     }
 
     std::erase_if(vehicles, [this](auto& p) {
-        auto& v = p.second;
-        if (v.is_dead()) {
+        if (auto& v = p.second; v.is_dead()) {
             dead_counter++;
             return true;
         }
         return false;
     });
-    return (initial_size - vehicles.size());
+    return initial_size - vehicles.size();
 }
 
 auto World::prune_eaten_food() -> decltype(food)::size_type
@@ -126,7 +123,7 @@ auto World::prune_eaten_food() -> decltype(food)::size_type
                       return f.is_expired();
                   }),
         food.end();
-    return (initial_size - food.size());
+    return initial_size - food.size();
 }
 
 bool World::is_day() const noexcept
@@ -233,36 +230,13 @@ void World::run(render::IRenderer* renderer, int target_tps)
             renderer->terminate();
             break;
         }
-        tps_target_wait(tick_start, target_tps);
         if (tick_counter % (target_tps / 2 + 1) == 0) {
             auto tick_end = std::chrono::steady_clock::now();
             current_tps   = update_tps_from_tick_duration(tick_start, tick_end);
         }
+        tps_target_wait(tick_start, target_tps);
     }
     end_time = std::chrono::steady_clock::now();
-}
-
-void World::food_tick(std::unordered_map<FoodIdType, Food>& food)
-{
-    prune_eaten_food();
-
-    for (auto& [id, food] : food) {
-        food.update();
-    }
-}
-
-void World::vehicle_tick(
-    std::unordered_map<World::VehicleIdType, Vehicle>& neighbors,
-    std::unordered_map<World::FoodIdType, Food>&       food_neighbors)
-{
-    prune_dead_vehicles();
-
-    for (auto& [id, vehicle] : vehicles) {
-        vehicle.highlighted = false;
-        vehicle.behaviors(neighbors, food_neighbors);
-        vehicle.update();
-        vehicle.avoid_edges();
-    }
 }
 
 void World::check_time_of_day()
@@ -288,13 +262,13 @@ void World::check_time_of_day()
         }
     }
 }
+
 bool World::tick()
 {
     // events are adding during ticks to be processed at the next tick, but
     // they should be thought about as belonging to the world of the prior tick
     // so they must be processed before the tick starts
     process_events();
-
     check_time_of_day();
     food_tick(food);
     vehicle_tick(vehicles, food);
@@ -318,6 +292,27 @@ void World::clear_verbose_vehicles()
 }
 
 World::~World() = default;
+
+void World::food_tick(Foods& food)
+{
+    prune_eaten_food();
+
+    for (auto& [id, food] : food) {
+        food.update();
+    }
+}
+
+void World::vehicle_tick(Vehicles& neighbors, Foods& food_neighbors)
+{
+    prune_dead_vehicles();
+
+    for (auto& [id, vehicle] : vehicles) {
+        vehicle.highlighted = false;
+        vehicle.behaviors(neighbors, food_neighbors);
+        vehicle.update();
+        // vehicle.avoid_edges();
+    }
+}
 
 void World::process_events()
 {

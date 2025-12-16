@@ -8,10 +8,7 @@
 #include <FL/Fl_Window.H>
 #include <functional>
 #include <memory>
-#include <type_traits>
 
-#include <FL/Fl_Check_Button.H>
-#include <FL/Fl_Input.H>
 #include "irenderer.h"
 
 namespace tom::render {

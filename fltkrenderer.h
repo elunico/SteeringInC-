@@ -4,12 +4,8 @@
 #include <FL/Fl.H>
 #include <FL/Fl_Box.H>
 #include <FL/fl_draw.H>
-#include <FL/Fl_Widget.H>
-#include <FL/Fl_Window.H>
-#include <FL/x.H>
 #include "food.h"
 #include "irenderer.h"
-#include "vehicle.h"
 #include "world.h"
 
 namespace tom::render {

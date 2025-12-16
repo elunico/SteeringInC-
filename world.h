@@ -83,6 +83,9 @@ struct World {
 
     using VehicleIdType = unsigned long;
     using FoodIdType    = unsigned long;
+    using Foods         = std::unordered_map<FoodIdType, Food>;
+    using Vehicles      = std::unordered_map<VehicleIdType, Vehicle>;
+
     long                                       seed;
     int                                        width;
     int                                        height;
@@ -101,8 +104,7 @@ struct World {
     double                                  food_pct_chance = 5.0;
     std::chrono::steady_clock::time_point   start_time;
     std::chrono::steady_clock::time_point   end_time;
-    cyclic<decltype(World::tick_counter), World::day_night_cycle_length>
-        daytime;
+    cyclic<decltype(tick_counter), day_night_cycle_length> daytime;
 
     static void stop_running(int)
     {
@@ -182,7 +184,8 @@ struct World {
         is_paused = false;
     }
 
-    void  check_time_of_day();
+    void check_time_of_day();
+
     bool tick();
 
     Vehicle& create_vehicle(Vec2D const& position);
@@ -194,10 +197,9 @@ struct World {
    private:
     double current_tps{};
 
-    void food_tick(std::unordered_map<World::FoodIdType, Food>& food_neighbors);
-    void vehicle_tick(
-        std::unordered_map<World::VehicleIdType, Vehicle>& neighbors,
-        std::unordered_map<World::FoodIdType, Food>&       food_neighbors);
+    void food_tick(Foods& food_neighbors);
+
+    void vehicle_tick(Vehicles& neighbors, Foods& food_neighbors);
 
     void process_events();
 

@@ -1,7 +1,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <cassert>
 #include <concepts>
 #include <cstdlib>
 #include <iostream>
@@ -127,7 +126,7 @@ inline Vec2D midpoint(Vec2D a, Vec2D b)
 
 template <typename T, typename R>
     requires std::same_as<T, std::string>
-inline R midpoint(T s)
+R midpoint(T s)
 {
     return (s.length() + 1) / 2;
 }
@@ -136,7 +135,7 @@ template <typename T, typename R = size_t>
     requires std::same_as<
         std::add_pointer_t<std::remove_cv_t<std::remove_pointer_t<T> > >,
         char*>
-inline R midpoint(T s)
+R midpoint(T s)
 {
     return (strlen(s) + 1) / 2;
 }

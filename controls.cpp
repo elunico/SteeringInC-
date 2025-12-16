@@ -1,6 +1,5 @@
 #include "controls.h"
 
-#include <_string.h>
 #include <FL/fl_ask.H>
 #include <string>
 #include <utility>
@@ -15,10 +14,10 @@ int QtBase::y = 10;
 
 QtBase::QtBase(int h) : h(h)
 {
-    // output("Increasing y from ", QtBase::y, " by ", QtBase::h, " + 10, for ",
-    //        this, "\n");
 }
+
 Fl_Color QtButtonBase::default_on_color  = fl_rgb_color(0, 225, 80);
+
 Fl_Color QtButtonBase::default_off_color = fl_rgb_color(200, 200, 200);
 
 Fl_Color QtButtonBase::default_warning_color = fl_rgb_color(255, 30, 30);
@@ -71,7 +70,7 @@ QtToggleButton::QtToggleButton(World*                  world,
         new_label += label + index;
         QtBase::h *= 2;
         copy_label(new_label.c_str());
-        resize(QtBase::x, QtBase::y, w, QtBase::h);
+        Fl_Widget::resize(QtBase::x, QtBase::y, w, QtBase::h);
     }
 
     QtBase::y += QtBase::h + 10;

@@ -4,6 +4,8 @@
 
 #include "cursesrenderer.h"
 #include <ncurses.h>
+#include "food.h"
+#include "vehicle.h"
 #include "world.h"
 
 namespace tom::render {

@@ -4,9 +4,7 @@
 
 #ifndef CURSESRENDERER_H
 #define CURSESRENDERER_H
-#include "food.h"
 #include "irenderer.h"
-#include "vehicle.h"
 #include "world.h"
 
 namespace tom::render {

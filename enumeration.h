@@ -12,12 +12,12 @@ struct Enumeration {
 
     constexpr virtual ~Enumeration() = default;
 
-    constexpr operator T() const
+    explicit constexpr operator T() const
     {
         return value;
     }
 
-    constexpr Enumeration(T v) : value(v)
+    explicit constexpr Enumeration(T v) : value(v)
     {
     }
 

@@ -1,15 +1,14 @@
 #include <FL/Fl.H>
-#include <FL/Fl_Window.H>
 #include <unistd.h>
 #include <algorithm>
-#include <cassert>
-#include <csignal>
 #include <iostream>
 #include <ranges>
 #include "cursesrenderer.h"
 #include "fltkrenderer.h"
 #include "irenderer.h"
+#include "struct2this.h"
 #include "utils.h"
+#include "vehicle.h"
 
 struct arguments {
     double       food_pct_chance   = 45.0;
@@ -76,36 +75,31 @@ void parse_args(int argc, char* argv[], arguments& args)
     }
 }
 
-template <typename X>
-struct This2Param {
-    X meth;
-
-    This2Param(X meth) : meth(meth)
-    {
-    }
-
-    template <typename T, typename... Args>
-    constexpr auto operator()(T self, Args... args) const
-        -> decltype((self.*meth)(args...))
-    {
-        return (self.*meth)(args...);
-    }
-};
-
-int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
+tom::World initialize_world(arguments const&   args,
+                            unsigned int const seed,
+                            int const          width,
+                            int const          height)
 {
-    arguments args;
-    parse_args(argc, argv, args);
-    unsigned int const seed   = args.random_seed;
-    int const          width  = args.width;
-    int const          height = args.height;
-
     tom::set_seed(seed);
     tom::World::is_paused      = !(args.auto_start);
     tom::World::edge_threshold = args.edge_threshold;
     tom::World world(seed, width, height);
     world.max_food        = args.max_food;
     world.food_pct_chance = args.food_pct_chance;
+    world.populate_world(args.starting_vehicles, 250);
+    return world;
+}
+
+int main(int argc, char* argv[])
+{
+    arguments args;
+    parse_args(argc, argv, args);
+    unsigned int const seed = args.random_seed;
+
+    int const width  = args.width;
+    int const height = args.height;
+
+    tom::World world = initialize_world(args, seed, width, height);
 
     auto* const renderer =
         args.use_curses
@@ -114,7 +108,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
             : static_cast<tom::render::IRenderer*>(
                   new tom::render::FLTKRenderer(&world, width, height));
 
-    world.populate_world(args.starting_vehicles, 250);
     world.run(renderer);
     renderer->render(tom::World::was_interrupted);
     delete renderer;

@@ -16,3 +16,4 @@ main
 .ninja_deps
 .ninja_log
 build.ninja
+DS_Store

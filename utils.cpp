@@ -5,9 +5,6 @@
 
 namespace tom {
 
-
-
-
 bool random_bool() noexcept
 {
     std::uniform_int_distribution<> dis(0, 1);
@@ -40,7 +37,8 @@ void log(std::string const& message)
     log_file << message << std::endl;
 }
 
-[[nodiscard]]  std::vector<std::string> split(std::string const& str, char delimiter)
+[[nodiscard]] std::vector<std::string> split(std::string const& str,
+                                             char               delimiter)
 {
     std::vector<std::string> parts;
     std::string              current;
@@ -56,9 +54,9 @@ void log(std::string const& message)
     return parts;
 }
 
- std::vector<std::string> split(std::string const& str,
-                                         char               delimiter,
-                                         size_t             limit)
+std::vector<std::string> split(std::string const& str,
+                               char               delimiter,
+                               size_t             limit)
 {
     std::vector<std::string> parts;
     std::string              current;

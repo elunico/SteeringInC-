@@ -24,8 +24,8 @@ double find_distance(const Vec2D& a, std::pair<ID, Obj>& b)
 class Vehicle {
    public:
     using IdType   = World::VehicleIdType;
-    using Foods    = std::unordered_map<World::FoodIdType, Food>;
-    using Vehicles = std::unordered_map<World::VehicleIdType, Vehicle>;
+    using Foods    = World::Foods;
+    using Vehicles = World::Vehicles;
 
     explicit Vehicle(Vec2D const& position);
     Vehicle();
@@ -102,8 +102,8 @@ class Vehicle {
     void                vehicle_behaviors(Vehicles& vehicles);
     void                try_explosion();
     void                apply_force(Vec2D force, bool unlimited = false);
-    void                perform_reproduction(Vehicle* mom, Vehicle* dad) const;
-    void                perform_explosion(World* world);
+    void                perform_reproduction(Vehicle const* mom, Vehicle const* dad) const;
+    void                perform_explosion(World* world) const;
 
     World* world                        = nullptr;
     double health                       = 20.0;

@@ -1,5 +1,5 @@
 #include "fltkrenderer.h"
-#include <assert.h>
+#include <cassert>
 #include <cmath>
 #include <ranges>
 #include <sstream>
