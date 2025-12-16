@@ -61,7 +61,8 @@ void parse_args(int argc, char* argv[], arguments& args)
                 std::cerr
                     << "Usage: " << argv[0]
                     << " [-w width] [-h height] [-s starting_vehicles] "
-                       "[-c (use curses)] [-p (pause)] [-r random_seed]\n";
+                       "[-c (use curses)] [-p (pause)] [-r random_seed] [-e "
+                       "edge_threshold] [-f food_pct_chance] [-x max_food]\n";
                 exit(EXIT_FAILURE);
         }
     }

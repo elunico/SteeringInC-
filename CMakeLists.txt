@@ -15,6 +15,6 @@ include_directories(${CURSES_INCLUDE_DIR})
 find_package(FLTK REQUIRED)
 include_directories(${FLTK_INCLUDE_DIR})
 add_executable(main vec2d.cpp vehicle.cpp world.cpp dna.cpp fltkrenderer.cpp food.cpp utils.cpp main.cpp
-        cursesrenderer.cpp irenderer.cpp controls.cpp)
+        cursesrenderer.cpp irenderer.cpp controls.cpp lifespan.cpp)
 target_link_libraries(main ${CURSES_LIBRARIES})
 target_link_libraries(main ${FLTK_LIBRARIES} ${FLTK_EXTRA_LIBRARIES})
