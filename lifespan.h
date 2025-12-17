@@ -1,16 +1,25 @@
 #ifndef LIFESPAN_H
 #define LIFESPAN_H
 
+#include <type_traits>
 #include "utils.h"
 
 namespace tom {
 
+template <typename T, T tick_amt>
+    requires std::is_arithmetic_v<T>
 class Lifespan {
-    int  remaining_ticks;
+    using UnderlyingType = T;
+
+    constexpr static T tick_amount = tick_amt;
+
+    T    life;
     bool unlimited_ = false;
 
    public:
-    Lifespan(int ticks) noexcept;
+    Lifespan(T ticks) noexcept : life(ticks)
+    {
+    }
 
     static Lifespan unlimited() noexcept
     {
@@ -19,27 +28,125 @@ class Lifespan {
         return ls;
     }
 
-    static Lifespan random(int min_ticks, int max_ticks) noexcept
+    static Lifespan random(T min_ticks, T max_ticks) noexcept
     {
-        return {static_cast<int>(random_in_range(min_ticks, max_ticks))};
+        return {T(random_in_range(min_ticks, max_ticks))};
     }
 
-    Lifespan& operator--() noexcept;
+    Lifespan& operator--() noexcept
+    {
+        update();
+        return *this;
+    }
 
-    Lifespan& operator--(int) noexcept;
+    Lifespan& operator--(int) noexcept
+    {
+        update();
+        return *this;
+    }
 
-    void update() noexcept;
+    Lifespan& operator+=(T ticks) noexcept
+    {
+        if (!unlimited_) {
+            life += ticks;
+        }
+        return *this;
+    }
 
-    [[nodiscard]] int remaining() const noexcept;
+    Lifespan& operator-=(T ticks) noexcept
+    {
+        if (!unlimited_) {
+            life -= ticks;
+            if (life < 0) {
+                life = 0;
+            }
+        }
+        return *this;
+    }
 
-    virtual void expire() noexcept;
+    void update() noexcept
+    {
+        if (!unlimited_ && life > 0) {
+            life -= tick_amount;
+        }
+    }
 
-    virtual void expire(bool force) noexcept;
+    [[nodiscard]] T remaining() const noexcept
+    {
+        return life;
+    }
 
-    [[nodiscard]] bool is_expired() const noexcept;
+    virtual void expire() noexcept
+    {
+        expire(false);
+    }
 
-    virtual ~Lifespan();
+    virtual void expire(bool force) noexcept
+    {
+        if (force || !unlimited_)
+            life = 0;
+    }
+
+    [[nodiscard]] bool is_expired() const noexcept
+    {
+        return !unlimited_ && life <= 0;
+    }
+
+    bool operator==(Lifespan const& other) const noexcept
+    {
+        return life == other.life && unlimited_ == other.unlimited_;
+    }
+
+    bool operator!=(Lifespan const& other) const noexcept
+    {
+        return !(*this == other);
+    }
+
+    bool operator<(Lifespan const& other) const noexcept
+    {
+        return life < other.life && unlimited_ == other.unlimited_;
+    }
+
+    bool operator<=(Lifespan const& other) const noexcept
+    {
+        return life <= other.life && unlimited_ == other.unlimited_;
+    }
+
+    bool operator>(Lifespan const& other) const noexcept
+    {
+        return life > other.life && unlimited_ == other.unlimited_;
+    }
+
+    bool operator>=(Lifespan const& other) const noexcept
+    {
+        return life >= other.life && unlimited_ == other.unlimited_;
+    }
+
+    bool operator<(UnderlyingType const& value) const noexcept
+    {
+        return life < value && !unlimited_;
+    }
+
+    bool operator<=(UnderlyingType const& value) const noexcept
+    {
+        return life <= value && !unlimited_;
+    }
+
+    bool operator>(UnderlyingType const& value) const noexcept
+    {
+        return life > value && !unlimited_;
+    }
+
+    bool operator>=(UnderlyingType const& value) const noexcept
+    {
+        return life >= value && !unlimited_;
+    }
+
+    virtual ~Lifespan() = default;
 };
+
+using IntLifespan    = Lifespan<int, 1>;
+using DoubleLifespan = Lifespan<double, 0.05>;
 
 }  // namespace tom
 

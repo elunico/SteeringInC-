@@ -146,15 +146,12 @@ bool World::knows_food(Food::IdType id) const
     return food.contains(id);
 }
 
-auto World::elapsed_time() const
-    -> std::chrono::duration<std::chrono::seconds::rep>
+auto World::elapsed_time() const -> Duration
 {
     if (game_running) {
-        return std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::steady_clock::now() - start_time);
+        return (Clock::now() - start_time);
     }
-    return std::chrono::duration_cast<std::chrono::seconds>(end_time -
-                                                            start_time);
+    return (end_time - start_time);
 }
 
 void World::populate_world(int vehicle_count, int food_count)
@@ -186,8 +183,7 @@ std::stringstream World::info_stream() const
        << " ; Oldest Vehicle: " << max_age << " | Food: " << food.size()
        << " ; Spawn Chance " << food_pct_chance << "% ; Max: " << max_food
        << " | Time Elapsed: "
-       << std::chrono::duration_cast<std::chrono::seconds>(
-              std::chrono::steady_clock::now() - start_time)
+       << std::chrono::duration_cast<std::chrono::seconds>(elapsed_time())
               .count()
        << "s"
        << " ; Tick: " << tick_counter << " ; TPS: " << tps() << " | "
@@ -203,9 +199,8 @@ std::stringstream World::info_stream() const
     return ss;
 }
 
-long double update_tps_from_tick_duration(
-    std::chrono::steady_clock::time_point const tick_start,
-    std::chrono::steady_clock::time_point const tick_end)
+long double calc_tps_from_tick_duration(World::TimePoint const tick_start,
+                                        World::TimePoint const tick_end)
 {
     return 1e6l /
            std::chrono::duration_cast<
@@ -216,9 +211,9 @@ long double update_tps_from_tick_duration(
 
 void World::run(render::IRenderer* renderer, int target_tps)
 {
-    start_time = std::chrono::steady_clock::now();
+    start_time = Clock::now();
     while (game_running) {
-        auto tick_start = std::chrono::steady_clock::now();
+        auto tick_start = Clock::now();
         if (!is_paused) {
             if (!tick()) {
                 game_running = false;
@@ -231,12 +226,12 @@ void World::run(render::IRenderer* renderer, int target_tps)
             break;
         }
         if (tick_counter % (target_tps / 2 + 1) == 0) {
-            auto tick_end = std::chrono::steady_clock::now();
-            current_tps   = update_tps_from_tick_duration(tick_start, tick_end);
+            auto tick_end = Clock::now();
+            current_tps   = calc_tps_from_tick_duration(tick_start, tick_end);
         }
-        tps_target_wait(tick_start, target_tps);
+        tps_target_wait(tick_start);
     }
-    end_time = std::chrono::steady_clock::now();
+    end_time = Clock::now();
 }
 
 void World::check_time_of_day()

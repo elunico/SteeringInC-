@@ -59,14 +59,12 @@ class cyclic {
         return *this;
     }
 
-
     constexpr auto operator++(int)
     {
         auto temp = *this;
         value     = (value + 1) % maximum;
         return temp;
     }
-
 
     constexpr auto& operator--()
     {

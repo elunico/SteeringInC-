@@ -13,12 +13,19 @@ class Vehicle;
 struct Environmental {
     virtual ~Environmental() = default;
     using IdType             = World::FoodIdType;
-    IdType   id;
-    World*   world;
-    Vec2D    position;
-    Lifespan lifespan;
 
-    Environmental(World* world, Vec2D const& pos, const Lifespan& ls) noexcept;
+    IdType           id;
+    World*           world;
+    Vec2D            position;
+    Lifespan<int, 1> lifespan;
+
+    template <typename T, T tick_amt>
+    Environmental(World*                       world,
+                  Vec2D const&                 pos,
+                  const Lifespan<T, tick_amt>& ls) noexcept
+        : id(next_id()), world(world), position(pos), lifespan(ls)
+    {
+    }
 
     [[nodiscard]] virtual Vec2D const& get_position() const noexcept;
 
@@ -63,6 +70,8 @@ struct Food : Environmental {
     void perform_explosion(World* world) const;
 
     void perform_spawn(World* world) const;
+
+    void avoid_edges() noexcept;
 
     static IdType next_id() noexcept
     {

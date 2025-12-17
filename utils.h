@@ -1,13 +1,16 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <cassert>
 #include <concepts>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <random>
 #include <string>
 #include <type_traits>
+#include <vector>
 #include "vec2d.h"
 
 #ifndef NDEBUG
@@ -18,6 +21,10 @@
 
 namespace tom {
 
+template <typename T, T tick_amt>
+    requires std::is_arithmetic_v<T>
+class Lifespan;
+
 template <typename T>
 concept Positionable = requires(T a) {
     { a.get_position() } -> std::convertible_to<Vec2D>;
@@ -25,7 +32,6 @@ concept Positionable = requires(T a) {
 
 static std::random_device rd;
 static std::mt19937       gen(rd());
-
 
 template <typename T>
     requires requires(T t) { gen.seed(t); }
@@ -92,15 +98,6 @@ auto get(tom::Vec2D const& v) -> decltype(auto)
         return v.y;
 }
 
-[[nodiscard]]  std::vector<std::string> split(std::string const& str, char delimiter);
-
-[[nodiscard]]  std::vector<std::string> split(std::string const& str,
-                                                       char   delimiter,
-                                                       size_t limit);
-
-// std::string replace(std::string const& str, std::string const& from,
-// std::string const& to);
-
 template <typename T, typename R = T>
 R constrain(T value, T min, T max)
 {
@@ -140,6 +137,11 @@ R midpoint(T s)
     return (strlen(s) + 1) / 2;
 }
 
+template <typename T, T amt>
+Lifespan<T, amt> midpoint(Lifespan<T, amt> const& a, Lifespan<T, amt> const& b)
+{
+    return Lifespan<T, amt>(std::midpoint(a.remaining(), b.remaining()));
+}
 }  // namespace tom
 
 #include <tuple>

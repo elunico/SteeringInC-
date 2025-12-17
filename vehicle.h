@@ -2,35 +2,35 @@
 #define VEHICLE_H
 
 #include "dna.h"
+#include "lifespan.h"
 #include "utils.h"
 #include "vec2d.h"
 #include "world.h"
 
 namespace tom {
 
-
-
-double find_distance(Vec2D const& a, Positionable auto const p)
+static inline double find_distance(Vec2D const& a, Positionable auto const p)
 {
     return a.distance_to(p.get_position());
 }
 
 template <Positionable Obj, typename ID = typename Obj::IdType>
-double find_distance(const Vec2D& a, std::pair<ID, Obj>& b)
+static inline double find_distance(const Vec2D& a, std::pair<ID, Obj>& b)
 {
     return a.distance_to(b.second.get_position());
 }
 
 class Vehicle {
    public:
-    using IdType   = World::VehicleIdType;
-    using Foods    = World::Foods;
-    using Vehicles = World::Vehicles;
+    using IdType       = World::VehicleIdType;
+    using Foods        = World::Foods;
+    using Vehicles     = World::Vehicles;
+    using LifespanType = Lifespan<double, 0.05>;
 
     explicit Vehicle(Vec2D const& position);
     Vehicle();
 
-    [[nodiscard]] double       get_health() const;
+    [[nodiscard]] LifespanType get_health() const;
     [[nodiscard]] int          get_age() const;
     [[nodiscard]] double       get_fitness() const;
     [[nodiscard]] DNA const&   get_dna() const;
@@ -59,7 +59,7 @@ class Vehicle {
                            Vec2D const& velocity,
                            DNA const&   dna,
                            int          generation,
-                           double       health,
+                           LifespanType health,
                            bool         verbose);
 
     template <class Container, typename T = Container::value_type::second_type>
@@ -102,16 +102,17 @@ class Vehicle {
     void                vehicle_behaviors(Vehicles& vehicles);
     void                try_explosion();
     void                apply_force(Vec2D force, bool unlimited = false);
-    void                perform_reproduction(Vehicle const* mom, Vehicle const* dad) const;
-    void                perform_explosion(World* world) const;
+    void perform_reproduction(Vehicle const* mom, Vehicle const* dad) const;
+    void perform_explosion(World* world) const;
 
-    World* world                        = nullptr;
-    double health                       = 20.0;
-    int    age                          = 0;
-    double mass                         = 1.0;
-    int    time_since_last_reproduction = -1;
-    int    generation                   = 0;
-    DNA    dna;
+    World* world = nullptr;
+    // double health                       = 20.0;
+    LifespanType health                       = 20.0;
+    int          age                          = 0;
+    double       mass                         = 1.0;
+    int          time_since_last_reproduction = -1;
+    int          generation                   = 0;
+    DNA          dna;
 
     Vec2D position;
     Vec2D velocity;

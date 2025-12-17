@@ -8,57 +8,14 @@
 #include <FL/Fl_Window.H>
 #include <functional>
 #include <memory>
+#include "qtbase.h"
 
 #include "irenderer.h"
 
 namespace tom::render {
 
-struct QtBase {
-    static int x;
-    static int y;
-    int        h = 30;
-
-    QtBase(int h);
-    virtual ~QtBase() = default;
-};
-
-struct QtButtonBase : QtBase {
-    static Fl_Color      default_on_color;
-    static Fl_Color      default_off_color;
-    static Fl_Color      default_warning_color;
-    static constexpr int button_height = 30;
-
-    World*                  world;
-    std::function<int(int)> callback;
-
-    QtButtonBase(QtButtonBase const&)            = delete;
-    QtButtonBase& operator=(QtButtonBase const&) = delete;
-
-    QtButtonBase(World* world, std::function<int(int)> callback);
-
-    virtual ~QtButtonBase();
-};
-
 struct QtSeparator : QtBase, Fl_Box {
     QtSeparator(int w);
-    void draw() override;
-};
-
-struct QtToggleButton : QtButtonBase, Fl_Button {
-    Fl_Color              on_color;
-    Fl_Color              text_color;
-    std::function<bool()> is_on;
-    QtToggleButton(QtToggleButton const&)            = delete;
-    QtToggleButton& operator=(QtToggleButton const&) = delete;
-    QtToggleButton(
-        World*                  world,
-        int                     w,
-        char const*             label,
-        Fl_Color                text_color,
-        Fl_Color                on_color,
-        std::function<int(int)> callback,
-        std::function<bool()>   is_on = [] { return false; });
-    int  handle(int event) override;
     void draw() override;
 };
 

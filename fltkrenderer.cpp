@@ -4,6 +4,7 @@
 #include <ranges>
 #include <sstream>
 #include "controls.h"
+#include "qtbuttonbase.h"
 #include "utils.h"
 #include "vehicle.h"
 #include "world.h"
@@ -143,7 +144,7 @@ void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
 
     Vec2D  pos     = vehicle.get_position();
     double heading = vehicle.get_velocity().heading();
-    int    size    = remap(vehicle.get_health(), 0.0, 20.0, 4.0, 10.0);
+    int    size = remap(vehicle.get_health().remaining(), 0.0, 20.0, 4.0, 10.0);
 
     // Calculate triangle vertices
     int x1 = static_cast<int>(pos.x + cos(heading) * size);

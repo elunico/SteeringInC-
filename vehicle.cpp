@@ -4,14 +4,37 @@
 #include <cassert>
 
 #include "food.h"
+#include "lifespan.h"
 #include "utils.h"
 #include "vec2d.h"
 #include "world.h"
 
-#define MAX_FORCE 0.45
+#ifdef GOTTA_GO_FAST
+#define MAX_FORCE 0.7
+#else
+#define MAX_FORCE 0.3
+#endif
 #define MAX_HEALTH 40.0
 
 namespace tom {
+
+static Lifespan<double, 0.05> min(Lifespan<double, 0.05> const& lifespan,
+                                  double                        d)
+{
+    if (lifespan > d) {
+        return Lifespan<double, 0.05>(d);
+    }
+    return lifespan;
+}
+
+static Lifespan<double, 0.05> max(Lifespan<double, 0.05> const& lifespan,
+                                  double                        d)
+{
+    if (lifespan < d) {
+        return Lifespan<double, 0.05>(d);
+    }
+    return lifespan;
+}
 
 Vehicle::Vehicle(Vec2D const& position)
     : position(position),
@@ -35,7 +58,7 @@ Vehicle::Vehicle() : Vehicle(Vec2D{0.0, 0.0})
     // output("Default constructor called. Vehicle id is ", id, "\n");
 }
 
-[[nodiscard]] double Vehicle::get_health() const
+[[nodiscard]] Vehicle::LifespanType Vehicle::get_health() const
 {
     return health;
 }
@@ -47,7 +70,7 @@ Vehicle::Vehicle() : Vehicle(Vec2D{0.0, 0.0})
 
 [[nodiscard]] double Vehicle::get_fitness() const
 {
-    return get_health() + get_age() * 0.1;
+    return get_health().remaining() + get_age() * 0.1;
 }
 
 [[nodiscard]] DNA const& Vehicle::get_dna() const
@@ -130,7 +153,7 @@ bool Vehicle::can_touch(double distance) const
 
 bool Vehicle::is_dead() const
 {
-    return health <= 0;
+    return health.is_expired();
 }
 
 void Vehicle::update()
@@ -139,9 +162,9 @@ void Vehicle::update()
         return;
 
     age++;
-    health -= 0.05;
+    health--;
 
-    if (health <= 0) {
+    if (health.is_expired()) {
         world->delay(
             [position = this->position, age = this->age](World* world) {
                 world->new_food(position, age / 1000.0 + 1.0);
@@ -150,7 +173,11 @@ void Vehicle::update()
     }
 
     velocity += acceleration;
+#ifdef GOTTA_GO_FAST
     velocity.set_mag(dna.max_speed);
+#else
+    velocity.limit(dna.max_speed);
+#endif
 
     position += velocity;
 
@@ -166,13 +193,14 @@ void Vehicle::update()
     avoid_edges();
 
     // Update world's max age if necessary
-    world->max_age = std::max(world->max_age, age);
-    health         = std::min(health, MAX_HEALTH);
+    using std::max, std::min;
+    world->max_age = max(world->max_age, age);
+    health         = min(health, MAX_HEALTH);
 }
 
 void Vehicle::kill()
 {
-    health = 0;
+    health.expire();
 }
 
 void Vehicle::avoid_edges()
@@ -228,7 +256,7 @@ void Vehicle::populate_in_place(typename Vehicle::IdType id,
                                 Vec2D const&             velocity,
                                 DNA const&               dna,
                                 int                      generation,
-                                double                   health,
+                                LifespanType             health,
                                 bool                     verbose)
 {
     this->world      = world;
@@ -413,8 +441,10 @@ void Vehicle::check_sought_food()
             last_sought_food_id = 0;
             return;
         }
-        if (auto d = position.distance_to(last_sought_food().get_position());
-            d > dna.perception_radius) {
+        auto& f = last_sought_food();
+        if (auto d = position.distance_to(f.get_position());
+            d > dna.perception_radius || f.is_expired() ||
+            f.get_nutrition() < 0) {
             last_sought_food_id = 0;
         }
     }
@@ -476,7 +506,8 @@ void Vehicle::perform_reproduction(Vehicle const* mom, Vehicle const* dad) const
     offspring.populate_in_place(
         Vehicle::next_id(), mom->world, child_pos, Vec2D::random(2.0),
         child_dna, std::max(mom->generation, dad->generation) + 1,
-        midpoint(mom->health, dad->health) * 1.2, mom->verbose || dad->verbose);
+        midpoint(mom->health, dad->health).remaining() * 1.2,
+        mom->verbose || dad->verbose);
     world->born_counter++;
     if (mom->verbose || dad->verbose)
         output("Adding reproduced vehicle: ", child_pos, "\n");
@@ -505,10 +536,12 @@ void Vehicle::perform_explosion(World* world) const
         child_dna.mutate();
         // reduce the likelihood of chained explosions
         child_dna.explosion_chance /= 2;
+        using std::max;
+
         offspring.populate_in_place(Vehicle::next_id(), this->world, start_pos,
                                     Vec2D::random(2.0), child_dna,
                                     this->generation + 1,
-                                    std::max(this->health, 2.0), this->verbose);
+                                    max(this->health, 2.0), this->verbose);
         world->born_counter++;
         if (offspring.verbose)
             output("Vehicle ", offspring.id,

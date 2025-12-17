@@ -1,18 +1,12 @@
 #include "food.h"
 
+#include "lifespan.h"
 #include "utils.h"
 #include "vec2d.h"
 #include "vehicle.h"
 #include "world.h"
 
 namespace tom {
-
-Environmental::Environmental(World*          world,
-                             Vec2D const&    pos,
-                             const Lifespan& ls) noexcept
-    : id(next_id()), world(world), position(pos), lifespan(ls)
-{
-}
 
 [[nodiscard]] Vec2D const& Environmental::get_position() const noexcept
 {
@@ -27,13 +21,15 @@ bool Environmental::is_expired() const noexcept
 Environmental::IdType Environmental::global_id_counter = 1;
 
 Food::Food() noexcept
-    : Environmental(nullptr, Vec2D::random(100), Lifespan::random(750, 1500)),
+    : Environmental(nullptr,
+                    Vec2D::random(100),
+                    IntLifespan::random(750, 1500)),
       nutrition(5.0)
 {
 }
 
 Food::Food(World* world, Vec2D const& pos) noexcept
-    : Environmental(world, pos, Lifespan::random(750, 1500)), nutrition(5.0)
+    : Environmental(world, pos, IntLifespan::random(750, 1500)), nutrition(5.0)
 {
 }
 
@@ -41,7 +37,7 @@ Food::Food(World*       world,
            Vec2D const& pos,
            double       nutrition,
            DNA const&   dna) noexcept
-    : Environmental(world, pos, Lifespan::random(750, 1500)),
+    : Environmental(world, pos, IntLifespan::random(750, 1500)),
       nutrition(nutrition),
       dna{dna}
 {
@@ -57,11 +53,8 @@ Vec2D const& Food::get_position() const noexcept
     return position;
 }
 
-void Food::update() noexcept
+void Food::avoid_edges() noexcept
 {
-    // velocity.limit(dna.max_speed);
-    position += velocity;
-
     if (position.x < World::edge_threshold ||
         position.x > world->width - World::edge_threshold) {
         velocity.x *= -1;
@@ -74,6 +67,14 @@ void Food::update() noexcept
         position.y = constrain(position.y, World::edge_threshold,
                                world->height - World::edge_threshold);
     }
+}
+
+void Food::update() noexcept
+{
+    // velocity.limit(dna.max_speed);
+    position += velocity;
+
+    avoid_edges();
 
     if (lifespan.remaining() < 10 &&
         random_in_range(0, 1) < dna.explosion_chance) {

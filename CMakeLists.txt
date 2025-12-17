@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 23)
 #  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -O0 -g -fsanitize=address -fsanitize=undefined")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror -O3 -DNDEBUG")
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -DNO_TPS_LIMIT")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -DGOTTA_GO_FAST") # makes all vehicles move at top speed at all times instead of just limiting to top speed
 
 find_package(Curses REQUIRED)
 include_directories(${CURSES_INCLUDE_DIR})
@@ -15,6 +16,6 @@ include_directories(${CURSES_INCLUDE_DIR})
 find_package(FLTK REQUIRED)
 include_directories(${FLTK_INCLUDE_DIR})
 add_executable(main vec2d.cpp vehicle.cpp world.cpp dna.cpp fltkrenderer.cpp food.cpp utils.cpp main.cpp
-        cursesrenderer.cpp irenderer.cpp controls.cpp lifespan.cpp)
+        cursesrenderer.cpp irenderer.cpp controls.cpp lifespan.cpp qtbuttonbase.cpp qttogglebutton.cpp qtbase.cpp split.cpp)
 target_link_libraries(main ${CURSES_LIBRARIES})
 target_link_libraries(main ${FLTK_LIBRARIES} ${FLTK_EXTRA_LIBRARIES})

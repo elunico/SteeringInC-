@@ -85,6 +85,14 @@ struct World {
     using FoodIdType    = unsigned long;
     using Foods         = std::unordered_map<FoodIdType, Food>;
     using Vehicles      = std::unordered_map<VehicleIdType, Vehicle>;
+    using Clock         = std::chrono::steady_clock;
+    using Duration      = Clock::duration;
+    using TimePoint     = Clock::time_point;
+
+    using TickTime =
+        std::chrono::duration<int64_t, std::ratio<1, World::target_tps>>;
+
+    static constexpr TickTime one_tick{1};
 
     long                                       seed;
     int                                        width;
@@ -163,8 +171,7 @@ struct World {
 
     [[nodiscard]] bool knows_food(FoodIdType id) const;
 
-    [[nodiscard]] auto elapsed_time() const
-        -> std::chrono::duration<std::chrono::seconds::rep>;
+    [[nodiscard]] auto elapsed_time() const -> Duration;
 
     void populate_world(int vehicle_count, int food_count);
 
@@ -210,17 +217,15 @@ struct World {
     }
 
 #else
-    inline static void tps_target_wait(
-        std::chrono::time_point<std::chrono::steady_clock> const& start_time,
-        int target_tps = World::target_tps)
+    inline static void tps_target_wait(TimePoint const& start_time)
     {
-        auto tick_time = std::chrono::steady_clock::now() - start_time;
-        auto target_tick_duration =
-            std::chrono::milliseconds(1000 / target_tps);
-        while (tick_time < target_tick_duration) {
+        auto tick_time = Clock::now() - start_time;
+        // auto target_tick_duration =
+        // std::chrono::milliseconds(1000 / target_tps);
+        while (tick_time < one_tick) {
             // sleep to maintain target fps
-            usleep(1000);
-            tick_time = std::chrono::steady_clock::now() - start_time;
+            usleep((one_tick / 10).count());  // sleep for a tenth of a tick
+            tick_time = Clock::now() - start_time;
         }
     }
 #endif
