@@ -1,11 +1,11 @@
-#include "controls.h"
+#include "ui/controls.h"
 
 #include <FL/fl_ask.H>
 #include <string>
 #include <utility>
 #include "fltkrenderer.h"
-#include "qtbuttonbase.h"
-#include "qttogglebutton.h"
+#include "ui/qtbuttonbase.h"
+#include "ui/qttogglebutton.h"
 #include "world.h"
 
 namespace tom::render {

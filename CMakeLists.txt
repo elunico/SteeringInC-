@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.14)
 project(vehicles)
 
 include_directories(.)
+include_directories(include)
+
+
+file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 set(CMAKE_CXX_STANDARD 23)
 #  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -O0 -g -fsanitize=address -fsanitize=undefined")
@@ -15,7 +19,6 @@ include_directories(${CURSES_INCLUDE_DIR})
 
 find_package(FLTK REQUIRED)
 include_directories(${FLTK_INCLUDE_DIR})
-add_executable(main vec2d.cpp vehicle.cpp world.cpp dna.cpp fltkrenderer.cpp food.cpp utils.cpp main.cpp
-        cursesrenderer.cpp irenderer.cpp controls.cpp lifespan.cpp qtbuttonbase.cpp qttogglebutton.cpp qtbase.cpp split.cpp)
+add_executable(main ${SOURCES})
 target_link_libraries(main ${CURSES_LIBRARIES})
 target_link_libraries(main ${FLTK_LIBRARIES} ${FLTK_EXTRA_LIBRARIES})
