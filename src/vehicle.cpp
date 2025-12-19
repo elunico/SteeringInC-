@@ -9,11 +9,7 @@
 #include "vec2d.h"
 #include "world.h"
 
-#ifdef GOTTA_GO_FAST
-#define MAX_FORCE 0.7
-#else
-#define MAX_FORCE 0.3
-#endif
+#define MAX_FORCE 0.5
 #define MAX_HEALTH 40.0
 
 namespace tom {
@@ -173,11 +169,7 @@ void Vehicle::update()
     }
 
     velocity += acceleration;
-#ifdef GOTTA_GO_FAST
-    velocity.set_mag(dna.max_speed);
-#else
     velocity.limit(dna.max_speed);
-#endif
 
     position += velocity;
 
@@ -234,7 +226,13 @@ void Vehicle::behaviors(
     std::unordered_map<World::VehicleIdType, Vehicle>& vehicles,
     std::unordered_map<World::FoodIdType, Food>&       food_positions)
 {
-    food_behaviors(food_positions);
+    if (health > MAX_HEALTH * 0.8) {
+        // if health is very high, no need to seek food
+        check_sought_food();
+    } else {
+        // food_behaviors will call check_sought_food internally
+        food_behaviors(food_positions);
+    }
 
     // if health is too low to seek vehicle, we still want to update the drawing
     check_sought_vehicle();
@@ -288,16 +286,15 @@ void Vehicle::seek_for_eat(Food* target, double record)
     }
 }
 
-void Vehicle::flee_poison(Food const* target, double record)
+void Vehicle::flee_poison(Food* target, double record)
 {
     if (can_see(record)) {
-        Vec2D desired = position - target->position;
-        desired.normalize();
-        desired -= velocity;
-        desired *= dna.max_speed;
-
-        Vec2D steer = desired - velocity;
-        steer.limit(MAX_FORCE);
+        if (random_in_range(0, 1) < target->dna.altruism_probability) {
+            target->expire();  // altruistically remove poison food
+            health--;          // slight health cost to self
+            return;
+        }
+        Vec2D steer = flee(target->position);
         apply_force(steer);
     }
 }
@@ -370,10 +367,18 @@ void Vehicle::seek_for_reproduction(Vehicle* target, double record)
     // offspring to the world's vehicle list
 }
 
+Vec2D Vehicle::flee(Vec2D const& target) const
+{
+    Vec2D desired = position - target;
+    desired.set_mag(dna.max_speed);
+    desired -= velocity;
+    return desired;
+}
+
 Vec2D Vehicle::seek(Vec2D const& target) const
 {
     Vec2D desired = target - position;
-    desired.normalize();
+    desired.set_mag(dna.max_speed);
     desired -= velocity;
     return desired;
 }
@@ -396,7 +401,7 @@ void Vehicle::food_behaviors(Foods& food_positions)
                              ? find_nearest(food_positions, record)
                              : &last_sought_food(record);
 
-    if (target_food != nullptr) {
+    if (target_food != nullptr && can_see(record)) {
         if (verbose) {
             output("Seeking food with ID: ", target_food->id,
                    " at: ", target_food->get_position(), "\n");
@@ -473,6 +478,13 @@ void Vehicle::vehicle_behaviors(Vehicles& vehicles)
         target_vehicle->highlighted = true;
     }
 
+    if (target_vehicle->health < 5.0) {
+        // vehicle could explode soon, avoid it
+        Vec2D steer = flee(target_vehicle->position);
+        apply_force(steer);
+        return;
+    }
+
     seek_for_malice(target_vehicle, record);
     seek_for_altruism(target_vehicle, record);
     seek_for_reproduction(target_vehicle, record);
@@ -524,15 +536,18 @@ void Vehicle::perform_explosion(World* world) const
                " explosion-born vehicle around position: ", start_pos, "\n");
 
     for (auto& [id, v] : world->vehicles) {
-        if (this->position.distance_to(v.position) <
-            this->dna.perception_radius) {
-            v.kill();
+        if (auto d = this->position.distance_to(v.position);
+            d < this->dna.perception_radius) {
+            // v.kill();
+            v.health -=
+                (MAX_HEALTH * ((1 / (d * this->dna.perception_radius))));
         }
     }
     std::vector children{count, Vehicle(start_pos)};
     for (unsigned long i = 0; i < count; i++) {
         Vehicle& offspring = children[i];
-        DNA      child_dna = this->dna;
+        offspring.position += Vec2D::random(dna.perception_radius / 2.0);
+        DNA child_dna = this->dna;
         child_dna.mutate();
         // reduce the likelihood of chained explosions
         child_dna.explosion_chance /= 2;

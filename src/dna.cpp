@@ -5,7 +5,7 @@ namespace tom {
 
 DNA::DNA() noexcept
     : perception_radius(random_in_range(40, 100)),
-      max_speed(random_in_range(1, 4)),
+      max_speed(random_in_range(0.75, 3.0)),
       mutation_rate(0.1),
       reproduction_cost(random_in_range(5, 15.0)),
       malice_desire(random_in_range(0.01, 0.3)),

@@ -43,6 +43,11 @@ Food::Food(World*       world,
 {
 }
 
+void Food::expire() noexcept
+{
+    lifespan.expire();
+}
+
 [[nodiscard]] double Food::get_nutrition() const noexcept
 {
     return nutrition;

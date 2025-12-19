@@ -61,6 +61,11 @@ Vec2D& Vec2D::operator/=(double scalar)
     return std::sqrt(dx * dx + dy * dy);
 }
 
+[[nodiscard]] double Vec2D::magSq() const
+{
+    return x * x + y * y;
+}
+
 [[nodiscard]] double Vec2D::magnitude() const
 {
     return std::sqrt(x * x + y * y);

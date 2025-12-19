@@ -9,14 +9,13 @@ namespace tom {
 template <typename T, T tick_amt>
     requires std::is_arithmetic_v<T>
 class Lifespan {
-    using UnderlyingType = T;
-
-    constexpr static T tick_amount = tick_amt;
-
     T    life;
     bool unlimited_ = false;
 
    public:
+    using UnderlyingType           = T;
+    constexpr static T tick_amount = tick_amt;
+
     Lifespan(T ticks) noexcept : life(ticks)
     {
     }

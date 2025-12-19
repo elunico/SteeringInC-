@@ -183,11 +183,16 @@ std::stringstream World::info_stream() const
        << " ; Oldest Vehicle: " << max_age << " | Food: " << food.size()
        << " ; Spawn Chance " << food_pct_chance << "% ; Max: " << max_food
        << " | Time Elapsed: "
-       << std::chrono::duration_cast<std::chrono::seconds>(elapsed_time())
-              .count()
+       << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time())
+                  .count() /
+              1000.0
        << "s"
        << " ; Tick: " << tick_counter << " ; TPS: " << tps() << " | "
        << (*daytime > (day_tick_length()) ? "Night" : "Day");
+
+    if (World::is_paused) {
+        ss << " | PAUSED ";
+    }
     if (interact_mode.is_set(
             static_cast<Enumeration<int>>(InteractMode::KILL))) {
         ss << "\n[KILL MODE ON (Radius: " << World::kill_radius << ")] ";
@@ -225,11 +230,11 @@ void World::run(render::IRenderer* renderer, int target_tps)
             renderer->terminate();
             break;
         }
+        tps_target_wait(tick_start);
         if (tick_counter % (target_tps / 2 + 1) == 0) {
             auto tick_end = Clock::now();
             current_tps   = calc_tps_from_tick_duration(tick_start, tick_end);
         }
-        tps_target_wait(tick_start);
     }
     end_time = Clock::now();
 }

@@ -9,7 +9,7 @@
 
 namespace tom {
 
-static inline double find_distance(Vec2D const& a, Positionable auto const p)
+static inline double find_distance(Vec2D const& a, Positionable auto const& p)
 {
     return a.distance_to(p.get_position());
 }
@@ -90,11 +90,12 @@ class Vehicle {
    private:
     static IdType       global_id_counter;
     void                seek_for_eat(Food* target, double record);
-    void                flee_poison(Food const* target, double record);
+    void                flee_poison(Food* target, double record);
     void                seek_for_malice(Vehicle* target, double record);
     void                seek_for_altruism(Vehicle* target, double record);
     void                seek_for_reproduction(Vehicle* target, double record);
     [[nodiscard]] Vec2D seek(Vec2D const& target) const;
+    [[nodiscard]] Vec2D flee(Vec2D const& target) const;
     Food&               last_sought_food(double& record) const;
     void                food_behaviors(Foods& food_positions);
     void                check_sought_vehicle();

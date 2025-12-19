@@ -23,6 +23,7 @@ struct Vec2D {
     Vec2D& operator*=(double scalar);
     Vec2D& operator/=(double scalar);
 
+    [[nodiscard]] double magSq() const;
     [[nodiscard]] double distance_to(Vec2D const& other) const;
     [[nodiscard]] double magnitude() const;
     void                 set_mag(double mag);

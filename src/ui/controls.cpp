@@ -25,7 +25,7 @@ void QtSeparator::draw()
 }
 
 ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
-    : Fl_Window(start_x, 0, W, H, "Control Window"), world(world)
+    : Fl_Window(start_x, 0, W, std::max(H, 650), "Control Window"), world(world)
 {
     box(FL_UP_BOX);
     color(FL_LIGHT2);

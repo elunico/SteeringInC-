@@ -33,6 +33,8 @@ struct Environmental {
 
     virtual void consume(Vehicle& consumer) noexcept = 0;
 
+    virtual void expire() noexcept = 0;
+
     [[nodiscard]] virtual bool is_expired() const noexcept;
 
     static IdType next_id() noexcept
@@ -66,6 +68,8 @@ struct Food : Environmental {
     void update() noexcept override;
 
     void consume(Vehicle& consumer) noexcept override;
+
+    void expire() noexcept override;
 
     void perform_explosion(World* world) const;
 

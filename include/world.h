@@ -7,6 +7,7 @@
 #include <ostream>
 #include <queue>
 #include <sstream>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 #include "cyclic_num.h"
@@ -89,10 +90,7 @@ struct World {
     using Duration      = Clock::duration;
     using TimePoint     = Clock::time_point;
 
-    using TickTime =
-        std::chrono::duration<int64_t, std::ratio<1, World::target_tps>>;
-
-    static constexpr TickTime one_tick{1};
+    static constexpr Duration one_tick{Duration::period::den / target_tps};
 
     long                                       seed;
     int                                        width;
@@ -219,13 +217,10 @@ struct World {
 #else
     inline static void tps_target_wait(TimePoint const& start_time)
     {
-        auto tick_time = Clock::now() - start_time;
-        // auto target_tick_duration =
-        // std::chrono::milliseconds(1000 / target_tps);
-        while (tick_time < one_tick) {
-            // sleep to maintain target fps
-            usleep((one_tick / 10).count());  // sleep for a tenth of a tick
-            tick_time = Clock::now() - start_time;
+        auto const tick_duration = Clock::now() - start_time;
+        if (tick_duration < one_tick) {
+            auto sleep_duration = one_tick - tick_duration;
+            usleep(sleep_duration.count() / 1000);
         }
     }
 #endif

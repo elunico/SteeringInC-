@@ -4,6 +4,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <limits>
 #include <numeric>
@@ -30,6 +31,15 @@ concept Positionable = requires(T a) {
     { a.get_position() } -> std::convertible_to<Vec2D>;
 };
 
+#ifdef FAST_RANDOM
+
+[[maybe_unused]] static inline void set_seed(auto seed) noexcept
+{
+    srand(static_cast<unsigned int>(seed));
+}
+
+#else
+
 static std::random_device rd;
 static std::mt19937       gen(rd());
 
@@ -39,6 +49,8 @@ void set_seed(T seed)
 {
     gen.seed(seed);
 }
+
+#endif
 
 bool random_bool() noexcept;
 

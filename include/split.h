@@ -2,6 +2,7 @@
 #define SPLIT_H
 
 #include <cstdlib>
+#include <limits>
 #include <string>
 #include <vector>
 
