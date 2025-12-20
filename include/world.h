@@ -90,6 +90,8 @@ struct World {
     using Clock         = std::chrono::steady_clock;
     using Duration      = Clock::duration;
     using TimePoint     = Clock::time_point;
+    using MutexType     = std::mutex;
+    using LockType      = std::scoped_lock<MutexType>;
 
     static constexpr Duration one_tick{Duration::period::den / target_tps};
 
@@ -113,7 +115,7 @@ struct World {
     std::chrono::steady_clock::time_point   end_time;
     cyclic<decltype(tick_counter), day_night_cycle_length> daytime;
 
-    std::mutex prune_mutex;
+    MutexType prune_mutex;
 
     static void stop_running(int)
     {
@@ -157,6 +159,8 @@ struct World {
     Food const& new_random_food();
 
     Food& new_food(Vec2D food_position, double nutrition);
+
+    void new_many_food(Vec2D const& position, int count, double nutrition);
 
     Food const& new_food(double nutrition);
 
@@ -204,6 +208,8 @@ struct World {
 
    private:
     double current_tps{};
+
+    Food& new_food_impl(Vec2D food_position, double nutrition);
 
     void food_tick(Foods& food_neighbors);
 

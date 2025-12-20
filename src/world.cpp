@@ -44,7 +44,7 @@ World::World(long seed, int width, int height)
 void World::add_vehicle(Vehicle&& vehicle)
 {
     // output("adding vehicle at position: ", vehicle.get_position(), "\n");
-    std::unique_lock l{prune_mutex};
+    World::LockType l{prune_mutex};
 
     vehicle.world        = this;
     vehicles[vehicle.id] = std::move(vehicle);
@@ -62,7 +62,7 @@ void World::add_all_vehicles(std::vector<Vehicle>&& new_vehicles)
     for (auto& v : new_vehicles) {
         v.world = this;
     }
-    std::unique_lock l{prune_mutex};
+    World::LockType l{prune_mutex};
 
     for (auto& v : new_vehicles) {
         assert(!vehicles.contains(v.id));
@@ -81,10 +81,16 @@ Food const& World::new_random_food()
     return new_food(random_in_range(0, 1) < POISON_CHANCE ? -10.0 : 5.0);
 }
 
-Food& World::new_food(Vec2D food_position, double nutrition)
+void World::new_many_food(Vec2D const& position, int count, double nutrition)
 {
-    std::unique_lock l{prune_mutex};
+    World::LockType l{prune_mutex};
+    for (int i = 0; i < count; i++) {
+        new_food_impl(position + Vec2D::random(5), nutrition);
+    }
+}
 
+Food& World::new_food_impl(Vec2D food_position, double nutrition)
+{
     auto  id    = Environmental::next_id();
     Food& f     = food[id];
     f.world     = this;
@@ -92,6 +98,13 @@ Food& World::new_food(Vec2D food_position, double nutrition)
     f.nutrition = nutrition;
     f.id        = id;
     return food.at(id);
+}
+
+Food& World::new_food(Vec2D food_position, double nutrition)
+{
+    World::LockType l{prune_mutex};
+
+    return new_food_impl(food_position, nutrition);
 }
 
 Food const& World::new_food(double nutrition)
@@ -111,7 +124,7 @@ auto World::prune_dead_vehicles() -> typename decltype(vehicles)::size_type
         }
     }
 
-    std::unique_lock l{prune_mutex};
+    World::LockType l{prune_mutex};
     std::erase_if(vehicles, [this](auto& p) {
         if (auto& v = p.second; v.is_dead()) {
             dead_counter++;
@@ -124,8 +137,8 @@ auto World::prune_dead_vehicles() -> typename decltype(vehicles)::size_type
 
 auto World::prune_eaten_food() -> decltype(food)::size_type
 {
-    auto             initial_size = food.size();
-    std::unique_lock l{prune_mutex};
+    auto            initial_size = food.size();
+    World::LockType l{prune_mutex};
 
     std::erase_if(food,
                   [](auto const& p) {
@@ -229,6 +242,7 @@ void World::run(render::IRenderer* renderer, int target_tps)
     start_time = Clock::now();
 
     std::thread ticker{[this, target_tps]() {
+        output("Ticker started\n");
         while (game_running) {
             auto tick_start = Clock::now();
             if (!is_paused) {
@@ -248,23 +262,25 @@ void World::run(render::IRenderer* renderer, int target_tps)
         }
     }};
 
-    std::thread renderer_thread{[this, renderer]() {
+    // std::thread renderer_thread{[this, renderer]() {
+    while (game_running) {
         auto frame_start = Clock::now();
-        while (game_running) {
-            std::unique_lock l{prune_mutex};
+        {
+            World::LockType l{prune_mutex};
             renderer->render();
-            if (was_interrupted) {
-                renderer->terminate();
-                break;
-            }
-            tps_target_wait(
-                frame_start,
-                Clock::duration{static_cast<Clock::duration::rep>(1e9 / 60)});
         }
-    }};
+        if (was_interrupted) {
+            renderer->terminate();
+            break;
+        }
+        tps_target_wait(
+            frame_start,
+            Clock::duration{static_cast<Clock::duration::rep>(1e9 / 60)});
+    }
+    // }};
 
     ticker.join();
-    renderer_thread.join();
+    // renderer_thread.join();
     end_time = Clock::now();
 }
 

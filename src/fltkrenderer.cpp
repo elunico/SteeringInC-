@@ -6,6 +6,7 @@
 #include "ui/controls.h"
 // #include "ui/qtbuttonbase.h"
 #include "utils.h"
+#include "vec2d.h"
 #include "vehicle.h"
 #include "world.h"
 
@@ -90,18 +91,21 @@ int FLTKCustomDrawer::handle(int i)
         double x = Fl::event_x();
         double y = Fl::event_y();
         if (World::interact_mode.is_set(World::InteractMode::KILL)) {
-            for (auto& [id, vehicle] : world->vehicles) {
-                if (vehicle.get_position().distance_to(Vec2D{x, y}) <
-                    World::kill_radius) {
-                    vehicle.kill();
+            world->delay([x, y](World* world) {
+                for (auto& [id, vehicle] : world->vehicles) {
+                    if (vehicle.get_position().distance_to(Vec2D{x, y}) <
+                        World::kill_radius) {
+                        vehicle.kill();
+                    }
                 }
-            }
+            });
             return 1;
         }
         if (World::interact_mode.is_set(World::InteractMode::FEED)) {
-            for (int idx = 0; idx < world->feed_count; idx++) {
-                world->new_food(Vec2D{x, y} + Vec2D::random(5), 5.0);
-            }
+            world->delay([x, y](World* world) {
+                world->new_many_food(Vec2D{x, y} + Vec2D::random(5),
+                                     world->feed_count, 5.0);
+            });
             return 1;
         }
         for (auto& vehicle : world->vehicles | std::views::values) {
