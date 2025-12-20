@@ -5,6 +5,7 @@
 #include <csignal>
 #include <cstdlib>
 #include <iostream>
+#include <mutex>
 #include <ranges>
 #include <vector>
 
@@ -43,6 +44,8 @@ World::World(long seed, int width, int height)
 void World::add_vehicle(Vehicle&& vehicle)
 {
     // output("adding vehicle at position: ", vehicle.get_position(), "\n");
+    std::unique_lock l{prune_mutex};
+
     vehicle.world        = this;
     vehicles[vehicle.id] = std::move(vehicle);
 }
@@ -59,6 +62,8 @@ void World::add_all_vehicles(std::vector<Vehicle>&& new_vehicles)
     for (auto& v : new_vehicles) {
         v.world = this;
     }
+    std::unique_lock l{prune_mutex};
+
     for (auto& v : new_vehicles) {
         assert(!vehicles.contains(v.id));
         vehicles[v.id] = std::move(v);
@@ -78,6 +83,8 @@ Food const& World::new_random_food()
 
 Food& World::new_food(Vec2D food_position, double nutrition)
 {
+    std::unique_lock l{prune_mutex};
+
     auto  id    = Environmental::next_id();
     Food& f     = food[id];
     f.world     = this;
@@ -104,6 +111,7 @@ auto World::prune_dead_vehicles() -> typename decltype(vehicles)::size_type
         }
     }
 
+    std::unique_lock l{prune_mutex};
     std::erase_if(vehicles, [this](auto& p) {
         if (auto& v = p.second; v.is_dead()) {
             dead_counter++;
@@ -116,7 +124,9 @@ auto World::prune_dead_vehicles() -> typename decltype(vehicles)::size_type
 
 auto World::prune_eaten_food() -> decltype(food)::size_type
 {
-    auto initial_size = food.size();
+    auto             initial_size = food.size();
+    std::unique_lock l{prune_mutex};
+
     std::erase_if(food,
                   [](auto const& p) {
                       auto const& f = p.second;
@@ -217,25 +227,44 @@ long double calc_tps_from_tick_duration(World::TimePoint const tick_start,
 void World::run(render::IRenderer* renderer, int target_tps)
 {
     start_time = Clock::now();
-    while (game_running) {
-        auto tick_start = Clock::now();
-        if (!is_paused) {
-            if (!tick()) {
-                game_running = false;
-                break;
+
+    std::thread ticker{[this, target_tps]() {
+        while (game_running) {
+            auto tick_start = Clock::now();
+            if (!is_paused) {
+                if (!tick()) {
+                    game_running = false;
+                    break;
+                }
+                tps_target_wait(
+                    tick_start,
+                    Clock::duration{
+                        static_cast<Clock::duration::rep>(1e9 / target_tps)});
+            }
+            if (tick_counter % (target_tps / 2 + 1) == 0) {
+                auto tick_end = Clock::now();
+                current_tps = calc_tps_from_tick_duration(tick_start, tick_end);
             }
         }
-        renderer->render();
-        if (was_interrupted) {
-            renderer->terminate();
-            break;
+    }};
+
+    std::thread renderer_thread{[this, renderer]() {
+        auto frame_start = Clock::now();
+        while (game_running) {
+            std::unique_lock l{prune_mutex};
+            renderer->render();
+            if (was_interrupted) {
+                renderer->terminate();
+                break;
+            }
+            tps_target_wait(
+                frame_start,
+                Clock::duration{static_cast<Clock::duration::rep>(1e9 / 60)});
         }
-        tps_target_wait(tick_start);
-        if (tick_counter % (target_tps / 2 + 1) == 0) {
-            auto tick_end = Clock::now();
-            current_tps   = calc_tps_from_tick_duration(tick_start, tick_end);
-        }
-    }
+    }};
+
+    ticker.join();
+    renderer_thread.join();
     end_time = Clock::now();
 }
 

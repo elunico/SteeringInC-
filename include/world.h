@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <chrono>
 #include <functional>
+#include <mutex>
 #include <ostream>
 #include <queue>
 #include <sstream>
@@ -112,6 +113,8 @@ struct World {
     std::chrono::steady_clock::time_point   end_time;
     cyclic<decltype(tick_counter), day_night_cycle_length> daytime;
 
+    std::mutex prune_mutex;
+
     static void stop_running(int)
     {
         output("Interrupting world...");
@@ -207,24 +210,30 @@ struct World {
     void vehicle_tick(Vehicles& neighbors, Foods& food_neighbors);
 
     void process_events();
+};
 
 #ifdef NO_TPS_LIMIT
-    constexpr static void tps_target_wait(auto const&...)
-    {
-        // do nothing
-    }
+
+constexpr inline void tps_target_wait(auto const&...)
+{
+    // do nothing
+}
 
 #else
-    inline static void tps_target_wait(TimePoint const& start_time)
-    {
-        auto const tick_duration = Clock::now() - start_time;
-        if (tick_duration < one_tick) {
-            auto sleep_duration = one_tick - tick_duration;
-            usleep(sleep_duration.count() / 1000);
-        }
-    }
+
+template <typename Clock = World::Clock>
+inline void tps_target_wait(typename Clock::time_point const& start_time,
+                            typename Clock::duration const&   goal)
+{
+    // auto const tick_duration = Clock::now() - start_time;
+    // if (tick_duration < goal) {
+    //     auto sleep_duration = goal - tick_duration;
+    //     std::this_thread::sleep_for(sleep_duration);
+    // }
+
+    std::this_thread::sleep_until(start_time + goal);
+}
 #endif
-};
 
 std::ostream& operator<<(std::ostream& os, World const& world);
 

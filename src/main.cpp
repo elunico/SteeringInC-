@@ -76,19 +76,16 @@ void parse_args(int argc, char* argv[], arguments& args)
     }
 }
 
-tom::World initialize_world(arguments const&   args,
-                            unsigned int const seed,
-                            int const          width,
-                            int const          height)
+void initialize_world(arguments const&   args,
+                      unsigned int const seed,
+                      tom::World&        world)
 {
     tom::set_seed(seed);
     tom::World::is_paused      = !(args.auto_start);
     tom::World::edge_threshold = args.edge_threshold;
-    tom::World world(seed, width, height);
-    world.max_food        = args.max_food;
-    world.food_pct_chance = args.food_pct_chance;
+    world.max_food             = args.max_food;
+    world.food_pct_chance      = args.food_pct_chance;
     world.populate_world(args.starting_vehicles, 250);
-    return world;
 }
 
 int main(int argc, char* argv[])
@@ -100,7 +97,8 @@ int main(int argc, char* argv[])
     int const width  = args.width;
     int const height = args.height;
 
-    tom::World world = initialize_world(args, seed, width, height);
+    tom::World world{seed, width, height};
+    initialize_world(args, seed, world);
 
     auto* const renderer =
         args.use_curses
