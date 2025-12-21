@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <iostream>
 #include <ranges>
-#include "cursesrenderer.h"
 #include "fltkrenderer.h"
 #include "irenderer.h"
 #include "struct2this.h"
@@ -18,7 +17,6 @@ struct arguments {
     int          starting_vehicles = 10;
     unsigned int max_food          = 1000;
     unsigned int random_seed       = static_cast<unsigned int>(time(nullptr));
-    bool         use_curses        = false;
     bool         auto_start        = true;
 };
 
@@ -45,9 +43,6 @@ void parse_args(int argc, char* argv[], arguments& args)
             case 'h':
                 args.height = std::stoi(optarg);
                 break;
-            case 'c':
-                args.use_curses = true;
-                break;
             case 's':
                 args.starting_vehicles = std::stoi(optarg);
                 break;
@@ -61,7 +56,7 @@ void parse_args(int argc, char* argv[], arguments& args)
                 std::cerr
                     << "Usage: " << argv[0]
                     << " [-w width] [-h height] [-s starting_vehicles] "
-                       "[-c (use curses)] [-p (pause)] [-r random_seed] [-e "
+                       "[-p (pause)] [-r random_seed] [-e "
                        "edge_threshold] [-f food_pct_chance] [-x max_food]\n";
                 exit(EXIT_FAILURE);
         }
@@ -102,17 +97,10 @@ int main(int argc, char* argv[])
 
     tom::World world = initialize_world(args, seed, width, height);
 
-    auto* const renderer =
-        args.use_curses
-            ? static_cast<tom::render::IRenderer*>(
-                  new tom::render::CursesRenderer(&world, width, height))
-            : static_cast<tom::render::IRenderer*>(
-                  new tom::render::FLTKRenderer(&world, width, height));
+    tom::render::FLTKRenderer renderer(&world, width, height);
 
-    world.run(renderer);
-    renderer->render(tom::World::was_interrupted);
-    delete renderer;
-
+    world.run(&renderer);
+    renderer.render(tom::World::was_interrupted);
     tom::output("Simulation ended.\n");
 
     if (!world.vehicles.empty()) {

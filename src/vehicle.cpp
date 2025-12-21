@@ -9,7 +9,7 @@
 #include "vec2d.h"
 #include "world.h"
 
-#define MAX_FORCE 0.5
+#define MAX_FORCE 0.45
 #define MAX_HEALTH 40.0
 
 namespace tom {
