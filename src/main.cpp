@@ -88,6 +88,9 @@ tom::World initialize_world(arguments const&   args,
 
 int main(int argc, char* argv[])
 {
+    tom::output("Scaling support result: ", Fl::screen_scaling_supported(), '\n');
+    Fl::screen_scale(0, 4.0f);
+
     arguments args;
     parse_args(argc, argv, args);
     unsigned int const seed = args.random_seed;

@@ -17,3 +17,4 @@ main
 .ninja_log
 build.ninja
 DS_Store
+perf*
