@@ -18,3 +18,4 @@ main
 build.ninja
 DS_Store
 perf*
+compile_commands.json
