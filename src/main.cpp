@@ -101,7 +101,9 @@ int main(int argc, char* argv[])
     parse_args(argc, argv, args);
 
     if (Fl::screen_scaling_supported() > 0) {
-        Fl::screen_scale(0, args.scale_factor);
+        for (decltype(Fl::screen_count()) i = Fl::screen_count() - 1; i >= 0; --i) {
+            Fl::screen_scale(i, args.scale_factor);
+        }
     } else if (args.scale_factor != 1.0f) {
         tom::output("Scaling is not supported on this platform!\n");
     }
