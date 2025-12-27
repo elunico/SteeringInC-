@@ -1,6 +1,7 @@
 #include <FL/Fl.H>
 #include <unistd.h>
 #include <algorithm>
+#include <cstdlib>
 #include <iostream>
 #include <ranges>
 #include "fltkrenderer.h"
@@ -18,13 +19,17 @@ struct arguments {
     unsigned int max_food          = 1000;
     unsigned int random_seed       = static_cast<unsigned int>(time(nullptr));
     bool         auto_start        = true;
+    float scale_factor = 1.0f;
 };
 
 void parse_args(int argc, char* argv[], arguments& args)
 {
     int c;
-    while ((c = getopt(argc, argv, "w:h:s:cpr:e:f:x:")) != -1) {
+    while ((c = getopt(argc, argv, "z:w:h:s:cpr:e:f:x:")) != -1) {
         switch (c) {
+            case 'z':
+                args.scale_factor = std::stof(optarg);
+                break;
             case 'e':
                 tom::World::edge_threshold = std::stod(optarg);
                 break;
@@ -57,9 +62,13 @@ void parse_args(int argc, char* argv[], arguments& args)
                     << "Usage: " << argv[0]
                     << " [-w width] [-h height] [-s starting_vehicles] "
                        "[-p (pause)] [-r random_seed] [-e "
-                       "edge_threshold] [-f food_pct_chance] [-x max_food]\n";
+                       "edge_threshold] [-f food_pct_chance] [-x max_food] [-z scale_factor ]\n";
                 exit(EXIT_FAILURE);
         }
+    }
+    if (args.scale_factor <= 0.0f) {
+        std::cerr << "Scale factor must be >= 0.0\n";
+        exit(EXIT_FAILURE);
     }
     if (args.width <= 0 || args.height <= 0) {
         std::cerr << "Width and height must be positive integers.\n";
@@ -88,11 +97,15 @@ tom::World initialize_world(arguments const&   args,
 
 int main(int argc, char* argv[])
 {
-    tom::output("Scaling support result: ", Fl::screen_scaling_supported(), '\n');
-    Fl::screen_scale(0, 4.0f);
-
     arguments args;
     parse_args(argc, argv, args);
+
+    if (Fl::screen_scaling_supported() > 0) {
+        Fl::screen_scale(0, args.scale_factor);
+    } else if (args.scale_factor != 1.0f) {
+        tom::output("Scaling is not supported on this platform!\n");
+    }
+    
     unsigned int const seed = args.random_seed;
 
     int const width  = args.width;

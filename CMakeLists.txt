@@ -6,6 +6,7 @@ include_directories(.)
 include_directories(include)
 
 option(RELEASE_BUILD "Build in release mode" OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
