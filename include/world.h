@@ -28,9 +28,9 @@ concept CallableWith = requires(Callable c, Args... args) { c(args...); };
 
 struct World {
     struct ViewMode : Enumeration<int> {
-        const static ViewMode PLAIN;
-        const static ViewMode FOOD_SEEKING;
-        const static ViewMode VEHICLE_SEEKING;
+        static ViewMode const PLAIN;
+        static ViewMode const FOOD_SEEKING;
+        static ViewMode const VEHICLE_SEEKING;
 
         constexpr ViewMode(int v) : Enumeration(v)
         {
@@ -40,9 +40,9 @@ struct World {
     };
 
     struct InteractMode : Enumeration<int> {
-        const static InteractMode NONE;
-        const static InteractMode FEED;
-        const static InteractMode KILL;
+        static InteractMode const NONE;
+        static InteractMode const FEED;
+        static InteractMode const KILL;
 
         constexpr InteractMode(int v) : Enumeration(v)
         {

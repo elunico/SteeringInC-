@@ -78,53 +78,29 @@ FLTKRenderer::~FLTKRenderer()
 std::array display_colors = {FL_BLUE,   FL_CYAN, FL_GREEN,
                              FL_YELLOW, FL_RED,  FL_MAGENTA};
 
-void FLTKCustomDrawer::clear_screen() const
+void FLTKCustomDrawer::draw()
 {
-    fl_color(FL_WHITE);
-    fl_rectf(x(), y(), w(), h());
-}
+    assert(world != nullptr &&
+           "World pointer is null. Did you forget to set it?");
 
-int FLTKCustomDrawer::handle(int i)
-{
-    if (i == FL_PUSH) {
-        double x = Fl::event_x();
-        double y = Fl::event_y();
-        if (World::interact_mode.is_set(World::InteractMode::KILL)) {
-            for (auto& [id, vehicle] : world->vehicles) {
-                if (vehicle.get_position().distance_to(Vec2D{x, y}) <
-                    World::kill_radius) {
-                    vehicle.kill();
-                }
-            }
-            return 1;
-        }
-        if (World::interact_mode.is_set(World::InteractMode::FEED)) {
-            for (int idx = 0; idx < world->feed_count; idx++) {
-                world->new_food(Vec2D{x, y} + Vec2D::random(5), 5.0);
-            }
-            return 1;
-        }
-        for (auto& vehicle : world->vehicles | std::views::values) {
-            if (vehicle.get_position().distance_to(Vec2D{x, y}) < 30) {
-                vehicle.verbose = !vehicle.verbose;
-                return 1;
-            }
-        }
-        return Fl_Box::handle(i);
+    clear_screen();
+    if (world->is_day()) {
+        fl_color(FL_WHITE);
+    } else {
+        fl_color(FL_GRAY);
     }
-    return Fl_Box::handle(i);
-}
+    fl_rectf(x(), y(), w(), h());
 
-FLTKCustomDrawer::~FLTKCustomDrawer() = default;
-
-void FLTKCustomDrawer::draw_vehicle_target(Fl_Color     color,
-                                           Vec2D const& start,
-                                           Vec2D const& pos)
-{
-    fl_color(color);
-    fl_line(static_cast<int>(start.x), static_cast<int>(start.y),
-            static_cast<int>(pos.x), static_cast<int>(pos.y));
-    fl_rect(static_cast<int>(pos.x) - 3, static_cast<int>(pos.y) - 3, 6, 6);
+    auto ss  = world->info_stream();
+    auto msg = ss.str();
+    fl_font(FL_HELVETICA_BOLD, 14);
+    fl_color(FL_BLACK);
+    fl_draw(msg.c_str(), 0, 0, w(), h(), FL_ALIGN_TOP_LEFT | FL_ALIGN_WRAP);
+    if (!world->vehicles.empty()) {
+        draw_living_world();
+    } else {
+        draw_dead_world();
+    }
 }
 
 void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
@@ -217,30 +193,54 @@ void FLTKCustomDrawer::draw_dead_world()
     fl_draw(message.c_str(), (w() - text_width) / 2, h() / 2);
 }
 
-void FLTKCustomDrawer::draw()
+void FLTKCustomDrawer::clear_screen() const
 {
-    assert(world != nullptr &&
-           "World pointer is null. Did you forget to set it?");
-
-    clear_screen();
-    if (world->is_day()) {
-        fl_color(FL_WHITE);
-    } else {
-        fl_color(FL_GRAY);
-    }
+    fl_color(FL_WHITE);
     fl_rectf(x(), y(), w(), h());
-
-    auto ss  = world->info_stream();
-    auto msg = ss.str();
-    fl_font(FL_HELVETICA_BOLD, 14);
-    fl_color(FL_BLACK);
-    fl_draw(msg.c_str(), 0, 0, w(), h(), FL_ALIGN_TOP_LEFT | FL_ALIGN_WRAP);
-    if (!world->vehicles.empty()) {
-        draw_living_world();
-    } else {
-        draw_dead_world();
-    }
 }
+
+int FLTKCustomDrawer::handle(int i)
+{
+    if (i == FL_PUSH) {
+        double x = Fl::event_x();
+        double y = Fl::event_y();
+        if (World::interact_mode.is_set(World::InteractMode::KILL)) {
+            for (auto& [id, vehicle] : world->vehicles) {
+                if (vehicle.get_position().distance_to(Vec2D{x, y}) <
+                    World::kill_radius) {
+                    vehicle.kill();
+                }
+            }
+            return 1;
+        }
+        if (World::interact_mode.is_set(World::InteractMode::FEED)) {
+            for (int idx = 0; idx < world->feed_count; idx++) {
+                world->new_food(Vec2D{x, y} + Vec2D::random(5), 5.0);
+            }
+            return 1;
+        }
+        for (auto& vehicle : world->vehicles | std::views::values) {
+            if (vehicle.get_position().distance_to(Vec2D{x, y}) < 30) {
+                vehicle.verbose = !vehicle.verbose;
+                return 1;
+            }
+        }
+        return Fl_Box::handle(i);
+    }
+    return Fl_Box::handle(i);
+}
+
+void FLTKCustomDrawer::draw_vehicle_target(Fl_Color     color,
+                                           Vec2D const& start,
+                                           Vec2D const& pos)
+{
+    fl_color(color);
+    fl_line(static_cast<int>(start.x), static_cast<int>(start.y),
+            static_cast<int>(pos.x), static_cast<int>(pos.y));
+    fl_rect(static_cast<int>(pos.x) - 3, static_cast<int>(pos.y) - 3, 6, 6);
+}
+
+FLTKCustomDrawer::~FLTKCustomDrawer() = default;
 
 void FLTKRenderer::teardown()
 {

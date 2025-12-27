@@ -273,7 +273,7 @@ bool World::tick()
     food_tick(food);
     vehicle_tick(vehicles, food);
     tick_counter++;
-    daytime++;
+    ++daytime;
     return !vehicles.empty();
 }
 
@@ -317,9 +317,10 @@ void World::vehicle_tick(Vehicles& neighbors, Foods& food_neighbors)
 void World::process_events()
 {
     while (!actions.empty()) {
-        auto f = std::move(actions.front());
+        // auto f = std::move(actions.front());
+        actions.front()(this);
         actions.pop();
-        f(this);
+        // f(this);
     }
 }
 

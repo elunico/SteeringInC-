@@ -20,7 +20,7 @@ class SplitLimit {
 
     bool operator!=(size_t other) const noexcept;
 
-    bool is_unlimited() const noexcept;
+    [[nodiscard]] bool is_unlimited() const noexcept;
 
     static SplitLimit unlimited() noexcept
     {

@@ -80,15 +80,14 @@ void Vec2D::set_mag(double mag)
 
 void Vec2D::normalize()
 {
-    double mag = magnitude();
-    if (mag != 0) {
+    if (double const mag = magnitude(); mag != 0) {
         set(x / mag, y / mag);
     }
 }
 
 [[nodiscard]] Vec2D Vec2D::normalized() const
 {
-    double mag = magnitude();
+    double const mag = magnitude();
     if (mag == 0)
         return {0, 0};
     return {x / mag, y / mag};
@@ -96,15 +95,14 @@ void Vec2D::normalize()
 
 void Vec2D::limit(double max)
 {
-    double mag = magnitude();
-    if (mag > max) {
+    if (double const mag = magnitude(); mag > max) {
         set((x / mag) * max, (y / mag) * max);
     }
 }
 
 void Vec2D::set_heading(double angle)
 {
-    double mag = magnitude();
+    double const mag = magnitude();
     set(cos(angle) * mag, sin(angle) * mag);
 }
 

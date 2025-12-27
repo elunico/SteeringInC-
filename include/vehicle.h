@@ -15,7 +15,7 @@ static inline double find_distance(Vec2D const& a, Positionable auto const& p)
 }
 
 template <Positionable Obj, typename ID = typename Obj::IdType>
-static inline double find_distance(const Vec2D& a, std::pair<ID, Obj>& b)
+static inline double find_distance(Vec2D const& a, std::pair<ID, Obj>& b)
 {
     return a.distance_to(b.second.get_position());
 }

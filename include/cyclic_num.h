@@ -33,7 +33,7 @@ class cyclic {
      * @param initial The initial value to assign to the cyclic object.
      *                It will be reduced modulo the maximum value.
      */
-    constexpr cyclic(T initial) : value(initial % maximum)
+    explicit constexpr cyclic(T initial) : value(initial % maximum)
     {
     }
 
@@ -101,9 +101,80 @@ class cyclic {
         return *this;
     }
 
-    constexpr operator T() const
+    template <T other_max = maximum>
+    constexpr bool operator==(cyclic<T, other_max> const& other) const
+    {
+        return value == other.value;
+    }
+
+    template <T other_max = maximum>
+    constexpr bool operator!=(cyclic<T, other_max> const& other) const
+    {
+        return value != other.value;
+    }
+
+    template <T other_max = maximum>
+    constexpr bool operator<(cyclic<T, other_max> const& other) const
+    {
+        return value < other.value;
+    }
+
+    template <T other_max = maximum>
+    constexpr bool operator<=(cyclic<T, other_max> const& other) const
+    {
+        return value <= other.value;
+    }
+
+    template <T other_max = maximum>
+    constexpr bool operator>(cyclic<T, other_max> const& other) const
+    {
+        return value > other.value;
+    }
+
+    template <T other_max = maximum>
+    constexpr bool operator>=(cyclic<T, other_max> const& other) const
+    {
+        return value >= other.value;
+    }
+
+    constexpr bool operator==(T other) const
+    {
+        return value == other;
+    }
+
+    constexpr bool operator!=(T other) const
+    {
+        return value != other;
+    }
+
+    constexpr bool operator<(T other) const
+    {
+        return value < other;
+    }
+
+    constexpr bool operator<=(T other) const
+    {
+        return value <= other;
+    }
+
+    constexpr bool operator>(T other) const
+    {
+        return value > other;
+    }
+
+    constexpr bool operator>=(T other) const
+    {
+        return value >= other;
+    }
+
+    explicit constexpr operator T() const
     {
         return value;
+    }
+
+    constexpr operator bool() const
+    {
+        return value != 0;
     }
 
     constexpr T operator*() const

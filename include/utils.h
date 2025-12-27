@@ -113,10 +113,12 @@ auto get(tom::Vec2D const& v) -> decltype(auto)
 template <typename T, typename R = T>
 R constrain(T value, T min, T max)
 {
-    if (value < min)
+    if (value < min) {
         return min;
-    if (value > max)
+    }
+    if (value > max) {
         return max;
+    }
     return value;
 }
 
