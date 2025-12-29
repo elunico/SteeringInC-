@@ -1,7 +1,7 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <unistd.h>
+#include "windows_shim.h"
 #include <chrono>
 #include <functional>
 #include <ostream>
@@ -222,7 +222,7 @@ struct World {
         auto const tick_duration = Clock::now() - start_time;
         if (tick_duration < one_tick) {
             auto sleep_duration = one_tick - tick_duration;
-            usleep(sleep_duration.count() / 1000);
+            usleep_shim(sleep_duration.count() / 1000);
         }
     }
 #endif

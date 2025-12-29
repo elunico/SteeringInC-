@@ -1,5 +1,5 @@
 #include <FL/Fl.H>
-#include <unistd.h>
+#include "windows_shim.h"
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
@@ -22,41 +22,41 @@ struct arguments {
     float scale_factor = 1.0f;
 };
 
-void parse_args(int argc, char* argv[], arguments& args)
+void parse_args(int argc, char const* argv[], arguments& args)
 {
     int c;
-    while ((c = getopt(argc, argv, "z:w:h:s:cpr:e:f:x:")) != -1) {
+    while ((c = getopt_shim(argc, argv, "z:w:h:s:cpr:e:f:x:")) != -1) {
         switch (c) {
             case 'z':
-                args.scale_factor = std::stof(optarg);
+                args.scale_factor = std::stof(optarg_shim);
                 break;
             case 'e':
-                tom::World::edge_threshold = std::stod(optarg);
+                tom::World::edge_threshold = std::stod(optarg_shim);
                 break;
             case 'f':
-                args.food_pct_chance = std::stod(optarg);
+                args.food_pct_chance = std::stod(optarg_shim);
                 break;
             case 'x':
-                args.max_food = std::stoul(optarg);
+                args.max_food = std::stoul(optarg_shim);
                 break;
             case 'p':
                 args.auto_start = false;
                 break;
             case 'w':
-                args.width = std::stoi(optarg);
+                args.width = std::stoi(optarg_shim);
                 break;
             case 'h':
-                args.height = std::stoi(optarg);
+                args.height = std::stoi(optarg_shim);
                 break;
             case 's':
-                args.starting_vehicles = std::stoi(optarg);
+                args.starting_vehicles = std::stoi(optarg_shim);
                 break;
             case 'r':
                 args.random_seed =
-                    static_cast<unsigned int>(std::stoul(optarg));
+                    static_cast<unsigned int>(std::stoul(optarg_shim));
                 break;
             default:
-                std::cerr << "Unknown option: " << static_cast<char>(optopt)
+                std::cerr << "Unknown option: " << static_cast<char>(optopt_shim)
                           << "\n";
                 std::cerr
                     << "Usage: " << argv[0]
@@ -95,7 +95,7 @@ tom::World initialize_world(arguments const&   args,
     return world;
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char const* argv[])
 {
     arguments args;
     parse_args(argc, argv, args);
