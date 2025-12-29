@@ -157,6 +157,8 @@ struct World {
 
     Food const& new_food(double nutrition);
 
+    [[nodiscard]] bool should_spawn_food() const noexcept; 
+
     auto prune_dead_vehicles() -> typename decltype(vehicles)::size_type;
 
     auto prune_eaten_food() -> typename decltype(food)::size_type;

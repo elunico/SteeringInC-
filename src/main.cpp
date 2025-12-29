@@ -100,6 +100,7 @@ int main(int argc, char* argv[])
     arguments args;
     parse_args(argc, argv, args);
 
+#if defined(FL_ABI_VERSION) && (FL_ABI_VERSION >= 10400)
     if (Fl::screen_scaling_supported() > 0) {
         for (decltype(Fl::screen_count()) i = Fl::screen_count() - 1; i >= 0; --i) {
             Fl::screen_scale(i, args.scale_factor);
@@ -107,6 +108,9 @@ int main(int argc, char* argv[])
     } else if (args.scale_factor != 1.0f) {
         tom::output("Scaling is not supported on this platform!\n");
     }
+#else
+    tom::output("Scaling is not supported by this version of FLTK\n");
+#endif
     
     unsigned int const seed = args.random_seed;
 

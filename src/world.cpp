@@ -93,6 +93,12 @@ Food const& World::new_food(double nutrition)
     return new_food(food_position, nutrition);
 }
 
+bool World::should_spawn_food() const noexcept
+{
+    return (random_in_range(0, 1) < (food_pct_chance / 100.0 / target_tps) &&
+            food.size() < max_food); 
+}
+
 auto World::prune_dead_vehicles() -> typename decltype(vehicles)::size_type
 {
     auto const initial_size = vehicles.size();

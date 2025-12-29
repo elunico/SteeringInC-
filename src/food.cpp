@@ -91,9 +91,7 @@ void Food::update() noexcept
         // dont let the poison food create more food
         // TODO: feels hacky, maybe subclass Environmental for poison but world
         // has only a map of Food
-        if (random_in_range(0, 1) <
-                (world->food_pct_chance / 100.0 / world->target_tps) &&
-            world->food.size() < world->max_food) {
+        if (world->should_spawn_food()) {
             world->delay([this](auto* world) { this->perform_spawn(world); });
         }
     }

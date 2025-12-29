@@ -62,12 +62,12 @@ int random_int(int min, int max) noexcept;
 
 void log(std::string const& message);
 
-constexpr bool double_equal(double a, double b, double epsilon = 0.001) noexcept
+static inline bool double_equal(double a, double b, double epsilon = 0.001) noexcept
 {
     return std::abs(a - b) <= epsilon;
 }
 
-constexpr bool double_near_zero(double a, double epsilon = 0.001) noexcept
+static inline bool double_near_zero(double a, double epsilon = 0.001) noexcept
 {
     return double_equal(a, 0.0, epsilon);
 }

@@ -2,36 +2,39 @@
 #include <cassert>
 #include <cstddef>
 #include <fstream>
-
-#include <random>
+#include <type_traits>
 
 namespace tom {
 
 #ifdef FAST_RANDOM
 bool random_bool() noexcept
 {
-    return rand() % 2 == 0;
+    return (rand() & 1) == 0;
 }
 
 double random_delta(double scale) noexcept
 {
-    return ((rand() % 200) / 100.0 - 1.0) * scale;  // small random change
+    return ((random_in_range(0, 200) / 100.0) - 1.0) * scale;
 }
 
 double random_in_range(double min, double max) noexcept
 {
     return min + (rand() / (RAND_MAX / (max - min)));
-    // std::uniform_real_distribution<> dis(min, max);
-    // return dis(gen);
 }
+
+using twice_int = typename std::conditional<
+    sizeof(long) == 2 * sizeof(int),
+    long,
+    std::conditional<sizeof(long long) == 2 * sizeof(int), long long, void>>::
+    type;
 
 int random_int(int min, int max) noexcept
 {
-    return min + (rand() % (max - min + 1));
-    // std::uniform_int_distribution<> dis(min, max);
-    // return dis(gen);
+    return ((twice_int(rand()) * twice_int(max)) >> 31) + min;
 }
 #else
+
+#include <random>
 
 bool random_bool() noexcept
 {
