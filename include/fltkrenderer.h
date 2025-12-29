@@ -19,7 +19,7 @@ struct FLTKCustomDrawer : public Fl_Box {
 
     void draw_vehicle(Vehicle const& vehicle);
 
-    void draw_food(Food const& position);
+    void draw_food(Food const& food_item);
 
     void draw_living_world();
 

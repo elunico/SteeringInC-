@@ -162,15 +162,16 @@ void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
     }
 }
 
-void FLTKCustomDrawer::draw_food(Food const& position)
+void FLTKCustomDrawer::draw_food(Food const& food_item)
 {
-    if (position.nutrition < 0) {
-        fl_color(FL_RED);
-    } else {
-        fl_color(FL_GREEN);
-    }
-    fl_pie(static_cast<int>(position.position.x) - 2,
-           static_cast<int>(position.position.y) - 2, 4, 4, 0, 360);
+    // if (food_item.nutrition < 0) {
+        // fl_color(FL_RED);
+    // } else {
+        // fl_color(FL_GREEN);
+    // }
+    // fl_pie(static_cast<int>(position.position.x) - 2,
+    //        static_cast<int>(position.position.y) - 2, 4, 4, 0, 360);
+    fl_rectf(food_item.position.x, food_item.position.y, 4, 4, food_item.nutrition < 0 ? FL_RED : FL_GREEN);
 }
 
 void FLTKCustomDrawer::draw_living_world()
