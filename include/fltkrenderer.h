@@ -39,7 +39,6 @@ struct FLTKCustomDrawer : public Fl_Box {
 struct FLTKRenderer : public IRenderer {
     World*            world;
     FLTKCustomDrawer* drawer;
-    bool              has_control_window = false;
     static Fl_Window* window;
     static Fl_Window* control_window;
 
