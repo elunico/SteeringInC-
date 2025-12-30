@@ -11,6 +11,7 @@ void usleep_shim(long microseconds)
 }
 
 extern "C" {
+
 char const* optarg_shim = NULL;
 int optopt_shim = '?';
 int argpos = 1;
@@ -37,7 +38,7 @@ int getopt_shim(int argc, char const* argv[], char const* argstr)
                     return -1;
                 }
                 if (optarg_shim[0] == '-') {
-                    fprintf(stderr, "Warning: %s expects an argument but next option was %s. Maybe you forgot the argument?\n", arg, optarg);
+                    fprintf(stderr, "Warning: %s expects an argument but next option was %s. Maybe you forgot the argument?\n", arg, optarg_shim);
                 }
                 argpos += 2;
             } else {

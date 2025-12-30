@@ -44,6 +44,14 @@ class Lifespan {
         return *this;
     }
 
+    Lifespan& operator*=(T amount) noexcept
+    {
+        if (!unlimited_) {
+            life *= amount;
+        }
+        return *this;
+    }
+
     Lifespan& operator+=(T ticks) noexcept
     {
         if (!unlimited_) {

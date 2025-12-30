@@ -66,8 +66,8 @@ void parse_args(int argc, char const* argv[], arguments& args)
                 exit(EXIT_FAILURE);
         }
     }
-    if (args.scale_factor <= 0.0f) {
-        std::cerr << "Scale factor must be >= 0.0\n";
+    if (args.scale_factor <= 0.0f || args.scale_factor >= 5.0) {
+        std::cerr << "Scale factor must be 0.0 <= scale factor <= 5.0\n";
         exit(EXIT_FAILURE);
     }
     if (args.width <= 0 || args.height <= 0) {

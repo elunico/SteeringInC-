@@ -539,8 +539,7 @@ void Vehicle::perform_explosion(World* world) const
         if (auto d = this->position.distance_to(v.position);
             d < this->dna.perception_radius) {
             // v.kill();
-            v.health -=
-                (MAX_HEALTH * ((1 / (d * this->dna.perception_radius))));
+            v.health *= ((this->dna.perception_radius - d) / this->dna.perception_radius);
         }
     }
     std::vector children{count, Vehicle(start_pos)};
