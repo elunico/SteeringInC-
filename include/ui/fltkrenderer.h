@@ -9,6 +9,13 @@
 #include "world.h"
 
 namespace tom::render {
+
+struct screen_dim {
+    int w, h;
+};
+
+std::optional<screen_dim> get_screen(std::string& arg);
+
 struct FLTKCustomDrawer : public Fl_Box {
     World* world{};
     FLTKCustomDrawer(World* world, int W, int H);

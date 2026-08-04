@@ -1,4 +1,3 @@
-#include <FL/Fl.H>
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
@@ -8,8 +7,10 @@
 #ifdef NOGUI
 #include "consolerenderer.h"
 #else
+#include <FL/Fl.H>
 #include "ui/fltkrenderer.h"
 #endif
+#include "food.h"
 #include "irenderer.h"
 #include "struct2this.h"
 #include "utils.h"
@@ -29,51 +30,20 @@ struct arguments {
     float        scale_factor      = 1.0f;
 };
 
-struct screen_dim {
-    int w, h;
-};
+int get_dimension_width(char const* optarg)
+{
+    return std::stoi(optarg);
+}
+
+int get_dimension_height(char const* optarg)
+{
+    return std::stoi(optarg);
+}
 
 void lowercase(std::string& s)
 {
     std::transform(s.begin(), s.end(), s.begin(),
                    [](unsigned char c) { return std::tolower(c); });
-}
-
-std::optional<screen_dim> get_screen(std::string& arg)
-{
-    auto pos = arg.find("screen");
-    if (pos == std::string::npos) {
-        return std::nullopt;
-    }
-    auto nstart = arg.begin() + 6;
-    auto index =
-        (nstart == arg.end()) ? 0 : std::stoi(std::string{nstart, arg.end()});
-    int x, y, w, h;
-    Fl::screen_xywh(x, y, w, h, index);
-
-    return std::make_optional(screen_dim{w, h});
-}
-
-int get_dimension_width(char const* optarg)
-{
-    std::string arg(optarg);
-    lowercase(arg);
-    if (auto o = get_screen(arg); o) {
-        return o->w;
-    } else {
-        return std::stoi(arg);
-    }
-}
-
-int get_dimension_height(char const* optarg)
-{
-    std::string arg(optarg);
-    lowercase(arg);
-    if (auto o = get_screen(arg); o) {
-        return o->h;
-    } else {
-        return std::stoi(arg);
-    }
 }
 
 void parse_args(int argc, char const* argv[], arguments& args)

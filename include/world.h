@@ -1,7 +1,6 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include "windows_shim.h"
 #include <chrono>
 #include <functional>
 #include <ostream>
@@ -12,6 +11,7 @@
 #include <vector>
 #include "cyclic_num.h"
 #include "dna.h"
+#include "windows_shim.h"
 
 #include "enumeration.h"
 #include "irenderer.h"
@@ -157,7 +157,7 @@ struct World {
 
     Food const& new_food(double nutrition);
 
-    [[nodiscard]] bool should_spawn_food() const noexcept; 
+    [[nodiscard]] bool should_spawn_food() const noexcept;
 
     auto prune_dead_vehicles() -> typename decltype(vehicles)::size_type;
 

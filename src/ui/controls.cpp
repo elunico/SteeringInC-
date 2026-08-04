@@ -3,7 +3,7 @@
 #include <FL/fl_ask.H>
 #include <string>
 #include <utility>
-#include "fltkrenderer.h"
+#include "ui/fltkrenderer.h"
 #include "ui/qtbuttonbase.h"
 #include "ui/qttogglebutton.h"
 #include "world.h"

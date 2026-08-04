@@ -10,6 +10,7 @@
 #include "world.h"
 
 namespace tom::render {
+
 FLTKCustomDrawer::FLTKCustomDrawer(World* world, int W, int H)
     : Fl_Box(0, 0, W, H, nullptr), world(world)
 {
