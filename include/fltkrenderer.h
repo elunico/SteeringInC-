@@ -39,10 +39,12 @@ struct FLTKCustomDrawer : public Fl_Box {
 struct FLTKRenderer : public IRenderer {
     World*            world;
     FLTKCustomDrawer* drawer;
+    float             scale_factor;
     static Fl_Window* window;
     static Fl_Window* control_window;
+    static int const  CONTROL_WINDOW_WIDTH = 200;
 
-    FLTKRenderer(World* world, int W, int H);
+    FLTKRenderer(World* world, int W, int H, float scale_factor);
 
     void clear_screen() override;
 

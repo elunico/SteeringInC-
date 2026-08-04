@@ -6,6 +6,7 @@ include_directories(.)
 include_directories(include)
 
 option(RELEASE_BUILD "Build in release mode" OFF)
+option(NOGUI "Build without GUI" OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
@@ -14,7 +15,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 
 if(RELEASE_BUILD)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -Werror")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -Werror -flto")
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fno-omit-frame-pointer -D_GLIBCXX_DEBUG")
@@ -24,6 +25,10 @@ else()
     if(THREAD_SANITIZER)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fsanitize=thread")
     endif()
+endif()
+
+if(NOGUI)
+    add_definitions(-DNOGUI)
 endif()
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -DNO_TPS_LIMIT")

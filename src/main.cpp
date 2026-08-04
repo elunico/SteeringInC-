@@ -1,14 +1,17 @@
 #include <FL/Fl.H>
-#include "windows_shim.h"
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
+#include <optional>
 #include <ranges>
+#include <string>
+#include "consolerenderer.h"
 #include "fltkrenderer.h"
 #include "irenderer.h"
 #include "struct2this.h"
 #include "utils.h"
 #include "vehicle.h"
+#include "windows_shim.h"
 
 struct arguments {
     double       food_pct_chance   = 45.0;
@@ -18,22 +21,73 @@ struct arguments {
     int          starting_vehicles = 10;
     unsigned int max_food          = 1000;
     unsigned int random_seed       = static_cast<unsigned int>(time(nullptr));
+    unsigned int start_food        = 200;
     bool         auto_start        = true;
-    float scale_factor = 1.0f;
+    float        scale_factor      = 1.0f;
 };
+
+struct screen_dim {
+    int w, h;
+};
+
+void lowercase(std::string& s)
+{
+    std::transform(s.begin(), s.end(), s.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+}
+
+std::optional<screen_dim> get_screen(std::string& arg)
+{
+    auto pos = arg.find("screen");
+    if (pos == std::string::npos) {
+        return std::nullopt;
+    }
+    auto nstart = arg.begin() + 6;
+    auto index =
+        (nstart == arg.end()) ? 0 : std::stoi(std::string{nstart, arg.end()});
+    int x, y, w, h;
+    Fl::screen_xywh(x, y, w, h, index);
+
+    return std::make_optional(screen_dim{w, h});
+}
+
+int get_dimension_width(char const* optarg)
+{
+    std::string arg(optarg);
+    lowercase(arg);
+    if (auto o = get_screen(arg); o) {
+        return o->w;
+    } else {
+        return std::stoi(arg);
+    }
+}
+
+int get_dimension_height(char const* optarg)
+{
+    std::string arg(optarg);
+    lowercase(arg);
+    if (auto o = get_screen(arg); o) {
+        return o->h;
+    } else {
+        return std::stoi(arg);
+    }
+}
 
 void parse_args(int argc, char const* argv[], arguments& args)
 {
     int c;
-    while ((c = getopt_shim(argc, argv, "z:w:h:s:cpr:e:f:x:")) != -1) {
+    while ((c = getopt_shim(argc, argv, "uz:w:h:s:c:pr:e:f:x:")) != -1) {
         switch (c) {
+            case 'f':
+                args.start_food = std::stod(optarg_shim);
+                break;
             case 'z':
                 args.scale_factor = std::stof(optarg_shim);
                 break;
             case 'e':
                 tom::World::edge_threshold = std::stod(optarg_shim);
                 break;
-            case 'f':
+            case 'c':
                 args.food_pct_chance = std::stod(optarg_shim);
                 break;
             case 'x':
@@ -43,10 +97,10 @@ void parse_args(int argc, char const* argv[], arguments& args)
                 args.auto_start = false;
                 break;
             case 'w':
-                args.width = std::stoi(optarg_shim);
+                args.width = get_dimension_width(optarg_shim);
                 break;
             case 'h':
-                args.height = std::stoi(optarg_shim);
+                args.height = get_dimension_height(optarg_shim);
                 break;
             case 's':
                 args.starting_vehicles = std::stoi(optarg_shim);
@@ -56,13 +110,16 @@ void parse_args(int argc, char const* argv[], arguments& args)
                     static_cast<unsigned int>(std::stoul(optarg_shim));
                 break;
             default:
-                std::cerr << "Unknown option: " << static_cast<char>(optopt_shim)
-                          << "\n";
+                std::cerr << "Unknown option: "
+                          << static_cast<char>(optopt_shim) << "\n";
+                /* fallthrough */
+            case 'u':
                 std::cerr
                     << "Usage: " << argv[0]
                     << " [-w width] [-h height] [-s starting_vehicles] "
                        "[-p (pause)] [-r random_seed] [-e "
-                       "edge_threshold] [-f food_pct_chance] [-x max_food] [-z scale_factor ]\n";
+                       "edge_threshold] [-f starting_food_count ] [ -c "
+                       "food_pct_chance ] [-x max_food] [-z scale_factor ]\n";
                 exit(EXIT_FAILURE);
         }
     }
@@ -91,7 +148,7 @@ tom::World initialize_world(arguments const&   args,
     tom::World world(seed, width, height);
     world.max_food        = args.max_food;
     world.food_pct_chance = args.food_pct_chance;
-    world.populate_world(args.starting_vehicles, 250);
+    world.populate_world(args.starting_vehicles, args.start_food);
     return world;
 }
 
@@ -100,18 +157,6 @@ int main(int argc, char const* argv[])
     arguments args;
     parse_args(argc, argv, args);
 
-#if defined(FL_ABI_VERSION) && (FL_ABI_VERSION >= 10400)
-    if (Fl::screen_scaling_supported() > 0) {
-        for (decltype(Fl::screen_count()) i = Fl::screen_count() - 1; i >= 0; --i) {
-            Fl::screen_scale(i, args.scale_factor);
-        }
-    } else if (args.scale_factor != 1.0f) {
-        tom::output("Scaling is not supported on this platform!\n");
-    }
-#else
-    tom::output("Scaling is not supported by this version of FLTK\n");
-#endif
-    
     unsigned int const seed = args.random_seed;
 
     int const width  = args.width;
@@ -119,7 +164,13 @@ int main(int argc, char const* argv[])
 
     tom::World world = initialize_world(args, seed, width, height);
 
-    tom::render::FLTKRenderer renderer(&world, width, height);
+#ifdef NOGUI
+    tom::render::ConsoleRenderer renderer(&world);
+#else
+
+    tom::render::FLTKRenderer renderer(&world, width, height,
+                                       args.scale_factor);
+#endif
 
     world.run(&renderer);
     renderer.render(tom::World::was_interrupted);

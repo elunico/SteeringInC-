@@ -18,8 +18,22 @@ Fl_Window* FLTKRenderer::window = nullptr;
 
 Fl_Window* FLTKRenderer::control_window = nullptr;
 
-FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
+FLTKRenderer::FLTKRenderer(World* world, int W, int H, float scale_factor)
+    : world(world), scale_factor(scale_factor)
 {
+#if defined(FL_ABI_VERSION) && (FL_ABI_VERSION >= 10400)
+    if (Fl::screen_scaling_supported() > 0) {
+        for (decltype(Fl::screen_count()) i = Fl::screen_count() - 1; i >= 0;
+             --i) {
+            Fl::screen_scale(i, scale_factor);
+        }
+    } else if (scale_factor != 1.0f) {
+        tom::output("Scaling is not supported on this platform!\n");
+    }
+#else
+    tom::output("Scaling is not supported by this version of FLTK\n");
+#endif
+
     window = new Fl_Window(W, H);
     window->label("Vehicle Simulation");
 
@@ -36,7 +50,8 @@ FLTKRenderer::FLTKRenderer(World* world, int W, int H) : world(world)
     window->end();
     window->show();
 
-    control_window = new ControlWindow(world, W + 10, 200, H);
+    control_window =
+        new ControlWindow(world, W + 10, FLTKRenderer::CONTROL_WINDOW_WIDTH, H);
     control_window->label("Controls");
     control_window->end();
     control_window->show();
@@ -165,13 +180,14 @@ void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
 void FLTKCustomDrawer::draw_food(Food const& food_item)
 {
     // if (food_item.nutrition < 0) {
-        // fl_color(FL_RED);
+    // fl_color(FL_RED);
     // } else {
-        // fl_color(FL_GREEN);
+    // fl_color(FL_GREEN);
     // }
     // fl_pie(static_cast<int>(position.position.x) - 2,
     //        static_cast<int>(position.position.y) - 2, 4, 4, 0, 360);
-    fl_rectf(food_item.position.x, food_item.position.y, 4, 4, food_item.nutrition < 0 ? FL_RED : FL_GREEN);
+    fl_rectf(food_item.position.x, food_item.position.y, 4, 4,
+             food_item.nutrition < 0 ? FL_RED : FL_GREEN);
 }
 
 void FLTKCustomDrawer::draw_living_world()

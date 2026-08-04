@@ -72,7 +72,7 @@ class Vehicle {
             if constexpr (std::is_same_v<T, decltype(item)>) {
                 if (item_id == id) {
                     continue;
-                };
+                }
             }
             auto distance = find_distance(position, item);
             if (distance < record) {
@@ -106,8 +106,7 @@ class Vehicle {
     void perform_reproduction(Vehicle const* mom, Vehicle const* dad) const;
     void perform_explosion(World* world) const;
 
-    World* world = nullptr;
-    // double health                       = 20.0;
+    World*       world                        = nullptr;
     LifespanType health                       = 20.0;
     int          age                          = 0;
     double       mass                         = 1.0;

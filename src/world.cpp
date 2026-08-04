@@ -96,7 +96,7 @@ Food const& World::new_food(double nutrition)
 bool World::should_spawn_food() const noexcept
 {
     return (random_in_range(0, 1) < (food_pct_chance / 100.0 / target_tps) &&
-            food.size() < max_food); 
+            food.size() < max_food);
 }
 
 auto World::prune_dead_vehicles() -> typename decltype(vehicles)::size_type
@@ -127,8 +127,7 @@ auto World::prune_eaten_food() -> decltype(food)::size_type
                   [](auto const& p) {
                       auto const& f = p.second;
                       return f.is_expired();
-                  }),
-        food.end();
+                  });
     return initial_size - food.size();
 }
 
