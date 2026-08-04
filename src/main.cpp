@@ -5,8 +5,11 @@
 #include <optional>
 #include <ranges>
 #include <string>
+#ifdef NOGUI
 #include "consolerenderer.h"
-#include "fltkrenderer.h"
+#else
+#include "ui/fltkrenderer.h"
+#endif
 #include "irenderer.h"
 #include "struct2this.h"
 #include "utils.h"
