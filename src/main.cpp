@@ -29,6 +29,7 @@ struct arguments {
     unsigned int start_food        = 200;
     bool         auto_start        = true;
     float        scale_factor      = 1.0f;
+    bool         unlimited_tps     = false;
 };
 
 int get_dimension_width(char const* optarg)
@@ -52,6 +53,9 @@ void parse_args(int argc, char const* argv[], arguments& args)
     int c;
     while ((c = getopt_shim(argc, argv, "uz:w:h:s:c:pr:e:f:x:")) != -1) {
         switch (c) {
+            case 'u':
+                args.unlimited_tps = true;
+                break;
             case 'f':
                 args.start_food = std::stod(optarg_shim);
                 break;
@@ -87,13 +91,13 @@ void parse_args(int argc, char const* argv[], arguments& args)
                 std::cerr << "Unknown option: "
                           << static_cast<char>(optopt_shim) << "\n";
                 /* fallthrough */
-            case 'u':
-                std::cerr
-                    << "Usage: " << argv[0]
-                    << " [-w width] [-h height] [-s starting_vehicles] "
-                       "[-p (pause)] [-r random_seed] [-e "
-                       "edge_threshold] [-f starting_food_count ] [ -c "
-                       "food_pct_chance ] [-x max_food] [-z scale_factor ]\n";
+            case 'q':
+                std::cerr << "Usage: " << argv[0]
+                          << " [-w width] [-h height] [-s starting_vehicles] "
+                             "[-p (pause)] [-r random_seed] [-e "
+                             "edge_threshold] [-f starting_food_count ] [ -c "
+                             "food_pct_chance ] [-x max_food] [-z scale_factor "
+                             "] [-u (unlimited_tps)]\n";
                 exit(EXIT_FAILURE);
         }
     }
@@ -119,6 +123,7 @@ tom::World initialize_world(arguments const&   args,
     tom::set_seed(seed);
     tom::World::is_paused      = !(args.auto_start);
     tom::World::edge_threshold = args.edge_threshold;
+    tom::World::unlimited_tps  = args.unlimited_tps;
     tom::World world(seed, width, height);
     world.max_food        = args.max_food;
     world.food_pct_chance = args.food_pct_chance;

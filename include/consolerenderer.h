@@ -5,15 +5,13 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <csetjmp>
-#include <functional>
 #include <iostream>
-#include "dimensions.h"
 
 namespace tom::render {
 struct ConsoleRenderer : public IRenderer {
-    World*                      world;
-    bool                        has_interrupt_handler;
-    std::function<void(World*)> interrupt_handler;
+    World*      world;
+    std::size_t pmessage_size = 0;
+
     ConsoleRenderer(World* world);
 
     virtual void clear_screen() override;
@@ -25,6 +23,8 @@ struct ConsoleRenderer : public IRenderer {
     virtual void refresh() override;
 
     virtual void terminate() override;
+
+    virtual void interrupt_ask();
 
     virtual ~ConsoleRenderer();
 };

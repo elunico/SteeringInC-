@@ -31,6 +31,7 @@ double              World::edge_threshold  = 25.0;
 bool                World::was_interrupted = false;
 World::ViewMode     World::view_mode       = ViewMode::PLAIN;
 World::InteractMode World::interact_mode   = InteractMode::NONE;
+bool                World::unlimited_tps   = false;
 
 #define POISON_CHANCE 0.1
 
@@ -234,7 +235,9 @@ void World::run(render::IRenderer* renderer, int target_tps)
             renderer->terminate();
             break;
         }
-        tps_target_wait(tick_start);
+        if (!World::unlimited_tps) {
+            tps_target_wait(tick_start);
+        }
         if (tick_counter % (target_tps / 2 + 1) == 0) {
             auto tick_end = Clock::now();
             current_tps   = calc_tps_from_tick_duration(tick_start, tick_end);

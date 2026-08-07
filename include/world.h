@@ -74,6 +74,7 @@ struct World {
     static int           kill_radius;
     static double        edge_threshold;
     static bool          was_interrupted;
+    static bool          unlimited_tps;
 
     static constexpr int day_tick_length() noexcept
     {
@@ -224,13 +225,6 @@ struct World {
 
     void process_events();
 
-#ifdef NO_TPS_LIMIT
-    constexpr static void tps_target_wait(auto const&...)
-    {
-        // do nothing
-    }
-
-#else
     inline static void tps_target_wait(TimePoint const& start_time)
     {
         auto const tick_duration = Clock::now() - start_time;
@@ -239,7 +233,6 @@ struct World {
             usleep_shim(sleep_duration.count() / 1000);
         }
     }
-#endif
 };
 
 std::ostream& operator<<(std::ostream& os, World const& world);
