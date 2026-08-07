@@ -269,5 +269,4 @@ void FLTKRenderer::teardown()
         window->hide();
     }
 }
-
 }  // namespace tom::render

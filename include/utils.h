@@ -62,7 +62,9 @@ int random_int(int min, int max) noexcept;
 
 void log(std::string const& message);
 
-static inline bool double_equal(double a, double b, double epsilon = 0.001) noexcept
+static inline bool double_equal(double a,
+                                double b,
+                                double epsilon = 0.001) noexcept
 {
     return std::abs(a - b) <= epsilon;
 }
@@ -86,6 +88,8 @@ T remap(T value, T from1, T to1, T from2, T to2)
 {
     return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
 }
+
+void clear_screen();
 
 template <typename... Args>
 void output(Args&&... args)

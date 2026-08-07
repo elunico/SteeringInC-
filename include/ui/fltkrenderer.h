@@ -4,17 +4,12 @@
 #include <FL/Fl.H>
 #include <FL/Fl_Box.H>
 #include <FL/fl_draw.H>
+#include <FL/Fl_Window.H>
 #include "food.h"
 #include "irenderer.h"
 #include "world.h"
 
 namespace tom::render {
-
-struct screen_dim {
-    int w, h;
-};
-
-std::optional<screen_dim> get_screen(std::string& arg);
 
 struct FLTKCustomDrawer : public Fl_Box {
     World* world{};

@@ -2,11 +2,18 @@
 #define CONSOLERENDERER_H
 
 #include <include/irenderer.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <csetjmp>
+#include <functional>
 #include <iostream>
+#include "dimensions.h"
 
 namespace tom::render {
 struct ConsoleRenderer : public IRenderer {
-    World* world;
+    World*                      world;
+    bool                        has_interrupt_handler;
+    std::function<void(World*)> interrupt_handler;
     ConsoleRenderer(World* world);
 
     virtual void clear_screen() override;

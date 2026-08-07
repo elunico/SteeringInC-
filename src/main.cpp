@@ -16,6 +16,7 @@
 #include "utils.h"
 #include "vehicle.h"
 #include "windows_shim.h"
+#include "world.h"
 
 struct arguments {
     double       food_pct_chance   = 45.0;
@@ -124,6 +125,15 @@ tom::World initialize_world(arguments const&   args,
     world.populate_world(args.starting_vehicles, args.start_food);
     return world;
 }
+
+template <typename T, typename R, typename... Args>
+struct GetOwningClass {
+    using ClassType = T;
+
+    GetOwningClass(R (T::*_)(Args...))
+    {
+    }
+};
 
 int main(int argc, char const* argv[])
 {

@@ -37,6 +37,12 @@ struct World {
         }
 
         constexpr ViewMode(ViewMode const& other) = default;
+
+        constexpr ViewMode& operator=(ViewMode const& other)
+        {
+            value = other.value;
+            return *this;
+        }
     };
 
     struct InteractMode : Enumeration<int> {
@@ -51,6 +57,12 @@ struct World {
         constexpr InteractMode(InteractMode const& other)
             : Enumeration(other.value)
         {
+        }
+
+        constexpr InteractMode& operator=(InteractMode const& other)
+        {
+            value = other.value;
+            return *this;
         }
     };
 
@@ -102,14 +114,16 @@ struct World {
     // like pushing back to the list of vehicles etc.
     std::queue<std::function<void(World*)>> actions;
     int                                     feed_count{};
-    int                                     dead_counter    = 0;
-    int                                     born_counter    = 0;
-    int                                     tick_counter    = 0;
-    int                                     max_age         = 0;
-    unsigned int                            max_food        = 500;
-    double                                  food_pct_chance = 5.0;
-    std::chrono::steady_clock::time_point   start_time;
-    std::chrono::steady_clock::time_point   end_time;
+    int                                     dead_counter = 0;
+    int                                     born_counter = 0;
+    int                                     tick_counter = 0;
+    int                                     max_age      = 0;
+    unsigned int                            max_food     = 500;
+
+    /* percent is between 1.0 and 100.0 */
+    double                                food_pct_chance = 5.0;
+    std::chrono::steady_clock::time_point start_time;
+    std::chrono::steady_clock::time_point end_time;
     cyclic<decltype(tick_counter), day_night_cycle_length> daytime;
 
     static void stop_running(int)

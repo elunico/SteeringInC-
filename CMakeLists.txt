@@ -7,7 +7,7 @@ include_directories(include)
 
 option(RELEASE_BUILD "Build in release mode" OFF)
 option(NOGUI "Build without GUI" OFF)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
 if(NOGUI)
     add_definitions(-DNOGUI)

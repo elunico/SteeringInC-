@@ -96,14 +96,14 @@ class Vehicle {
     void                seek_for_reproduction(Vehicle* target, double record);
     [[nodiscard]] Vec2D seek(Vec2D const& target) const;
     [[nodiscard]] Vec2D flee(Vec2D const& target) const;
-    Food&               last_sought_food(double& record) const;
+    [[nodiscard]] Food& last_sought_food(double& record) const;
     void                food_behaviors(Foods& food_positions);
     void                check_sought_vehicle();
     void                check_sought_food();
     void                vehicle_behaviors(Vehicles& vehicles);
     void                try_explosion();
     void                apply_force(Vec2D force, bool unlimited = false);
-    void perform_reproduction(Vehicle const* mom, Vehicle const* dad) const;
+    void perform_reproduction(Vehicle const& mom, Vehicle const& dad) const;
     void perform_explosion(World* world) const;
 
     World*       world                        = nullptr;

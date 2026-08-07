@@ -354,7 +354,10 @@ void Vehicle::seek_for_reproduction(Vehicle* target, double record)
         health -= dna.reproduction_cost;
         time_since_last_reproduction = 0;
         world->delay([this, mom = this, dad = target](auto*) {
-            this->perform_reproduction(mom, dad);
+            if (mom == nullptr || dad == nullptr) {
+                return;
+            }
+            this->perform_reproduction(*mom, *dad);
         });
     } else {
         auto steer = seek(target->position);
@@ -507,21 +510,21 @@ void Vehicle::apply_force(Vec2D force, bool unlimited)
     acceleration += force;
 }
 
-void Vehicle::perform_reproduction(Vehicle const* mom, Vehicle const* dad) const
+void Vehicle::perform_reproduction(Vehicle const& mom, Vehicle const& dad) const
 {
-    Vec2D start_pos = mom->position;
-    auto  other_pos = dad->position;
-    DNA   child_dna = mom->dna.crossover(dad->dna);
+    Vec2D start_pos = mom.position;
+    auto  other_pos = dad.position;
+    DNA   child_dna = mom.dna.crossover(dad.dna);
     child_dna.mutate();
     Vec2D   child_pos = midpoint(start_pos, other_pos);
     Vehicle offspring(child_pos);
     offspring.populate_in_place(
-        Vehicle::next_id(), mom->world, child_pos, Vec2D::random(2.0),
-        child_dna, std::max(mom->generation, dad->generation) + 1,
-        midpoint(mom->health, dad->health).remaining() * 1.2,
-        mom->verbose || dad->verbose);
+        Vehicle::next_id(), mom.world, child_pos, Vec2D::random(2.0), child_dna,
+        std::max(mom.generation, dad.generation) + 1,
+        midpoint(mom.health, dad.health).remaining() * 1.2,
+        mom.verbose || dad.verbose);
     world->born_counter++;
-    if (mom->verbose || dad->verbose)
+    if (mom.verbose || dad.verbose)
         output("Adding reproduced vehicle: ", child_pos, "\n");
     world->add_vehicle(std::move(offspring));
 }
@@ -539,7 +542,8 @@ void Vehicle::perform_explosion(World* world) const
         if (auto d = this->position.distance_to(v.position);
             d < this->dna.perception_radius) {
             // v.kill();
-            v.health *= ((this->dna.perception_radius - d) / this->dna.perception_radius);
+            v.health *= ((this->dna.perception_radius - d) /
+                         this->dna.perception_radius);
         }
     }
     std::vector children{count, Vehicle(start_pos)};

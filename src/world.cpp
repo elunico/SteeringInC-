@@ -123,11 +123,10 @@ auto World::prune_dead_vehicles() -> typename decltype(vehicles)::size_type
 auto World::prune_eaten_food() -> decltype(food)::size_type
 {
     auto initial_size = food.size();
-    std::erase_if(food,
-                  [](auto const& p) {
-                      auto const& f = p.second;
-                      return f.is_expired();
-                  });
+    std::erase_if(food, [](auto const& p) {
+        auto const& f = p.second;
+        return f.is_expired();
+    });
     return initial_size - food.size();
 }
 
@@ -275,7 +274,13 @@ bool World::tick()
     // so they must be processed before the tick starts
     process_events();
     check_time_of_day();
+
+    /* food is pruned then the tick occurs. once food is pruned, events
+     * are then added, when the tick loop repeats, the events are then
+     * processed before the next pruning to prevent iterator invalidation */
     food_tick(food);
+
+    /* vehicle pruning occurs like food pruning, see above */
     vehicle_tick(vehicles, food);
     tick_counter++;
     ++daytime;

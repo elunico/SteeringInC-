@@ -11,6 +11,18 @@ struct Enumeration {
     T value;
 
     constexpr virtual ~Enumeration() = default;
+    constexpr Enumeration() : value(0)
+    {
+    }
+    constexpr Enumeration(Enumeration const& other) : value(other.value)
+    {
+    }
+
+    constexpr Enumeration& operator=(Enumeration const& other)
+    {
+        value = other.value;
+        return *this;
+    }
 
     explicit constexpr operator T() const
     {
