@@ -122,17 +122,37 @@ void FLTKCustomDrawer::draw()
 void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
 {
     fl_color(FL_BLACK);
-    if (vehicle.highlighted) {
-        fl_color(FL_RED);
-    }
+    // if (vehicle.highlighted) {
+    //     fl_color(FL_RED);
+    // }
 
-    if (vehicle.verbose) {
+    // if (vehicle.verbose) {
+    //     fl_color(FL_BLUE);
+    // }
+
+    // if (vehicle.get_age() < vehicle.get_dna().age_of_maturity) {
+    //     fl_color(FL_MAGENTA);
+    // }
+
+    switch(vehicle.behavior_state) {
+        case Vehicle::BehaviorState::UNSET:
+        fl_color(FL_GRAY0);
+        break;
+        case Vehicle::BehaviorState::WANDERING:
+        fl_color(FL_GREEN);
+        break;
+        case Vehicle::BehaviorState::HUNGRY:
         fl_color(FL_BLUE);
+        break;
+        case Vehicle::BehaviorState::OUTGOING:
+        fl_color(FL_RED);
+        break;
+        case Vehicle::BehaviorState::DESPERATE:
+        fl_color(FL_MAGENTA);
+        break;
+        
     }
 
-    if (vehicle.get_age() < vehicle.get_dna().age_of_maturity) {
-        fl_color(FL_MAGENTA);
-    }
 
     Vec2D  pos     = vehicle.get_position();
     double heading = vehicle.get_velocity().heading();

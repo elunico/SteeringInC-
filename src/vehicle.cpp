@@ -53,7 +53,6 @@ Vehicle::Vehicle(Vec2D const& position)
     wanderTarget = velocity.copy();
     wanderTarget.set_mag(Vehicle::WANDER_DISTANCE);
     wanderTarget += position;
-    tom::output(wanderTarget);
 }
 
 Vehicle::Vehicle() : Vehicle(Vec2D{0.0, 0.0})
@@ -258,6 +257,7 @@ void Vehicle::behaviors(
         check_sought_food();
         check_sought_vehicle();
         wander();
+        behavior_state = BehaviorState::WANDERING;
         return;
     }
 
@@ -268,6 +268,7 @@ void Vehicle::behaviors(
     if (health <= MAX_HEALTH * 0.8) {
         // food_behaviors will call check_sought_food internally
         food_behaviors(food_positions);
+        behavior_state = BehaviorState::HUNGRY;
     }
 
     // if health is too low to seek vehicle, we still want to update the drawing
@@ -275,12 +276,14 @@ void Vehicle::behaviors(
 
     if (health < 2.0) {
         try_explosion();
+        behavior_state = BehaviorState::DESPERATE;
         return;
     }
 
     // only search for vehicles if health is sufficient
     if (will_seek_vehicle()) {
         vehicle_behaviors(vehicles);
+        behavior_state = BehaviorState::OUTGOING;
     }
 }
 
@@ -426,8 +429,6 @@ Food& Vehicle::last_sought_food(double& record) const
 {
     assert(last_sought_food_id != 0);
     record = std::numeric_limits<double>::max();
-    tom::output("Attempting to access food with id ", last_sought_food_id,
-                "\n");
     auto& f = world->food.at(last_sought_food_id);
     record  = position.distance_to(f.get_position());
     return f;
@@ -483,8 +484,6 @@ void Vehicle::check_sought_food()
     // so they can seek a new one
     if (last_sought_food_id != 0) {
         if (!world->knows_food(last_sought_food_id)) {
-            tom::output("Removing sought food with id ", last_sought_food_id,
-                        "\n");
             last_sought_food_id = 0;
             return;
         }
