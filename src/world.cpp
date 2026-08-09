@@ -219,7 +219,7 @@ long double calc_tps_from_tick_duration(World::TimePoint const tick_start,
                .count();
 }
 
-void World::run(render::IRenderer* renderer, int target_tps)
+void World::run(render::IRenderer& renderer, int target_tps)
 {
     start_time = Clock::now();
     while (game_running) {
@@ -230,9 +230,9 @@ void World::run(render::IRenderer* renderer, int target_tps)
                 break;
             }
         }
-        renderer->render();
+        renderer.render();
         if (was_interrupted) {
-            renderer->terminate();
+            renderer.terminate();
             break;
         }
         if (!World::unlimited_tps) {

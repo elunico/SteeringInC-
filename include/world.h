@@ -194,7 +194,7 @@ struct World {
 
     [[nodiscard]] std::stringstream info_stream() const;
 
-    void run(render::IRenderer* renderer, int target_tps = World::target_tps);
+    void run(render::IRenderer& renderer, int target_tps = World::target_tps);
 
     static void pause()
     {

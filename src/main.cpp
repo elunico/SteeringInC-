@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
-#include <optional>
 #include <ranges>
 #include <string>
 #ifdef NOGUI
@@ -120,7 +119,6 @@ tom::World initialize_world(arguments const&   args,
                             int const          width,
                             int const          height)
 {
-    tom::set_seed(seed);
     tom::World::is_paused      = !(args.auto_start);
     tom::World::edge_threshold = args.edge_threshold;
     tom::World::unlimited_tps  = args.unlimited_tps;
@@ -146,6 +144,7 @@ int main(int argc, char const* argv[])
     parse_args(argc, argv, args);
 
     unsigned int const seed = args.random_seed;
+    tom::set_seed(seed);
 
     int const width  = args.width;
     int const height = args.height;
@@ -160,7 +159,7 @@ int main(int argc, char const* argv[])
                                        args.scale_factor);
 #endif
 
-    world.run(&renderer);
+    world.run(renderer);
     renderer.render(tom::World::was_interrupted);
     tom::output("Simulation ended.\n");
 
@@ -172,7 +171,7 @@ int main(int argc, char const* argv[])
                 ->second;
 
         tom::output("Max fitness vehicle ID: ", max_fitness_vehicle.id,
-                    " fitness: ", max_fitness_vehicle.get_fitness(), "\n");
+                    " fitness: ", max_fitness_vehicle.get_fitness(), "\n\n");
     }
 
     std::string s = world.info_stream().str();

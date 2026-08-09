@@ -32,6 +32,8 @@ static Lifespan<double, 0.05> max(Lifespan<double, 0.05> const& lifespan,
     return lifespan;
 }
 
+int const Vehicle::WANDER_DISTANCE = 50;
+
 Vehicle::Vehicle(Vec2D const& position)
     : position(position),
       velocity(random_in_range(0, dna.max_speed),
@@ -47,6 +49,11 @@ Vehicle::Vehicle(Vec2D const& position)
     } else {
         // do nothing
     }
+
+    wanderTarget = velocity.copy();
+    wanderTarget.set_mag(Vehicle::WANDER_DISTANCE);
+    wanderTarget += position;
+    tom::output(wanderTarget);
 }
 
 Vehicle::Vehicle() : Vehicle(Vec2D{0.0, 0.0})
@@ -129,7 +136,7 @@ bool Vehicle::can_see(Vec2D const& target) const
 
 [[nodiscard]] bool Vehicle::will_seek_vehicle() const
 {
-    return health >= 5;
+    return health >= 5 || (world && world->is_night());
 }
 
 bool Vehicle::can_touch(Vec2D const& target) const
@@ -222,14 +229,43 @@ void Vehicle::avoid_edges()
     }
 }
 
+void Vehicle::wander()
+{
+    // this code is taken from Coding Train and Craig Reynolds
+    // https://editor.p5js.org/codingtrain/sketches/VdHUvgHkm
+    auto wPoint = velocity.copy();
+    wPoint.set_mag(Vehicle::WANDER_DISTANCE);
+    wPoint += position;
+    auto offset  = 32;  // TODO: make a variable / DNA?
+    auto vOffset = Vec2D::random(offset * 0.2);
+    wanderTarget += vOffset;
+
+    auto v = wanderTarget - wPoint;
+    v.set_mag(Vehicle::WANDER_DISTANCE);
+    wanderTarget = wPoint + v;
+    auto force   = wanderTarget - position;
+    // force.set_mag(MAX_FORCE);
+    apply_force(force);
+}
+
 void Vehicle::behaviors(
     std::unordered_map<World::VehicleIdType, Vehicle>& vehicles,
     std::unordered_map<World::FoodIdType, Food>&       food_positions)
 {
-    if (health > MAX_HEALTH * 0.8) {
-        // if health is very high, no need to seek food
+    if ((health > MAX_HEALTH * 0.8) && (world && world->is_day())) {
+        // if health is very high, no need to seek food or vehicles
+        // wander around and avoid edges
         check_sought_food();
-    } else {
+        check_sought_vehicle();
+        wander();
+        return;
+    }
+
+    // if health is very high, no need to seek food but update sought for
+    // visualization
+    check_sought_food();
+
+    if (health <= MAX_HEALTH * 0.8) {
         // food_behaviors will call check_sought_food internally
         food_behaviors(food_positions);
     }
@@ -389,7 +425,9 @@ Vec2D Vehicle::seek(Vec2D const& target) const
 Food& Vehicle::last_sought_food(double& record) const
 {
     assert(last_sought_food_id != 0);
-    record  = std::numeric_limits<double>::max();
+    record = std::numeric_limits<double>::max();
+    tom::output("Attempting to access food with id ", last_sought_food_id,
+                "\n");
     auto& f = world->food.at(last_sought_food_id);
     record  = position.distance_to(f.get_position());
     return f;
@@ -397,8 +435,7 @@ Food& Vehicle::last_sought_food(double& record) const
 
 void Vehicle::food_behaviors(Foods& food_positions)
 {
-    check_sought_food();
-
+    // WARN: Must call check_sought_food first!
     double record      = std::numeric_limits<double>::max();
     auto*  target_food = last_sought_food_id == 0
                              ? find_nearest(food_positions, record)
@@ -446,13 +483,14 @@ void Vehicle::check_sought_food()
     // so they can seek a new one
     if (last_sought_food_id != 0) {
         if (!world->knows_food(last_sought_food_id)) {
+            tom::output("Removing sought food with id ", last_sought_food_id,
+                        "\n");
             last_sought_food_id = 0;
             return;
         }
         auto& f = last_sought_food();
         if (auto d = position.distance_to(f.get_position());
-            d > dna.perception_radius || f.is_expired() ||
-            f.get_nutrition() < 0) {
+            d > dna.perception_radius || f.is_expired()) {
             last_sought_food_id = 0;
         }
     }

@@ -1,4 +1,5 @@
 #include "include/consolerenderer.h"
+#include <csignal>
 #include <iostream>
 #include "checks.h"
 #include "include/world.h"
@@ -9,9 +10,15 @@ static bool check_poll = false;
 tom::render::ConsoleRenderer::ConsoleRenderer(World* world) : world(world)
 {
     signal(SIGINT, [](int) { check_poll = true; });
+    // print the ansi code to hide the cursor
+    console_out("\033[?25l");
 }
 
-tom::render::ConsoleRenderer::~ConsoleRenderer() = default;
+tom::render::ConsoleRenderer::~ConsoleRenderer()
+{
+    // print the ansi code to show the cursor
+    console_out("\033[?25h");
+}
 
 void tom::render::ConsoleRenderer::clear_screen()
 {
@@ -22,6 +29,8 @@ void tom::render::ConsoleRenderer::interrupt_ask()
 {
 reask:
     tom::clear_screen();
+    // show cursor for options
+    console_out("\033[?25h");
     tom::output(world->info_stream().str());
     tom::output("\n\nAvailable Commands:");
     tom::output("\np: pause/unpause");
@@ -87,6 +96,8 @@ reask:
     tom::clear_screen();
     if (check_poll)
         goto reask;
+    else
+        console_out("\033[?25l");
 }
 
 void tom::render::ConsoleRenderer::render(bool transient)

@@ -89,11 +89,13 @@ class Vehicle {
 
    private:
     static IdType       global_id_counter;
+    static int const    WANDER_DISTANCE;
     void                seek_for_eat(Food* target, double record);
     void                flee_poison(Food* target, double record);
     void                seek_for_malice(Vehicle* target, double record);
     void                seek_for_altruism(Vehicle* target, double record);
     void                seek_for_reproduction(Vehicle* target, double record);
+    void                wander();
     [[nodiscard]] Vec2D seek(Vec2D const& target) const;
     [[nodiscard]] Vec2D flee(Vec2D const& target) const;
     [[nodiscard]] Food& last_sought_food(double& record) const;
@@ -117,6 +119,7 @@ class Vehicle {
     Vec2D position;
     Vec2D velocity;
     Vec2D acceleration{};
+    Vec2D wanderTarget{velocity};
 
    public:
     static decltype(global_id_counter) next_id()
