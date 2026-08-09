@@ -316,7 +316,7 @@ void Vehicle::seek_for_eat(Food* target, double record)
 {
     if (can_touch(record)) {
         // Already at target; captured food
-        health += 5.0;  // Increase health on reaching target
+        health += 50.0;  // Increase health on reaching target
         target->consume(*this);
     } else if (can_see(record)) {
         Vec2D steer = seek(target->position);
@@ -343,7 +343,7 @@ void Vehicle::seek_for_malice(Vehicle* target, double record)
         // ATTACK!
         if (can_touch(record)) {
             target->health -= dna.malice_damage;
-            this->health += dna.malice_damage * 0.5;
+            this->health += dna.malice_damage;
         } else if (can_see(record)) {
             // if vehicle is far away, try to seek it
             Vec2D steer = seek(target->position);

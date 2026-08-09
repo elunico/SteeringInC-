@@ -24,12 +24,12 @@ Food::Food() noexcept
     : Environmental(nullptr,
                     Vec2D::random(100),
                     IntLifespan::random(750, 1500)),
-      nutrition(5.0)
+      nutrition(50.0)
 {
 }
 
 Food::Food(World* world, Vec2D const& pos) noexcept
-    : Environmental(world, pos, IntLifespan::random(750, 1500)), nutrition(5.0)
+    : Environmental(world, pos, IntLifespan::random(750, 1500)), nutrition(50.0)
 {
 }
 
@@ -85,6 +85,7 @@ void Food::update() noexcept
         random_in_range(0, 1) < dna.explosion_chance) {
         world->delay([this](auto* world) { this->perform_explosion(world); });
         lifespan.expire();
+        return ;
     }
 
     if (nutrition > 0) {

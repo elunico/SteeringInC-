@@ -16,7 +16,7 @@ class Lifespan {
     using UnderlyingType           = T;
     constexpr static T tick_amount = tick_amt;
 
-    Lifespan(T ticks) noexcept : life(ticks)
+    Lifespan(T life) noexcept : life(life)
     {
     }
 
@@ -55,7 +55,7 @@ class Lifespan {
     Lifespan& operator+=(T ticks) noexcept
     {
         if (!unlimited_) {
-            life += ticks;
+            life += (ticks * tick_amount);
         }
         return *this;
     }
@@ -63,7 +63,7 @@ class Lifespan {
     Lifespan& operator-=(T ticks) noexcept
     {
         if (!unlimited_) {
-            life -= ticks;
+            life -= (ticks * tick_amount);
             if (life < 0) {
                 life = 0;
             }
