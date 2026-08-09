@@ -1,6 +1,7 @@
 #ifndef VEHICLE_H
 #define VEHICLE_H
 
+#include <unordered_set>
 #include "dna.h"
 #include "lifespan.h"
 #include "utils.h"
@@ -20,9 +21,77 @@ static inline double find_distance(Vec2D const& a, std::pair<ID, Obj>& b)
     return a.distance_to(b.second.get_position());
 }
 
+template <typename T>
+struct OptionSet {
+    std::unordered_set<T> options;
+    OptionSet()
+    {
+    }
+
+    explicit OptionSet(T option)
+    {
+        options.insert(option);
+    }
+
+    bool operator==(T option) const
+    {
+        return contains(option);
+    }
+
+    bool operator!=(T option) const
+    {
+        return !(operator==(option));
+    }
+
+    bool operator==(OptionSet<T> const& other) const
+    {
+        return options == other.options;
+    }
+
+    bool operator!=(OptionSet<T> const& other) const
+    {
+        return !(options == other.options);
+    }
+
+    void set(T option)
+    {
+        options.clear();
+        options.insert(option);
+    }
+
+    void add(T option)
+    {
+        options.insert(option);
+    }
+
+    void remove(T option)
+    {
+        auto i = options.find(option);
+        if (i != options.end()) {
+            options.erase(i);
+        }
+    }
+
+    void clear()
+    {
+        options.clear();
+    }
+
+    [[nodiscard]] bool contains(T option) const
+    {
+        return options.contains(option);
+    }
+};
+
 class Vehicle {
    public:
-    enum class BehaviorState { UNSET, WANDERING, HUNGRY, OUTGOING, DESPERATE };
+    enum struct BehaviorState {
+        UNSET     = 0,
+        WANDERING = 1,
+        HUNGRY    = 2,
+        OUTGOING  = 4,
+        DESPERATE = 8
+    };
 
     using IdType       = World::VehicleIdType;
     using Foods        = World::Foods;
@@ -94,6 +163,7 @@ class Vehicle {
     static int const    WANDER_DISTANCE;
     static double const MAX_FORCE;
     static double const MAX_HEALTH;
+    void                determine_behavior();
     void                seek_for_eat(Food* target, double record);
     void                flee_poison(Food* target, double record);
     void                seek_for_malice(Vehicle* target, double record);
@@ -126,7 +196,7 @@ class Vehicle {
     Vec2D wanderTarget{velocity};
 
    public:
-    BehaviorState behavior_state = BehaviorState::UNSET;
+    OptionSet<BehaviorState> behavior_state{};
 
     static decltype(global_id_counter) next_id()
     {

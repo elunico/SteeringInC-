@@ -246,44 +246,84 @@ void Vehicle::wander()
     apply_force(force);
 }
 
+void Vehicle::determine_behavior()
+{
+    behavior_state.clear();
+    if (health < 2.0) {
+        behavior_state.set(BehaviorState::DESPERATE);
+        return;
+    }
+    if ((health > MAX_HEALTH * 0.8) && (world && world->is_day())) {
+        behavior_state.set(BehaviorState::WANDERING);
+        return;
+    }
+    if (health <= MAX_HEALTH * 0.8) {
+        behavior_state.add(BehaviorState::HUNGRY);
+    }
+    if (will_seek_vehicle()) {
+        behavior_state.add(BehaviorState::OUTGOING);
+    }
+}
+
 void Vehicle::behaviors(
     std::unordered_map<World::VehicleIdType, Vehicle>& vehicles,
     std::unordered_map<World::FoodIdType, Food>&       food_positions)
 {
-    if ((health > MAX_HEALTH * 0.8) && (world && world->is_day())) {
-        // if health is very high, no need to seek food or vehicles
-        // wander around and avoid edges
-        check_sought_food();
-        check_sought_vehicle();
-        wander();
-        behavior_state = BehaviorState::WANDERING;
-        return;
-    }
-
-    // if health is very high, no need to seek food but update sought for
-    // visualization
     check_sought_food();
-
-    if (health <= MAX_HEALTH * 0.8) {
-        // food_behaviors will call check_sought_food internally
-        food_behaviors(food_positions);
-        behavior_state = BehaviorState::HUNGRY;
-    }
-
-    // if health is too low to seek vehicle, we still want to update the drawing
     check_sought_vehicle();
 
-    if (health < 2.0) {
+    determine_behavior();
+
+    if (behavior_state.contains(BehaviorState::DESPERATE)) {
         try_explosion();
-        behavior_state = BehaviorState::DESPERATE;
-        return;
     }
 
-    // only search for vehicles if health is sufficient
-    if (will_seek_vehicle()) {
-        vehicle_behaviors(vehicles);
-        behavior_state = BehaviorState::OUTGOING;
+    if (behavior_state.contains(BehaviorState::WANDERING)) {
+        wander();
     }
+
+    if (behavior_state.contains(BehaviorState::HUNGRY)) {
+        food_behaviors(food_positions);
+    }
+
+    if (behavior_state.contains(BehaviorState::OUTGOING)) {
+        vehicle_behaviors(vehicles);
+    }
+
+    // if ((health > MAX_HEALTH * 0.8) && (world && world->is_day())) {
+    //     // if health is very high, no need to seek food or vehicles
+    //     // wander around and avoid edges
+    //     check_sought_food();
+    //     check_sought_vehicle();
+    //     wander();
+    //     behavior_state = BehaviorState::WANDERING;
+    //     return;
+    // }
+
+    // // if health is very high, no need to seek food but update sought for
+    // // visualization
+    // check_sought_food();
+
+    // if (health <= MAX_HEALTH * 0.8) {
+    //     // food_behaviors will call check_sought_food internally
+    //     food_behaviors(food_positions);
+    //     behavior_state = BehaviorState::HUNGRY;
+    // }
+
+    // // if health is too low to seek vehicle, we still want to update the
+    // drawing check_sought_vehicle();
+
+    // if (health < 2.0) {
+    //     try_explosion();
+    //     behavior_state = BehaviorState::DESPERATE;
+    //     return;
+    // }
+
+    // // only search for vehicles if health is sufficient
+    // if (will_seek_vehicle()) {
+    //     vehicle_behaviors(vehicles);
+    //     behavior_state = BehaviorState::OUTGOING;
+    // }
 }
 
 void Vehicle::populate_in_place(typename Vehicle::IdType id,
