@@ -22,13 +22,7 @@ static inline double find_distance(Vec2D const& a, std::pair<ID, Obj>& b)
 
 class Vehicle {
    public:
-    enum class BehaviorState {
-        UNSET,
-        WANDERING,
-        HUNGRY,
-        OUTGOING,
-        DESPERATE
-    };
+    enum class BehaviorState { UNSET, WANDERING, HUNGRY, OUTGOING, DESPERATE };
 
     using IdType       = World::VehicleIdType;
     using Foods        = World::Foods;
@@ -98,6 +92,8 @@ class Vehicle {
    private:
     static IdType       global_id_counter;
     static int const    WANDER_DISTANCE;
+    static double const MAX_FORCE;
+    static double const MAX_HEALTH;
     void                seek_for_eat(Food* target, double record);
     void                flee_poison(Food* target, double record);
     void                seek_for_malice(Vehicle* target, double record);
@@ -128,8 +124,8 @@ class Vehicle {
     Vec2D velocity;
     Vec2D acceleration{};
     Vec2D wanderTarget{velocity};
-    
-    public:
+
+   public:
     BehaviorState behavior_state = BehaviorState::UNSET;
 
     static decltype(global_id_counter) next_id()

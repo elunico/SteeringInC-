@@ -9,9 +9,6 @@
 #include "vec2d.h"
 #include "world.h"
 
-#define MAX_FORCE 0.45
-#define MAX_HEALTH 40.0
-
 namespace tom {
 
 static Lifespan<double, 0.05> min(Lifespan<double, 0.05> const& lifespan,
@@ -32,7 +29,9 @@ static Lifespan<double, 0.05> max(Lifespan<double, 0.05> const& lifespan,
     return lifespan;
 }
 
-int const Vehicle::WANDER_DISTANCE = 50;
+int const    Vehicle::WANDER_DISTANCE = 50;
+double const Vehicle::MAX_FORCE       = 0.45;
+double const Vehicle::MAX_HEALTH      = 40.0;
 
 Vehicle::Vehicle(Vec2D const& position)
     : position(position),
@@ -428,7 +427,7 @@ Vec2D Vehicle::seek(Vec2D const& target) const
 Food& Vehicle::last_sought_food(double& record) const
 {
     assert(last_sought_food_id != 0);
-    record = std::numeric_limits<double>::max();
+    record  = std::numeric_limits<double>::max();
     auto& f = world->food.at(last_sought_food_id);
     record  = position.distance_to(f.get_position());
     return f;
