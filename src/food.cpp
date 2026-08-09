@@ -85,7 +85,7 @@ void Food::update() noexcept
         random_in_range(0, 1) < dna.explosion_chance) {
         world->delay([this](auto* world) { this->perform_explosion(world); });
         lifespan.expire();
-        return ;
+        return;
     }
 
     if (nutrition > 0) {
@@ -106,10 +106,10 @@ void Food::consume(Vehicle& consumer) noexcept
     }
     consumer.health += nutrition;
     if (consumer.verbose)
-        output("Was eaten by Vehicle ID: ", consumer.id,
-               " at position: ", consumer.get_position(),
-               " | Nutrition: ", nutrition, "\n");
-    lifespan.expire();
+        // output("Was eaten by Vehicle ID: ", consumer.id,
+        //        " at position: ", consumer.get_position(),
+        //        " | Nutrition: ", nutrition, "\n");
+        lifespan.expire();
 }
 
 void Food::perform_explosion(World* world) const

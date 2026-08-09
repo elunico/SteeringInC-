@@ -1,9 +1,9 @@
 #ifndef VEHICLE_H
 #define VEHICLE_H
 
-#include <unordered_set>
 #include "dna.h"
 #include "lifespan.h"
+#include "optionset.h"
 #include "utils.h"
 #include "vec2d.h"
 #include "world.h"
@@ -20,68 +20,6 @@ static inline double find_distance(Vec2D const& a, std::pair<ID, Obj>& b)
 {
     return a.distance_to(b.second.get_position());
 }
-
-template <typename T>
-struct OptionSet {
-    std::unordered_set<T> options;
-    OptionSet()
-    {
-    }
-
-    explicit OptionSet(T option)
-    {
-        options.insert(option);
-    }
-
-    bool operator==(T option) const
-    {
-        return contains(option);
-    }
-
-    bool operator!=(T option) const
-    {
-        return !(operator==(option));
-    }
-
-    bool operator==(OptionSet<T> const& other) const
-    {
-        return options == other.options;
-    }
-
-    bool operator!=(OptionSet<T> const& other) const
-    {
-        return !(options == other.options);
-    }
-
-    void set(T option)
-    {
-        options.clear();
-        options.insert(option);
-    }
-
-    void add(T option)
-    {
-        options.insert(option);
-    }
-
-    void remove(T option)
-    {
-        auto i = options.find(option);
-        if (i != options.end()) {
-            options.erase(i);
-        }
-    }
-
-    void clear()
-    {
-        options.clear();
-    }
-
-    [[nodiscard]] bool contains(T option) const
-    {
-        return options.contains(option);
-    }
-};
 
 class Vehicle {
    public:
@@ -163,6 +101,8 @@ class Vehicle {
     static int const    WANDER_DISTANCE;
     static double const MAX_FORCE;
     static double const MAX_HEALTH;
+    [[nodiscard]] bool  is_health_pct_above(double pct) const;
+    [[nodiscard]] bool  is_health_pct_below(double pct) const;
     void                determine_behavior();
     void                seek_for_eat(Food* target, double record);
     void                flee_poison(Food* target, double record);

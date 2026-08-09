@@ -2,6 +2,7 @@
 #include "vehicle.h"
 
 #include <cassert>
+#include <sstream>
 
 #include "food.h"
 #include "lifespan.h"
@@ -134,7 +135,12 @@ bool Vehicle::can_see(Vec2D const& target) const
 
 [[nodiscard]] bool Vehicle::will_seek_vehicle() const
 {
-    return health >= 5 || (world && world->is_night());
+    // during the day Vehicles only seek others if they are high enough to not
+    // need food too badly when health is very low Vehicles scramble for food
+    // only. at night they always want to be around others. note that this does
+    // not prevent seeking food but does average velocities so food seeking will
+    // be mediated by the desire to stay near others
+    return is_health_pct_above(0.25) || (world && world->is_night());
 }
 
 bool Vehicle::can_touch(Vec2D const& target) const
@@ -157,8 +163,34 @@ bool Vehicle::is_dead() const
     return health.is_expired();
 }
 
+[[nodiscard]] bool Vehicle::is_health_pct_above(double pct) const
+{
+    double remainingTicks = health.remaining() * decltype(health)::tick_amount;
+    double totalTicks =
+        Vehicle::MAX_HEALTH * Vehicle::LifespanType::tick_amount;
+    double lifePct = remainingTicks / totalTicks;
+    return lifePct > pct;
+}
+
+[[nodiscard]] bool Vehicle::is_health_pct_below(double pct) const
+{
+    double remainingTicks = health.remaining() * decltype(health)::tick_amount;
+    double totalTicks =
+        Vehicle::MAX_HEALTH * Vehicle::LifespanType::tick_amount;
+    double lifePct = remainingTicks / totalTicks;
+    return lifePct < pct;
+}
+
 void Vehicle::update()
 {
+    if (verbose) {
+        std::stringstream s;
+        s << "Vehicle " << id << " health " << health.remaining()
+          << " will_seek_vehicle()=" << will_seek_vehicle();
+        auto msg = s.str();
+        tom::output(msg);
+        tom::output(std::string(msg.size(), '\b'));
+    }
     if (health == 0)
         return;
 
@@ -249,15 +281,18 @@ void Vehicle::wander()
 void Vehicle::determine_behavior()
 {
     behavior_state.clear();
-    if (health < 2.0) {
+    if (is_health_pct_below(0.1)) {
         behavior_state.set(BehaviorState::DESPERATE);
         return;
     }
-    if ((health > MAX_HEALTH * 0.8) && (world && world->is_day())) {
+    if ((is_health_pct_above(0.75)) && (world && world->is_day())) {
         behavior_state.set(BehaviorState::WANDERING);
         return;
     }
-    if (health <= MAX_HEALTH * 0.8) {
+    // desperation and wandering are unique actions
+    // but a vehicle may seek food or others or try to find food while
+    // remaining close to others so the actions are not mutually exclusive
+    if (is_health_pct_below(0.65)) {
         behavior_state.add(BehaviorState::HUNGRY);
     }
     if (will_seek_vehicle()) {
@@ -482,10 +517,10 @@ void Vehicle::food_behaviors(Foods& food_positions)
                              : &last_sought_food(record);
 
     if (target_food != nullptr && can_see(record)) {
-        if (verbose) {
-            output("Seeking food with ID: ", target_food->id,
-                   " at: ", target_food->get_position(), "\n");
-        }
+        // if (verbose) {
+        //     output("Seeking food with ID: ", target_food->id,
+        //            " at: ", target_food->get_position(), "\n");
+        // }
         // update the currently sought food
         last_sought_food_id = target_food->id;
         if (target_food->nutrition < 0) {
@@ -597,11 +632,10 @@ void Vehicle::perform_reproduction(Vehicle const& mom, Vehicle const& dad) const
     offspring.populate_in_place(
         Vehicle::next_id(), mom.world, child_pos, Vec2D::random(2.0), child_dna,
         std::max(mom.generation, dad.generation) + 1,
-        midpoint(mom.health, dad.health).remaining() * 1.2,
-        mom.verbose || dad.verbose);
+        midpoint(mom.health, dad.health).remaining() * 1.2, false);
     world->born_counter++;
-    if (mom.verbose || dad.verbose)
-        output("Adding reproduced vehicle: ", child_pos, "\n");
+    // if (mom.verbose || dad.verbose)
+    // output("Adding reproduced vehicle: ", child_pos, "\n");
     world->add_vehicle(std::move(offspring));
 }
 
@@ -610,9 +644,9 @@ void Vehicle::perform_explosion(World* world) const
     Vec2D start_pos = this->position;
     // Explosion-born vehicle
     unsigned long count = this->dna.explosion_tries;
-    if (this->verbose)
-        output("Adding ", count,
-               " explosion-born vehicle around position: ", start_pos, "\n");
+    // if (this->verbose)
+    // output("Adding ", count,
+    //    " explosion-born vehicle around position: ", start_pos, "\n");
 
     for (auto& [id, v] : world->vehicles) {
         if (auto d = this->position.distance_to(v.position);
@@ -637,9 +671,9 @@ void Vehicle::perform_explosion(World* world) const
                                     this->generation + 1,
                                     max(this->health, 2.0), this->verbose);
         world->born_counter++;
-        if (offspring.verbose)
-            output("Vehicle ", offspring.id,
-                   " born at position: ", offspring.position, "\n");
+        // if (offspring.verbose)
+        //     output("Vehicle ", offspring.id,
+        //            " born at position: ", offspring.position, "\n");
     }
     world->add_all_vehicles(std::move(children));
 }
