@@ -6,8 +6,8 @@
 #include <ostream>
 #include <queue>
 #include <sstream>
-#include <thread>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include "cyclic_num.h"
 #include "dna.h"
@@ -66,15 +66,25 @@ struct World {
         }
     };
 
-    static constexpr int target_tps = 90;
-    static bool          game_running;
-    static bool          is_paused;
-    static ViewMode      view_mode;
-    static InteractMode  interact_mode;
-    static int           kill_radius;
-    static double        edge_threshold;
-    static bool          was_interrupted;
-    static bool          unlimited_tps;
+    using VehicleIdType = unsigned long;
+    using FoodIdType    = unsigned long;
+    using Foods         = std::unordered_map<FoodIdType, Food>;
+    using Vehicles      = std::unordered_map<VehicleIdType, Vehicle>;
+    using Clock         = std::chrono::steady_clock;
+    using Duration      = Clock::duration;
+    using TimePoint     = Clock::time_point;
+
+    static constexpr int                    target_tps = 90;
+    static bool                             game_running;
+    static bool                             is_paused;
+    static ViewMode                         view_mode;
+    static InteractMode                     interact_mode;
+    static int                              kill_radius;
+    static double                           edge_threshold;
+    static bool                             was_interrupted;
+    static bool                             unlimited_tps;
+    static std::pair<VehicleIdType, double> max_fitness;
+    // for tracking the fittest vehicle in the world
 
     static constexpr int day_tick_length() noexcept
     {
@@ -93,16 +103,7 @@ struct World {
     }
 
     /*                                              1 minute days */
-    static constexpr int day_night_cycle_length = target_tps * 60;
-
-    using VehicleIdType = unsigned long;
-    using FoodIdType    = unsigned long;
-    using Foods         = std::unordered_map<FoodIdType, Food>;
-    using Vehicles      = std::unordered_map<VehicleIdType, Vehicle>;
-    using Clock         = std::chrono::steady_clock;
-    using Duration      = Clock::duration;
-    using TimePoint     = Clock::time_point;
-
+    static constexpr int      day_night_cycle_length = target_tps * 60;
     static constexpr Duration one_tick{Duration::period::den / target_tps};
 
     long                                       seed;

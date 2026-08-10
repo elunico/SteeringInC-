@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
-#include <ranges>
 #include <string>
 #ifdef NOGUI
 #include "consolerenderer.h"
@@ -9,9 +8,7 @@
 #include <FL/Fl.H>
 #include "ui/fltkrenderer.h"
 #endif
-#include "food.h"
 #include "irenderer.h"
-#include "struct2this.h"
 #include "utils.h"
 #include "vehicle.h"
 #include "windows_shim.h"
@@ -138,8 +135,12 @@ struct GetOwningClass {
     }
 };
 
+#define CYAN "\033[36m"
+#define BLACK "\033[0m"
+
 int main(int argc, char const* argv[])
 {
+    tom::output(CYAN "./main use -q for usage information\n" BLACK);
     arguments args;
     parse_args(argc, argv, args);
 
@@ -161,23 +162,15 @@ int main(int argc, char const* argv[])
 
     world.run(renderer);
     renderer.render(tom::World::was_interrupted);
-    tom::output("Simulation ended.\n");
+    tom::output("\nSimulation ended.\n");
 
-    if (!world.vehicles.empty()) {
-        auto max_fitness_vehicle =
-            std::ranges::max_element(world.vehicles | std::views::values,
-                                     This2Param{&tom::Vehicle::is_less_fit})
-                .base()
-                ->second;
-
-        tom::output("Max fitness vehicle ID: ", max_fitness_vehicle.id,
-                    " fitness: ", max_fitness_vehicle.get_fitness(), "\n\n");
-    }
+    tom::output("Max fitness vehicle ID: ", tom::World::max_fitness.first,
+                " fitness: ", tom::World::max_fitness.second, "\n");
 
     std::string s = world.info_stream().str();
     std::ranges::transform(s, std::begin(s),
                            [](auto const& c) { return c == '|' ? '\n' : c; });
-    tom::output(s);
+    tom::output(s, "\n");
 
     return 0;
 }

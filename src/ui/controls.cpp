@@ -96,10 +96,33 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
 
     create_separator(button_width);
 
-    create_button(button_width, "Add Vehicle", FL_BLACK, FL_GRAY, [world](int) {
-        world->create_vehicle(world->rand_pos_in_bounds());
-        return 1;  // Indicate handled
-    });
+    create_button(button_width, "Disperse New Vehicles", FL_BLACK, FL_GRAY,
+                  [world](int) {
+                      auto s = fl_input("Enter number of vehicles to add");
+                      if (s == nullptr) {
+                          return 0;
+                      }
+                      int count = std::stol(s);
+                      for (int i = 0; i < count; i++) {
+                          world->create_vehicle(world->rand_pos_in_bounds());
+                      }
+                      return 1;  // Indicate handled
+                  });
+
+    create_button(button_width, "Disperse New Food", FL_BLACK, FL_BLACK,
+                  [world](int) {
+                      auto s = fl_input("Enter amount of food to add");
+                      if (s == nullptr) {
+                          return 0;
+                      }
+                      int count = std::stol(s);
+                      for (int i = 0; i < count; i++) {
+                          world->new_random_food();
+                      }
+                      return 1;  // Indicate handled
+                  });
+
+    create_separator(button_width);
 
     create_button(
         button_width, "Feed Mode", FL_BLACK, QtButtonBase::default_on_color,
@@ -125,19 +148,6 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
             return 1;  // Indicate handled
         },
         [] { return World::interact_mode.is_set(World::InteractMode::FEED); });
-
-    create_button(button_width, "Add a Lot of Feed", FL_BLACK, FL_BLACK,
-                  [world](int) {
-                      auto s = fl_input("Enter amount of food to add");
-                      if (s == nullptr) {
-                          return 0;
-                      }
-                      int count = std::stol(s);
-                      for (int i = 0; i < count; i++) {
-                          world->new_random_food();
-                      }
-                      return 1;  // Indicate handled
-                  });
 
     create_button(
         button_width, "Kill Mode", FL_BLACK,

@@ -24,14 +24,15 @@ World::InteractMode const World::InteractMode::NONE = 0;
 World::InteractMode const World::InteractMode::FEED = 1;
 World::InteractMode const World::InteractMode::KILL = 2;
 
-bool                World::game_running    = true;
-bool                World::is_paused       = false;
-int                 World::kill_radius     = 100;
-double              World::edge_threshold  = 25.0;
-bool                World::was_interrupted = false;
-World::ViewMode     World::view_mode       = ViewMode::PLAIN;
-World::InteractMode World::interact_mode   = InteractMode::NONE;
-bool                World::unlimited_tps   = false;
+bool                World::game_running                    = true;
+bool                World::is_paused                       = false;
+int                 World::kill_radius                     = 100;
+double              World::edge_threshold                  = 25.0;
+bool                World::was_interrupted                 = false;
+World::ViewMode     World::view_mode                       = ViewMode::PLAIN;
+World::InteractMode World::interact_mode                   = InteractMode::NONE;
+bool                World::unlimited_tps                   = false;
+std::pair<World::VehicleIdType, double> World::max_fitness = {0, 0.0};
 
 #define POISON_CHANCE 0.1
 
@@ -74,7 +75,8 @@ Vec2D World::rand_pos_in_bounds(double margin) const
 
 Food const& World::new_random_food()
 {
-    return new_food(random_in_range(0, 1) < POISON_CHANCE ? -20.0 : 25.0);
+    return new_food(random_in_range(0, 1) < POISON_CHANCE ? -5.0 / 0.05
+                                                          : 10.0 / 0.05);
 }
 
 Food& World::new_food(Vec2D food_position, double nutrition)
@@ -323,6 +325,10 @@ void World::vehicle_tick(Vehicles& neighbors, Foods& food_neighbors)
         vehicle.highlighted = false;
         vehicle.behaviors(neighbors, food_neighbors);
         vehicle.update();
+        if (vehicle.get_fitness() > World::max_fitness.second) {
+            World::max_fitness.first  = vehicle.id;
+            World::max_fitness.second = vehicle.get_fitness();
+        }
         // vehicle.avoid_edges();
     }
 }
