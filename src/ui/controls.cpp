@@ -81,7 +81,7 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
             return 1;  // Indicate handled
         },
         [] {
-            return World::view_mode.is_set(World::ViewMode::VEHICLE_SEEKING);
+            return World::view_mode.contains(World::ViewMode::VEHICLE_SEEKING);
         });
 
     create_button(
@@ -92,7 +92,9 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
             redraw();
             return 1;  // Indicate handled
         },
-        [] { return World::view_mode.is_set(World::ViewMode::FOOD_SEEKING); });
+        [] {
+            return World::view_mode.contains(World::ViewMode::FOOD_SEEKING);
+        });
 
     create_separator(button_width);
 
@@ -128,7 +130,7 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
         button_width, "Feed Mode", FL_BLACK, QtButtonBase::default_on_color,
         [this, world](int) {
             World::interact_mode.toggle(World::InteractMode::FEED);
-            if (!World::interact_mode.is_set(World::InteractMode::FEED)) {
+            if (!World::interact_mode.contains(World::InteractMode::FEED)) {
                 redraw();
                 return 1;  // Indicate handled
             }
@@ -140,21 +142,23 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
                     fl_alert("Invalid count. Using default 10.");
                     world->feed_count = 10;
                 }
-                World::interact_mode.unset(World::InteractMode::KILL);
+                World::interact_mode.remove(World::InteractMode::KILL);
             } else {
-                World::interact_mode.unset(World::InteractMode::FEED);
+                World::interact_mode.remove(World::InteractMode::FEED);
             }
             redraw();
             return 1;  // Indicate handled
         },
-        [] { return World::interact_mode.is_set(World::InteractMode::FEED); });
+        [] {
+            return World::interact_mode.contains(World::InteractMode::FEED);
+        });
 
     create_button(
         button_width, "Kill Mode", FL_BLACK,
         QtButtonBase::default_warning_color,
         [this](int) {
             World::interact_mode.toggle(World::InteractMode::KILL);
-            if (!World::interact_mode.is_set(World::InteractMode::KILL)) {
+            if (!World::interact_mode.contains(World::InteractMode::KILL)) {
                 redraw();
                 return 1;  // Indicate handled
             }
@@ -166,14 +170,16 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
                     fl_alert("Invalid radius input. Using default 100.");
                     World::kill_radius = 100;
                 }
-                World::interact_mode.unset(World::InteractMode::FEED);
+                World::interact_mode.remove(World::InteractMode::FEED);
             } else {
-                World::interact_mode.unset(World::InteractMode::KILL);
+                World::interact_mode.remove(World::InteractMode::KILL);
             }
             redraw();
             return 1;  // Indicate handled
         },
-        [] { return World::interact_mode.is_set(World::InteractMode::KILL); });
+        [] {
+            return World::interact_mode.contains(World::InteractMode::KILL);
+        });
 
     create_separator(button_width);
     // buttons.push_back(std::make_unique<QtSeparator>(button_width));

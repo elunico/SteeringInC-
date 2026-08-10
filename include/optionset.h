@@ -3,7 +3,6 @@
 
 #include <unordered_set>
 
-
 template <typename T>
 struct OptionSet {
     std::unordered_set<T> options;
@@ -40,6 +39,14 @@ struct OptionSet {
     {
         options.clear();
         options.insert(option);
+    }
+
+    void toggle(T option)
+    {
+        if (contains(option))
+            remove(option);
+        else
+            add(option);
     }
 
     void add(T option)

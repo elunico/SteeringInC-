@@ -169,14 +169,14 @@ void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
 
     // Draw  a line from the vehicle to its last sought vehicle if it exists
     if (vehicle.get_last_sought_vehicle_id() &&
-        World::view_mode.is_set(World::ViewMode::VEHICLE_SEEKING)) {
+        World::view_mode.contains(World::ViewMode::VEHICLE_SEEKING)) {
         auto& target = vehicle.last_sought_vehicle().get_position();
         draw_vehicle_target(FL_BLUE, pos, target);
     }
 
     // Draw  a line from the vehicle to its last sought food if it exists
     if (vehicle.last_sought_food_id != 0 &&
-        World::view_mode.is_set(World::ViewMode::FOOD_SEEKING)) {
+        World::view_mode.contains(World::ViewMode::FOOD_SEEKING)) {
         auto& target = vehicle.last_sought_food().get_position();
         draw_vehicle_target(FL_GREEN, pos, target);
     }
@@ -230,7 +230,7 @@ int FLTKCustomDrawer::handle(int i)
     if (i == FL_PUSH) {
         double x = Fl::event_x();
         double y = Fl::event_y();
-        if (World::interact_mode.is_set(World::InteractMode::KILL)) {
+        if (World::interact_mode.contains(World::InteractMode::KILL)) {
             for (auto& [id, vehicle] : world->vehicles) {
                 if (vehicle.get_position().distance_to(Vec2D{x, y}) <
                     World::kill_radius) {
@@ -239,7 +239,7 @@ int FLTKCustomDrawer::handle(int i)
             }
             return 1;
         }
-        if (World::interact_mode.is_set(World::InteractMode::FEED)) {
+        if (World::interact_mode.contains(World::InteractMode::FEED)) {
             for (int idx = 0; idx < world->feed_count; idx++) {
                 world->new_food(Vec2D{x, y} + Vec2D::random(5), 5.0 / 0.05);
             }

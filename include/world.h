@@ -11,9 +11,9 @@
 #include <vector>
 #include "cyclic_num.h"
 #include "dna.h"
+#include "optionset.h"
 #include "windows_shim.h"
 
-#include "enumeration.h"
 #include "irenderer.h"
 #include "utils.h"
 #include "vec2d.h"
@@ -27,44 +27,8 @@ template <typename Callable, typename... Args>
 concept CallableWith = requires(Callable c, Args... args) { c(args...); };
 
 struct World {
-    struct ViewMode : Enumeration<int> {
-        static ViewMode const PLAIN;
-        static ViewMode const FOOD_SEEKING;
-        static ViewMode const VEHICLE_SEEKING;
-
-        constexpr ViewMode(int v) : Enumeration(v)
-        {
-        }
-
-        constexpr ViewMode(ViewMode const& other) = default;
-
-        constexpr ViewMode& operator=(ViewMode const& other)
-        {
-            value = other.value;
-            return *this;
-        }
-    };
-
-    struct InteractMode : Enumeration<int> {
-        static InteractMode const NONE;
-        static InteractMode const FEED;
-        static InteractMode const KILL;
-
-        constexpr InteractMode(int v) : Enumeration(v)
-        {
-        }
-
-        constexpr InteractMode(InteractMode const& other)
-            : Enumeration(other.value)
-        {
-        }
-
-        constexpr InteractMode& operator=(InteractMode const& other)
-        {
-            value = other.value;
-            return *this;
-        }
-    };
+    enum struct ViewMode { PLAIN, FOOD_SEEKING, VEHICLE_SEEKING };
+    enum struct InteractMode { NONE, FEED, KILL };
 
     using VehicleIdType = unsigned long;
     using FoodIdType    = unsigned long;
@@ -77,8 +41,8 @@ struct World {
     static constexpr int                    target_tps = 90;
     static bool                             game_running;
     static bool                             is_paused;
-    static ViewMode                         view_mode;
-    static InteractMode                     interact_mode;
+    static OptionSet<ViewMode>              view_mode;
+    static OptionSet<InteractMode>          interact_mode;
     static int                              kill_radius;
     static double                           edge_threshold;
     static bool                             was_interrupted;
