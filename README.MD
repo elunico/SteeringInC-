@@ -8,8 +8,9 @@ Even though this is based on that challenge, there are significant behavioral di
 
 ## Requirements
 
-You need to have CMAKE, make, and FLTK to run this program currently.
+You need to have CMAKE and make to build this. The GUI is written in FLTK which is required for a GUI rendering. 
 
+### Building 
 Build with
 
 ```sh
@@ -18,11 +19,22 @@ make -j
 ./main # run the executable
 ```
 
+### Without FLTK
+
+You can choose to build 
+in non-GUI mode which will print a world summery to the Console but run the simulation normally behind the scenes, but no visualization is present. In this mode, FLTK is not used and it is not required for building. 
+
+To do this you can use the `-DNOGUI=yes` flag on the cmake build command. 
+
+```sh
+cmake -DRELEASE_BUILD=yes -DNOGUI=yes .
+```
+
 ## Controls
 
 When the program is running with the FLTK renderer (which is default), you can click on a vehicle to highlight it. You will also see a control window with several buttons which will help you control the simulation.
 
-Currently there are no ways to control the simulation in curses mode.
+When using the NOGUI mode without FLTK, the program will respond to a `SIGINT` by pausing the simulation and presenting the user with a TUI for options to modify the parameters of the simulation. 
 
 ## Demonstration
 [Demo Gif](https://app.eluni.co/vehicle-demo)
