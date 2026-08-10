@@ -1,5 +1,6 @@
 #include "food.h"
 
+#include "checks.h"
 #include "fooddna.h"
 #include "lifespan.h"
 #include "utils.h"
@@ -97,9 +98,7 @@ void Food::update() noexcept
 
 void Food::consume(Vehicle& consumer) noexcept
 {
-    if (is_expired()) {
-        return;
-    }
+    GUARD(!is_expired());
     consumer.health += dna.nutrition;
     // if (consumer.verbose)
     // output("Was eaten by Vehicle ID: ", consumer.id,
@@ -110,8 +109,7 @@ void Food::consume(Vehicle& consumer) noexcept
 
 void Food::perform_explosion(World* world) const
 {
-    if (world->food.size() >= world->max_food)
-        return;
+    GUARD(world->food.size() < world->max_food);
     for (int i = this->dna.explosionCount; i > 0; i--) {
         Food& f = world->new_food(this->position, this->get_nutrition());
         f.dna   = this->dna;

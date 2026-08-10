@@ -4,6 +4,7 @@
 #include <cassert>
 #include <sstream>
 
+#include "checks.h"
 #include "food.h"
 #include "lifespan.h"
 #include "utils.h"
@@ -194,8 +195,7 @@ void Vehicle::update()
         tom::output(msg);
         tom::output(std::string(msg.size(), '\b'));
     }
-    if (health == 0)
-        return;
+    GUARD(health != 0);
 
     age++;
     health--;
@@ -454,9 +454,8 @@ void Vehicle::seek_for_altruism(Vehicle* target, double record)
 
 void Vehicle::seek_for_reproduction(Vehicle* target, double record)
 {
-    if (age < dna.age_of_maturity) {
-        return;
-    }
+    GUARD(age >= dna.age_of_maturity);
+
     if ((health < dna.reproduction_cost ||
          time_since_last_reproduction < dna.reproduction_cooldown) &&
         // if recently reproduced, cannot reproduce again yet but if never
@@ -470,9 +469,7 @@ void Vehicle::seek_for_reproduction(Vehicle* target, double record)
         health -= dna.reproduction_cost;
         time_since_last_reproduction = 0;
         world->delay([this, mom = this, dad = target](auto*) {
-            if (mom == nullptr || dad == nullptr) {
-                return;
-            }
+            GUARD(mom != nullptr && dad != nullptr);
             this->perform_reproduction(*mom, *dad);
         });
     } else {
@@ -583,9 +580,7 @@ void Vehicle::vehicle_behaviors(Vehicles& vehicles)
 
     // if the *nearest* vehicle is too far to see, or there is no vehicle, do
     // nothing
-    if (!can_see(record) || target_vehicle == nullptr) {
-        return;
-    }
+    GUARD(can_see(record) && (target_vehicle != nullptr));
 
     // update the currently sought vehicle
     assert(target_vehicle->id != id);
@@ -626,10 +621,10 @@ void Vehicle::apply_force(Vec2D force, bool unlimited)
 
 void Vehicle::perform_reproduction(Vehicle const& mom, Vehicle const& dad) const
 {
-    Vec2D start_pos = mom.position;
-    auto  other_pos = dad.position;
-    Vec2D child_pos = midpoint(start_pos, other_pos);
-    DNA   child_dna = mom.dna.crossover(dad.dna);
+    auto start_pos = mom.position;
+    auto other_pos = dad.position;
+    auto child_pos = midpoint(start_pos, other_pos);
+    DNA  child_dna = mom.dna.crossover(dad.dna);
     child_dna.mutate();
     Vehicle offspring(child_pos);
     offspring.populate_in_place(
@@ -637,24 +632,17 @@ void Vehicle::perform_reproduction(Vehicle const& mom, Vehicle const& dad) const
         std::max(mom.generation, dad.generation) + 1,
         midpoint(mom.health, dad.health).remaining() * 1.2, false);
     world->born_counter++;
-    // if (mom.verbose || dad.verbose)
-    // output("Adding reproduced vehicle: ", child_pos, "\n");
     world->add_vehicle(std::move(offspring));
 }
 
 void Vehicle::perform_explosion(World* world) const
 {
-    Vec2D start_pos = this->position;
-    // Explosion-born vehicle
-    unsigned long count = this->dna.explosion_tries;
-    // if (this->verbose)
-    // output("Adding ", count,
-    //    " explosion-born vehicle around position: ", start_pos, "\n");
+    Vec2D         start_pos = this->position;
+    unsigned long count     = this->dna.explosion_tries;
 
     for (auto& [id, v] : world->vehicles) {
         if (auto d = this->position.distance_to(v.position);
             d < this->dna.perception_radius) {
-            // v.kill();
             v.health *= 0.67;
         }
     }
@@ -666,16 +654,11 @@ void Vehicle::perform_explosion(World* world) const
         child_dna.mutate();
         // reduce the likelihood of chained explosions
         child_dna.explosion_chance /= 2;
-        using std::max;
-
         offspring.populate_in_place(Vehicle::next_id(), this->world, start_pos,
                                     Vec2D::random(2.0), child_dna,
                                     this->generation + 1,
                                     max(this->health, 2.0), this->verbose);
         world->born_counter++;
-        // if (offspring.verbose)
-        //     output("Vehicle ", offspring.id,
-        //            " born at position: ", offspring.position, "\n");
     }
     world->add_all_vehicles(std::move(children));
 }
