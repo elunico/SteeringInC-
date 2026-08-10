@@ -6,14 +6,14 @@
 #include <ostream>
 #include <queue>
 #include <sstream>
-#include <thread>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include "cyclic_num.h"
 #include "dna.h"
+#include "optionset.h"
 #include "windows_shim.h"
 
-#include "enumeration.h"
 #include "irenderer.h"
 #include "utils.h"
 #include "vec2d.h"
@@ -27,54 +27,28 @@ template <typename Callable, typename... Args>
 concept CallableWith = requires(Callable c, Args... args) { c(args...); };
 
 struct World {
-    struct ViewMode : Enumeration<int> {
-        static ViewMode const PLAIN;
-        static ViewMode const FOOD_SEEKING;
-        static ViewMode const VEHICLE_SEEKING;
+    enum struct ViewMode { PLAIN, FOOD_SEEKING, VEHICLE_SEEKING };
+    enum struct InteractMode { NONE, FEED, KILL };
 
-        constexpr ViewMode(int v) : Enumeration(v)
-        {
-        }
+    using VehicleIdType = unsigned long;
+    using FoodIdType    = unsigned long;
+    using Foods         = std::unordered_map<FoodIdType, Food>;
+    using Vehicles      = std::unordered_map<VehicleIdType, Vehicle>;
+    using Clock         = std::chrono::steady_clock;
+    using Duration      = Clock::duration;
+    using TimePoint     = Clock::time_point;
 
-        constexpr ViewMode(ViewMode const& other) = default;
-
-        constexpr ViewMode& operator=(ViewMode const& other)
-        {
-            value = other.value;
-            return *this;
-        }
-    };
-
-    struct InteractMode : Enumeration<int> {
-        static InteractMode const NONE;
-        static InteractMode const FEED;
-        static InteractMode const KILL;
-
-        constexpr InteractMode(int v) : Enumeration(v)
-        {
-        }
-
-        constexpr InteractMode(InteractMode const& other)
-            : Enumeration(other.value)
-        {
-        }
-
-        constexpr InteractMode& operator=(InteractMode const& other)
-        {
-            value = other.value;
-            return *this;
-        }
-    };
-
-    static constexpr int target_tps = 90;
-    static bool          game_running;
-    static bool          is_paused;
-    static ViewMode      view_mode;
-    static InteractMode  interact_mode;
-    static int           kill_radius;
-    static double        edge_threshold;
-    static bool          was_interrupted;
-    static bool          unlimited_tps;
+    static constexpr int                    target_tps = 90;
+    static bool                             game_running;
+    static bool                             is_paused;
+    static OptionSet<ViewMode>              view_mode;
+    static OptionSet<InteractMode>          interact_mode;
+    static int                              kill_radius;
+    static double                           edge_threshold;
+    static bool                             was_interrupted;
+    static bool                             unlimited_tps;
+    static std::pair<VehicleIdType, double> max_fitness;
+    // for tracking the fittest vehicle in the world
 
     static constexpr int day_tick_length() noexcept
     {
@@ -93,16 +67,7 @@ struct World {
     }
 
     /*                                              1 minute days */
-    static constexpr int day_night_cycle_length = target_tps * 60;
-
-    using VehicleIdType = unsigned long;
-    using FoodIdType    = unsigned long;
-    using Foods         = std::unordered_map<FoodIdType, Food>;
-    using Vehicles      = std::unordered_map<VehicleIdType, Vehicle>;
-    using Clock         = std::chrono::steady_clock;
-    using Duration      = Clock::duration;
-    using TimePoint     = Clock::time_point;
-
+    static constexpr int      day_night_cycle_length = target_tps * 60;
     static constexpr Duration one_tick{Duration::period::den / target_tps};
 
     long                                       seed;

@@ -1,5 +1,6 @@
 #include "food.h"
 
+#include "fooddna.h"
 #include "lifespan.h"
 #include "utils.h"
 #include "vec2d.h"
@@ -21,26 +22,21 @@ bool Environmental::is_expired() const noexcept
 Environmental::IdType Environmental::global_id_counter = 1;
 
 Food::Food() noexcept
-    : Environmental(nullptr,
-                    Vec2D::random(100),
-                    IntLifespan::random(750, 1500)),
-      nutrition(50.0)
+    : Environmental(nullptr, Vec2D::random(100), IntLifespan::random(750, 1500))
 {
+    lifespan = IntLifespan{(int) dna.lifeticks};
 }
 
 Food::Food(World* world, Vec2D const& pos) noexcept
-    : Environmental(world, pos, IntLifespan::random(750, 1500)), nutrition(50.0)
+    : Environmental(world, pos, IntLifespan::random(750, 1500))
 {
+    lifespan = IntLifespan{(int) dna.lifeticks};
 }
 
-Food::Food(World*       world,
-           Vec2D const& pos,
-           double       nutrition,
-           DNA const&   dna) noexcept
-    : Environmental(world, pos, IntLifespan::random(750, 1500)),
-      nutrition(nutrition),
-      dna{dna}
+Food::Food(World* world, Vec2D const& pos, FoodDNA const& dna) noexcept
+    : Environmental(world, pos, IntLifespan::random(750, 1500)), dna{dna}
 {
+    lifespan = IntLifespan{(int) dna.lifeticks};
 }
 
 void Food::expire() noexcept
@@ -50,7 +46,7 @@ void Food::expire() noexcept
 
 [[nodiscard]] double Food::get_nutrition() const noexcept
 {
-    return nutrition;
+    return dna.nutrition;
 }
 
 Vec2D const& Food::get_position() const noexcept
@@ -76,19 +72,19 @@ void Food::avoid_edges() noexcept
 
 void Food::update() noexcept
 {
-    // velocity.limit(dna.max_speed);
+    velocity.limit(dna.speed);
     position += velocity;
 
     avoid_edges();
 
     if (lifespan.remaining() < 10 &&
-        random_in_range(0, 1) < dna.explosion_chance) {
+        random_in_range(0, 1) < dna.explosionChance) {
         world->delay([this](auto* world) { this->perform_explosion(world); });
         lifespan.expire();
         return;
     }
 
-    if (nutrition > 0) {
+    if (dna.nutrition > 0) {
         // dont let the poison food create more food
         // TODO: feels hacky, maybe subclass Environmental for poison but world
         // has only a map of Food
@@ -104,7 +100,7 @@ void Food::consume(Vehicle& consumer) noexcept
     if (is_expired()) {
         return;
     }
-    consumer.health += nutrition;
+    consumer.health += dna.nutrition;
     // if (consumer.verbose)
     //     output("Was eaten by Vehicle ID: ", consumer.id,
     //            " at position: ", consumer.get_position(),
@@ -116,12 +112,12 @@ void Food::perform_explosion(World* world) const
 {
     if (world->food.size() >= world->max_food)
         return;
-    for (int i = this->dna.explosion_tries; i > 0; i--) {
+    for (int i = this->dna.explosionCount; i > 0; i--) {
         Food& f = world->new_food(this->position, this->get_nutrition());
         f.dna   = this->dna;
         f.dna.mutate();
-        if (random_in_range(0, 1) < this->dna.mutation_rate) {
-            f.nutrition *= -random_in_range(1.0, 3.0);
+        if (random_in_range(0, 1) < this->dna.mutationRate) {
+            f.dna.nutrition *= -random_in_range(1.0, 3.0);
         }
     }
 }
@@ -131,8 +127,8 @@ void Food::perform_spawn(World* world) const
     Food& f = world->new_food(position, this->get_nutrition());
     f.dna   = this->dna;
     f.dna.mutate();
-    if (random_in_range(0, 1) < f.dna.mutation_rate) {
-        f.nutrition *= -random_in_range(1.0, 3.0);
+    if (random_in_range(0, 1) < f.dna.mutationRate) {
+        f.dna.nutrition *= -random_in_range(1.0, 3.0);
     }
 }
 }  // namespace tom

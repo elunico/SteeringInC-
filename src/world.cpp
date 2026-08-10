@@ -10,28 +10,22 @@
 
 #include "food.h"
 #include "irenderer.h"
+#include "optionset.h"
 #include "utils.h"
 #include "vec2d.h"
 #include "vehicle.h"
 
 namespace tom {
 
-World::ViewMode const World::ViewMode::PLAIN           = 0;
-World::ViewMode const World::ViewMode::FOOD_SEEKING    = 1;
-World::ViewMode const World::ViewMode::VEHICLE_SEEKING = 2;
-
-World::InteractMode const World::InteractMode::NONE = 0;
-World::InteractMode const World::InteractMode::FEED = 1;
-World::InteractMode const World::InteractMode::KILL = 2;
-
-bool                World::game_running    = true;
-bool                World::is_paused       = false;
-int                 World::kill_radius     = 100;
-double              World::edge_threshold  = 25.0;
-bool                World::was_interrupted = false;
-World::ViewMode     World::view_mode       = ViewMode::PLAIN;
-World::InteractMode World::interact_mode   = InteractMode::NONE;
-bool                World::unlimited_tps   = false;
+bool   World::game_running    = true;
+bool   World::is_paused       = false;
+int    World::kill_radius     = 100;
+double World::edge_threshold  = 25.0;
+bool   World::was_interrupted = false;
+auto   World::view_mode       = OptionSet(World::ViewMode::PLAIN);
+auto   World::interact_mode   = OptionSet(World::InteractMode::NONE);
+bool   World::unlimited_tps   = false;
+std::pair<World::VehicleIdType, double> World::max_fitness = {0, 0.0};
 
 #define POISON_CHANCE 0.1
 
@@ -82,12 +76,12 @@ Food const& World::new_random_food()
 
 Food& World::new_food(Vec2D food_position, double nutrition)
 {
-    auto  id    = Environmental::next_id();
-    Food& f     = food[id];
-    f.world     = this;
-    f.position  = food_position;
-    f.nutrition = nutrition;
-    f.id        = id;
+    auto  id        = Environmental::next_id();
+    Food& f         = food[id];
+    f.world         = this;
+    f.position      = food_position;
+    f.dna.nutrition = nutrition;
+    f.id            = id;
     return food.at(id);
 }
 
@@ -201,12 +195,10 @@ std::stringstream World::info_stream() const
     if (World::is_paused) {
         ss << " | PAUSED ";
     }
-    if (interact_mode.is_set(
-            static_cast<Enumeration<int>>(InteractMode::KILL))) {
+    if (interact_mode.contains(World::InteractMode::KILL)) {
         ss << "\n[KILL MODE ON (Radius: " << World::kill_radius << ")] ";
     }
-    if (interact_mode.is_set(
-            static_cast<Enumeration<int>>(InteractMode::FEED))) {
+    if (interact_mode.contains(World::InteractMode::FEED)) {
         ss << "\n[FEED MODE ON (Count: " << feed_count << ")] ";
     }
     return ss;
@@ -326,6 +318,10 @@ void World::vehicle_tick(Vehicles& neighbors, Foods& food_neighbors)
         vehicle.highlighted = false;
         vehicle.behaviors(neighbors, food_neighbors);
         vehicle.update();
+        if (vehicle.get_fitness() > World::max_fitness.second) {
+            World::max_fitness.first  = vehicle.id;
+            World::max_fitness.second = vehicle.get_fitness();
+        }
         // vehicle.avoid_edges();
     }
 }

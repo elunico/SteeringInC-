@@ -1,9 +1,10 @@
 #ifndef DNA_H
 #define DNA_H
 
+#include "basedna.h"
 namespace tom {
 
-struct DNA {
+struct DNA : public BaseDNA<DNA> {
     double perception_radius;
     double max_speed;
     double mutation_rate;
@@ -18,7 +19,6 @@ struct DNA {
     double explosion_tries;
     int    reproduction_cooldown;
     int    age_of_maturity;
-
 
     DNA() noexcept;
 

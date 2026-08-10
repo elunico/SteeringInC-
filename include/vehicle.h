@@ -34,7 +34,7 @@ class Vehicle {
     using IdType       = World::VehicleIdType;
     using Foods        = World::Foods;
     using Vehicles     = World::Vehicles;
-    using LifespanType = Lifespan<double, 0.01>;
+    using LifespanType = Lifespan<double, 0.05>;
 
     explicit Vehicle(Vec2D const& position);
     Vehicle();

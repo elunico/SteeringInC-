@@ -245,7 +245,7 @@ void Vehicle::update()
     if (health.is_expired()) {
         world->delay(
             [position = this->position, age = this->age](World* world) {
-                world->new_food(position, age / 1000.0 + 1.0);
+                world->new_food(position, age / 100.0 + 1.0);
             });
         return;
     }
@@ -417,7 +417,7 @@ void Vehicle::seek_for_eat(Food* target, double record)
 void Vehicle::flee_poison(Food* target, double record)
 {
     if (can_see(record)) {
-        if (random_in_range(0, 1) < target->dna.altruism_probability) {
+        if (random_in_range(0, 1) < dna.altruism_probability) {
             target->expire();  // altruistically remove poison food
             health--;          // slight health cost to self
             return;
@@ -538,7 +538,7 @@ void Vehicle::food_behaviors(Foods& food_positions)
         // }
         // update the currently sought food
         last_sought_food_id = target_food->id;
-        if (target_food->nutrition < 0) {
+        if (target_food->get_nutrition() < 0) {
             flee_poison(target_food, record);
         } else {
             seek_for_eat(target_food, record);
@@ -640,9 +640,9 @@ void Vehicle::perform_reproduction(Vehicle const& mom, Vehicle const& dad) const
 {
     Vec2D start_pos = mom.position;
     auto  other_pos = dad.position;
+    Vec2D child_pos = midpoint(start_pos, other_pos);
     DNA   child_dna = mom.dna.crossover(dad.dna);
     child_dna.mutate();
-    Vec2D   child_pos = midpoint(start_pos, other_pos);
     Vehicle offspring(child_pos);
     offspring.populate_in_place(
         Vehicle::next_id(), mom.world, child_pos, Vec2D::random(2.0), child_dna,
@@ -667,8 +667,7 @@ void Vehicle::perform_explosion(World* world) const
         if (auto d = this->position.distance_to(v.position);
             d < this->dna.perception_radius) {
             // v.kill();
-            v.health *= ((this->dna.perception_radius - d) /
-                         this->dna.perception_radius);
+            v.health *= 0.67;
         }
     }
     std::vector children{count, Vehicle(start_pos)};

@@ -1,6 +1,7 @@
 #ifndef FOOD_H
 #define FOOD_H
 
+#include "fooddna.h"
 #include "lifespan.h"
 #include "utils.h"
 #include "vec2d.h"
@@ -48,18 +49,13 @@ struct Environmental {
 
 struct Food : Environmental {
     using IdType = World::FoodIdType;
-    // prevent the initial food from all disappearing at once
-    double nutrition;
-    DNA    dna{};
+    FoodDNA dna{};
 
     Food() noexcept;
 
     Food(World* world, Vec2D const& pos) noexcept;
 
-    Food(World*       world,
-         Vec2D const& pos,
-         double       nutrition,
-         DNA const&   dna) noexcept;
+    Food(World* world, Vec2D const& pos, FoodDNA const& dna) noexcept;
 
     [[nodiscard]] double get_nutrition() const noexcept;
 
