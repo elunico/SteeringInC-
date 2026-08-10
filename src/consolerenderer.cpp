@@ -34,6 +34,7 @@ reask:
     tom::output(world->info_stream().str());
     tom::output("\n\nAvailable Commands:");
     tom::output("\np: pause/unpause");
+    tom::output("\nu: sprint!");
     tom::output("\nq: end the simulation");
     tom::output("\nm: change the max food allowed");
     tom::output("\nf: change the food spawn chance");
@@ -51,6 +52,10 @@ reask:
         case 'q':
             World::was_interrupted = true;
             check_poll             = false;
+            break;
+        case 'u':
+            World::unlimited_tps = !World::unlimited_tps;
+            check_poll           = false;
             break;
         case 'm': {
             tom::output("Enter the new max food count: ");
