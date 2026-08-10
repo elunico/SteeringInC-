@@ -3,7 +3,8 @@
 
 namespace tom {
 FoodDNA::FoodDNA()
-    : nutrition(random_in_range(10 / 0.05, 25 / 0.05)),
+    // nutrition is now a percentage of max health not an absolute value
+    : nutrition(random_in_range(0.05, 0.2)),
       lifeticks(random_in_range(300, 1000)),
       speed(random_in_range(1, 3)),
       explosionChance(random_in_range(0.01, 0.1)),
@@ -28,7 +29,7 @@ FoodDNA FoodDNA::crossover(FoodDNA const& other) const noexcept
 void FoodDNA::mutate() noexcept
 {
     if (random_in_range(0, 1) < mutationRate) {
-        nutrition += random_delta(0.5 / 0.05);
+        nutrition += random_delta(0.01);
     }
     if (random_in_range(0, 1) < mutationRate) {
         lifeticks += random_delta(20);

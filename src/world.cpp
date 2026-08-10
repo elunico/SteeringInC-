@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "food.h"
+#include "fooddna.h"
 #include "irenderer.h"
 #include "optionset.h"
 #include "utils.h"
@@ -17,15 +18,17 @@
 
 namespace tom {
 
-bool   World::game_running    = true;
-bool   World::is_paused       = false;
-int    World::kill_radius     = 100;
-double World::edge_threshold  = 25.0;
-bool   World::was_interrupted = false;
-auto   World::view_mode       = OptionSet(World::ViewMode::PLAIN);
-auto   World::interact_mode   = OptionSet(World::InteractMode::NONE);
-bool   World::unlimited_tps   = false;
-std::pair<World::VehicleIdType, double> World::max_fitness = {0, 0.0};
+bool                            World::game_running    = true;
+bool                            World::is_paused       = false;
+int                             World::kill_radius     = 100;
+double                          World::edge_threshold  = 25.0;
+bool                            World::was_interrupted = false;
+OptionSet<tom::World::ViewMode> World::view_mode =
+    OptionSet(World::ViewMode::PLAIN);
+OptionSet<tom::World::InteractMode> World::interact_mode =
+    OptionSet(World::InteractMode::NONE);
+bool                                    World::unlimited_tps = false;
+std::pair<World::VehicleIdType, double> World::max_fitness   = {0, 0.0};
 
 #define POISON_CHANCE 0.1
 
@@ -68,8 +71,10 @@ Vec2D World::rand_pos_in_bounds(double margin) const
 
 Food const& World::new_random_food()
 {
-    return new_food(random_in_range(0, 1) < POISON_CHANCE ? -10.0 / 0.05
-                                                          : 15.0 / 0.05);
+    // see Food class for information on how nutrition works
+    return new_food(random_in_range(0, 1) < POISON_CHANCE
+                        ? -2.0
+                        : random_in_range(0.05, 0.2));
 }
 
 Food& World::new_food(Vec2D food_position, double nutrition)
