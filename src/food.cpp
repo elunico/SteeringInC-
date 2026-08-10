@@ -100,11 +100,14 @@ void Food::consume(Vehicle& consumer) noexcept
     if (is_expired()) {
         return;
     }
-    consumer.health += dna.nutrition;
-    // if (consumer.verbose)
-    //     output("Was eaten by Vehicle ID: ", consumer.id,
-    //            " at position: ", consumer.get_position(),
-    //            " | Nutrition: ", nutrition, "\n");
+    // see FoodDNA for more
+    consumer.health += (Vehicle::MAX_HEALTH * dna.nutrition) /
+                       decltype(consumer.health)::tick_amount;
+    if (consumer.verbose)
+        output("Was eaten by Vehicle ID: ", consumer.id,
+               " at position: ", consumer.get_position(),
+               " | Nutrition: ", dna.nutrition, " for ",
+               (Vehicle::MAX_HEALTH * dna.nutrition), "health.\n");
     lifespan.expire();
 }
 

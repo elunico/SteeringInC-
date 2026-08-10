@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "food.h"
+#include "fooddna.h"
 #include "irenderer.h"
 #include "optionset.h"
 #include "utils.h"
@@ -17,15 +18,17 @@
 
 namespace tom {
 
-bool   World::game_running    = true;
-bool   World::is_paused       = false;
-int    World::kill_radius     = 100;
-double World::edge_threshold  = 25.0;
-bool   World::was_interrupted = false;
-auto   World::view_mode       = OptionSet(World::ViewMode::PLAIN);
-auto   World::interact_mode   = OptionSet(World::InteractMode::NONE);
-bool   World::unlimited_tps   = false;
-std::pair<World::VehicleIdType, double> World::max_fitness = {0, 0.0};
+bool                            World::game_running    = true;
+bool                            World::is_paused       = false;
+int                             World::kill_radius     = 100;
+double                          World::edge_threshold  = 25.0;
+bool                            World::was_interrupted = false;
+OptionSet<tom::World::ViewMode> World::view_mode =
+    OptionSet(World::ViewMode::PLAIN);
+OptionSet<tom::World::InteractMode> World::interact_mode =
+    OptionSet(World::InteractMode::NONE);
+bool                                    World::unlimited_tps = false;
+std::pair<World::VehicleIdType, double> World::max_fitness   = {0, 0.0};
 
 #define POISON_CHANCE 0.1
 
