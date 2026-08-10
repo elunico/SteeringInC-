@@ -628,9 +628,9 @@ void Vehicle::perform_reproduction(Vehicle const& mom, Vehicle const& dad) const
 {
     Vec2D start_pos = mom.position;
     auto  other_pos = dad.position;
+    Vec2D child_pos = midpoint(start_pos, other_pos);
     DNA   child_dna = mom.dna.crossover(dad.dna);
     child_dna.mutate();
-    Vec2D   child_pos = midpoint(start_pos, other_pos);
     Vehicle offspring(child_pos);
     offspring.populate_in_place(
         Vehicle::next_id(), mom.world, child_pos, Vec2D::random(2.0), child_dna,
