@@ -105,11 +105,11 @@ void Food::consume(Vehicle& consumer) noexcept
         return;
     }
     consumer.health += nutrition;
-    if (consumer.verbose)
-        // output("Was eaten by Vehicle ID: ", consumer.id,
-        //        " at position: ", consumer.get_position(),
-        //        " | Nutrition: ", nutrition, "\n");
-        lifespan.expire();
+    // if (consumer.verbose)
+    // output("Was eaten by Vehicle ID: ", consumer.id,
+    //        " at position: ", consumer.get_position(),
+    //        " | Nutrition: ", nutrition, "\n");
+    lifespan.expire();
 }
 
 void Food::perform_explosion(World* world) const

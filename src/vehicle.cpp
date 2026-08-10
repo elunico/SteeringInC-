@@ -393,7 +393,7 @@ void Vehicle::seek_for_eat(Food* target, double record)
 {
     if (can_touch(record)) {
         // Already at target; captured food
-        health += 50.0;  // Increase health on reaching target
+        // health += 50.0;  // Increase health on reaching target
         target->consume(*this);
     } else if (can_see(record)) {
         Vec2D steer = seek(target->position);
