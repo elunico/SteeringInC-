@@ -106,9 +106,9 @@ void Food::consume(Vehicle& consumer) noexcept
     }
     consumer.health += nutrition;
     // if (consumer.verbose)
-    // output("Was eaten by Vehicle ID: ", consumer.id,
-    //        " at position: ", consumer.get_position(),
-    //        " | Nutrition: ", nutrition, "\n");
+    //     output("Was eaten by Vehicle ID: ", consumer.id,
+    //            " at position: ", consumer.get_position(),
+    //            " | Nutrition: ", nutrition, "\n");
     lifespan.expire();
 }
 

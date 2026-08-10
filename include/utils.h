@@ -8,6 +8,7 @@
 #include <iostream>
 #include <limits>
 #include <numeric>
+#include <ostream>
 #include <random>
 #include <string>
 #include <type_traits>
@@ -95,6 +96,7 @@ template <typename... Args>
 void output(Args&&... args)
 {
     ((std::cout << std::forward<Args>(args)), ...);
+    std::cout << std::flush;
 }
 
 #ifdef NDEBUG

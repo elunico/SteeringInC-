@@ -54,9 +54,13 @@ class Vehicle {
     [[nodiscard]] bool         is_verbose() const;
     [[nodiscard]] bool         can_see(Vec2D const& target) const;
     [[nodiscard]] bool         will_seek_vehicle() const;
+    [[nodiscard]] bool         is_hungry() const;
     [[nodiscard]] bool         can_touch(Vec2D const& target) const;
     [[nodiscard]] bool         can_see(double distance) const;
     [[nodiscard]] bool         can_touch(double distance) const;
+    [[nodiscard]] bool         is_health_pct_above(double pct) const;
+    [[nodiscard]] bool         is_health_pct_below(double pct) const;
+    [[nodiscard]] double       get_health_pct() const;
     [[nodiscard]] bool         is_dead() const;
     void                       update();
     void                       kill();
@@ -101,8 +105,6 @@ class Vehicle {
     static int const    WANDER_DISTANCE;
     static double const MAX_FORCE;
     static double const MAX_HEALTH;
-    [[nodiscard]] bool  is_health_pct_above(double pct) const;
-    [[nodiscard]] bool  is_health_pct_below(double pct) const;
     void                determine_behavior();
     void                seek_for_eat(Food* target, double record);
     void                flee_poison(Food* target, double record);

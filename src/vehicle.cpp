@@ -2,10 +2,13 @@
 #include "vehicle.h"
 
 #include <cassert>
+#include <cstddef>
+#include <ostream>
 #include <sstream>
 
 #include "food.h"
 #include "lifespan.h"
+#include "optionset.h"
 #include "utils.h"
 #include "vec2d.h"
 #include "world.h"
@@ -32,7 +35,7 @@ static Lifespan<T, amount> max(Lifespan<T, amount> const& lifespan, T d)
 
 int const    Vehicle::WANDER_DISTANCE = 50;
 double const Vehicle::MAX_FORCE       = 0.45;
-double const Vehicle::MAX_HEALTH      = 35.0;
+double const Vehicle::MAX_HEALTH      = 45.0;
 
 Vehicle::Vehicle(Vec2D const& position)
     : position(position),
@@ -140,7 +143,7 @@ bool Vehicle::can_see(Vec2D const& target) const
     // only. at night they always want to be around others. note that this does
     // not prevent seeking food but does average velocities so food seeking will
     // be mediated by the desire to stay near others
-    return is_health_pct_above(0.25) || (world && world->is_night());
+    return is_health_pct_above(0.5) || (world && world->is_night());
 }
 
 bool Vehicle::can_touch(Vec2D const& target) const
@@ -163,20 +166,61 @@ bool Vehicle::is_dead() const
     return health.is_expired();
 }
 
-[[nodiscard]] bool Vehicle::is_health_pct_above(double pct) const
+[[nodiscard]] double Vehicle::get_health_pct() const
 {
     double remainingTicks = health.remaining();
     double totalTicks     = Vehicle::MAX_HEALTH;
     double lifePct        = remainingTicks / totalTicks;
-    return lifePct > pct;
+    return lifePct;
+}
+
+[[nodiscard]] bool Vehicle::is_health_pct_above(double pct) const
+{
+    return get_health_pct() > pct;
 }
 
 [[nodiscard]] bool Vehicle::is_health_pct_below(double pct) const
 {
-    double remainingTicks = health.remaining();
-    double totalTicks     = Vehicle::MAX_HEALTH;
-    double lifePct        = remainingTicks / totalTicks;
-    return lifePct < pct;
+    return get_health_pct() < pct;
+}
+
+static inline std::ostream& operator<<(std::ostream&          os,
+                                       Vehicle::BehaviorState state)
+{
+    switch (state) {
+        case tom::Vehicle::BehaviorState::DESPERATE:
+            os << "DESPERATE";
+            break;
+        case tom::Vehicle::BehaviorState::OUTGOING:
+            os << "OUTGOING";
+            break;
+        case tom::Vehicle::BehaviorState::HUNGRY:
+            os << "HUNGRY";
+            break;
+        case tom::Vehicle::BehaviorState::UNSET:
+            os << "UNSET";
+            break;
+        case tom::Vehicle::BehaviorState::WANDERING:
+            os << "WANDERING";
+            break;
+    }
+    return os;
+}
+
+template <typename T>
+static inline std::ostream& operator<<(std::ostream&       os,
+                                       OptionSet<T> const& state)
+{
+    os << "OptionSet(";
+    auto i = state.options.cbegin();
+    while (i != state.options.cend()) {
+        os << *i++;
+        if (i == state.options.cend())
+            break;
+        os << " | ";
+    }
+    os << ")";
+    return os;
 }
 
 void Vehicle::update()
@@ -184,11 +228,10 @@ void Vehicle::update()
     if (verbose) {
         std::stringstream s;
         s << "Vehicle " << id << " health " << health.remaining()
+          << " (pct=" << get_health_pct() << ")"
           << " will_seek_vehicle()=" << will_seek_vehicle() << " age " << age
-          << " generation " << generation
-          << " health_pct_above(0.25)=" << is_health_pct_above(0.25)
-          << " health_pct_above(0.5)=" << is_health_pct_above(0.5)
-          << " health_pct_above(0.8)=" << is_health_pct_above(0.8);
+          << " is_hungry()=" << is_hungry()
+          << " BehaviorState=" << behavior_state;
         auto msg = s.str();
         tom::output(msg);
         tom::output(std::string(msg.size(), '\b'));
@@ -280,6 +323,11 @@ void Vehicle::wander()
     apply_force(force);
 }
 
+[[nodiscard]] bool Vehicle::is_hungry() const
+{
+    return is_health_pct_below(0.5);
+}
+
 void Vehicle::determine_behavior()
 {
     behavior_state.clear();
@@ -287,14 +335,14 @@ void Vehicle::determine_behavior()
         behavior_state.set(BehaviorState::DESPERATE);
         return;
     }
-    if ((is_health_pct_above(0.75)) && (world && world->is_day())) {
+    if ((is_health_pct_above(0.8)) && (world && world->is_day())) {
         behavior_state.set(BehaviorState::WANDERING);
         return;
     }
     // desperation and wandering are unique actions
     // but a vehicle may seek food or others or try to find food while
     // remaining close to others so the actions are not mutually exclusive
-    if (is_health_pct_below(0.65)) {
+    if (is_hungry()) {
         behavior_state.add(BehaviorState::HUNGRY);
     }
     if (will_seek_vehicle()) {
@@ -326,41 +374,6 @@ void Vehicle::behaviors(
     if (behavior_state.contains(BehaviorState::OUTGOING)) {
         vehicle_behaviors(vehicles);
     }
-
-    // if ((health > MAX_HEALTH * 0.8) && (world && world->is_day())) {
-    //     // if health is very high, no need to seek food or vehicles
-    //     // wander around and avoid edges
-    //     check_sought_food();
-    //     check_sought_vehicle();
-    //     wander();
-    //     behavior_state = BehaviorState::WANDERING;
-    //     return;
-    // }
-
-    // // if health is very high, no need to seek food but update sought for
-    // // visualization
-    // check_sought_food();
-
-    // if (health <= MAX_HEALTH * 0.8) {
-    //     // food_behaviors will call check_sought_food internally
-    //     food_behaviors(food_positions);
-    //     behavior_state = BehaviorState::HUNGRY;
-    // }
-
-    // // if health is too low to seek vehicle, we still want to update the
-    // drawing check_sought_vehicle();
-
-    // if (health < 2.0) {
-    //     try_explosion();
-    //     behavior_state = BehaviorState::DESPERATE;
-    //     return;
-    // }
-
-    // // only search for vehicles if health is sufficient
-    // if (will_seek_vehicle()) {
-    //     vehicle_behaviors(vehicles);
-    //     behavior_state = BehaviorState::OUTGOING;
-    // }
 }
 
 void Vehicle::populate_in_place(typename Vehicle::IdType id,
