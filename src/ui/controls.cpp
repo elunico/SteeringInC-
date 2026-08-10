@@ -54,6 +54,15 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
                       return 1;  // Indicate handled
                   });
 
+    create_button(
+        button_width, "Sprint!", FL_BLACK, QtButtonBase::default_on_color,
+        [this](int) {
+            World::unlimited_tps = !World::unlimited_tps;
+            redraw();
+            return 1;  // Indicate handled
+        },
+        []() { return World::unlimited_tps; });
+
     create_separator(button_width);
 
     create_button(button_width, "Clear Vehicle Selection", FL_BLACK, FL_GRAY,
