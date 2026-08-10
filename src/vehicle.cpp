@@ -140,7 +140,8 @@ bool Vehicle::can_see(Vec2D const& target) const
     // only. at night they always want to be around others. note that this does
     // not prevent seeking food but does average velocities so food seeking will
     // be mediated by the desire to stay near others
-    return is_health_pct_above(0.25) || (world && world->is_night());
+    return (is_health_pct_above(0.3) && (world && world->is_day())) ||
+           (is_health_pct_above(0.2) && (world && world->is_night()));
 }
 
 bool Vehicle::can_touch(Vec2D const& target) const
@@ -202,7 +203,7 @@ void Vehicle::update()
     if (health.is_expired()) {
         world->delay(
             [position = this->position, age = this->age](World* world) {
-                world->new_food(position, age / 1000.0 + 1.0);
+                world->new_food(position, age / 100.0 + 1.0);
             });
         return;
     }
@@ -294,7 +295,7 @@ void Vehicle::determine_behavior()
     // desperation and wandering are unique actions
     // but a vehicle may seek food or others or try to find food while
     // remaining close to others so the actions are not mutually exclusive
-    if (is_health_pct_below(0.65)) {
+    if (is_health_pct_below(0.7)) {
         behavior_state.add(BehaviorState::HUNGRY);
     }
     if (will_seek_vehicle()) {
@@ -404,7 +405,7 @@ void Vehicle::seek_for_eat(Food* target, double record)
 void Vehicle::flee_poison(Food* target, double record)
 {
     if (can_see(record)) {
-        if (random_in_range(0, 1) < target->dna.altruism_probability) {
+        if (random_in_range(0, 1) < dna.altruism_probability) {
             target->expire();  // altruistically remove poison food
             health--;          // slight health cost to self
             return;
@@ -525,7 +526,7 @@ void Vehicle::food_behaviors(Foods& food_positions)
         // }
         // update the currently sought food
         last_sought_food_id = target_food->id;
-        if (target_food->nutrition < 0) {
+        if (target_food->get_nutrition() < 0) {
             flee_poison(target_food, record);
         } else {
             seek_for_eat(target_food, record);
@@ -654,8 +655,7 @@ void Vehicle::perform_explosion(World* world) const
         if (auto d = this->position.distance_to(v.position);
             d < this->dna.perception_radius) {
             // v.kill();
-            v.health *= ((this->dna.perception_radius - d) /
-                         this->dna.perception_radius);
+            v.health *= 0.67;
         }
     }
     std::vector children{count, Vehicle(start_pos)};

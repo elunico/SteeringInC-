@@ -75,18 +75,18 @@ Vec2D World::rand_pos_in_bounds(double margin) const
 
 Food const& World::new_random_food()
 {
-    return new_food(random_in_range(0, 1) < POISON_CHANCE ? -5.0 / 0.05
-                                                          : 10.0 / 0.05);
+    return new_food(random_in_range(0, 1) < POISON_CHANCE ? -10.0 / 0.05
+                                                          : 15.0 / 0.05);
 }
 
 Food& World::new_food(Vec2D food_position, double nutrition)
 {
-    auto  id    = Environmental::next_id();
-    Food& f     = food[id];
-    f.world     = this;
-    f.position  = food_position;
-    f.nutrition = nutrition;
-    f.id        = id;
+    auto  id        = Environmental::next_id();
+    Food& f         = food[id];
+    f.world         = this;
+    f.position      = food_position;
+    f.dna.nutrition = nutrition;
+    f.id            = id;
     return food.at(id);
 }
 

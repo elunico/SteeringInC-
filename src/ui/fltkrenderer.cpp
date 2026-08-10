@@ -191,8 +191,12 @@ void FLTKCustomDrawer::draw_food(Food const& food_item)
     // }
     // fl_pie(static_cast<int>(position.position.x) - 2,
     //        static_cast<int>(position.position.y) - 2, 4, 4, 0, 360);
+
     fl_rectf(food_item.position.x, food_item.position.y, 4, 4,
-             food_item.nutrition < 0 ? FL_RED : FL_GREEN);
+             food_item.dna.nutrition < 0 ? FL_RED : FL_GREEN);
+    // fl_draw(std::to_string((int) food_item.get_nutrition()).c_str(),
+    // static_cast<int>(food_item.position.x),
+    // static_cast<int>(food_item.position.y) - 5);
 }
 
 void FLTKCustomDrawer::draw_living_world()
@@ -237,7 +241,7 @@ int FLTKCustomDrawer::handle(int i)
         }
         if (World::interact_mode.is_set(World::InteractMode::FEED)) {
             for (int idx = 0; idx < world->feed_count; idx++) {
-                world->new_food(Vec2D{x, y} + Vec2D::random(5), 5.0);
+                world->new_food(Vec2D{x, y} + Vec2D::random(5), 5.0 / 0.05);
             }
             return 1;
         }
