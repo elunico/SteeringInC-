@@ -74,7 +74,7 @@ Vec2D World::rand_pos_in_bounds(double margin) const
 
 Food const& World::new_random_food()
 {
-    return new_food(random_in_range(0, 1) < POISON_CHANCE ? -10.0 : 5.0);
+    return new_food(random_in_range(0, 1) < POISON_CHANCE ? -15.0 : 2.5);
 }
 
 Food& World::new_food(Vec2D food_position, double nutrition)
