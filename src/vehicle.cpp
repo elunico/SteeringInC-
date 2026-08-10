@@ -12,27 +12,27 @@
 
 namespace tom {
 
-static Lifespan<double, 0.05> min(Lifespan<double, 0.05> const& lifespan,
-                                  double                        d)
+template <typename T, T amount>
+static Lifespan<T, amount> min(Lifespan<T, amount> const& lifespan, T d)
 {
     if (lifespan > d) {
-        return Lifespan<double, 0.05>(d);
+        return Lifespan<T, amount>(d);
     }
     return lifespan;
 }
 
-static Lifespan<double, 0.05> max(Lifespan<double, 0.05> const& lifespan,
-                                  double                        d)
+template <typename T, T amount>
+static Lifespan<T, amount> max(Lifespan<T, amount> const& lifespan, T d)
 {
     if (lifespan < d) {
-        return Lifespan<double, 0.05>(d);
+        return Lifespan<T, amount>(d);
     }
     return lifespan;
 }
 
 int const    Vehicle::WANDER_DISTANCE = 50;
 double const Vehicle::MAX_FORCE       = 0.45;
-double const Vehicle::MAX_HEALTH      = 40.0;
+double const Vehicle::MAX_HEALTH      = 35.0;
 
 Vehicle::Vehicle(Vec2D const& position)
     : position(position),
@@ -165,19 +165,17 @@ bool Vehicle::is_dead() const
 
 [[nodiscard]] bool Vehicle::is_health_pct_above(double pct) const
 {
-    double remainingTicks = health.remaining() * decltype(health)::tick_amount;
-    double totalTicks =
-        Vehicle::MAX_HEALTH * Vehicle::LifespanType::tick_amount;
-    double lifePct = remainingTicks / totalTicks;
+    double remainingTicks = health.remaining();
+    double totalTicks     = Vehicle::MAX_HEALTH;
+    double lifePct        = remainingTicks / totalTicks;
     return lifePct > pct;
 }
 
 [[nodiscard]] bool Vehicle::is_health_pct_below(double pct) const
 {
-    double remainingTicks = health.remaining() * decltype(health)::tick_amount;
-    double totalTicks =
-        Vehicle::MAX_HEALTH * Vehicle::LifespanType::tick_amount;
-    double lifePct = remainingTicks / totalTicks;
+    double remainingTicks = health.remaining();
+    double totalTicks     = Vehicle::MAX_HEALTH;
+    double lifePct        = remainingTicks / totalTicks;
     return lifePct < pct;
 }
 
@@ -186,7 +184,11 @@ void Vehicle::update()
     if (verbose) {
         std::stringstream s;
         s << "Vehicle " << id << " health " << health.remaining()
-          << " will_seek_vehicle()=" << will_seek_vehicle();
+          << " will_seek_vehicle()=" << will_seek_vehicle() << " age " << age
+          << " generation " << generation
+          << " health_pct_above(0.25)=" << is_health_pct_above(0.25)
+          << " health_pct_above(0.5)=" << is_health_pct_above(0.5)
+          << " health_pct_above(0.8)=" << is_health_pct_above(0.8);
         auto msg = s.str();
         tom::output(msg);
         tom::output(std::string(msg.size(), '\b'));

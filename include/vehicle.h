@@ -34,7 +34,7 @@ class Vehicle {
     using IdType       = World::VehicleIdType;
     using Foods        = World::Foods;
     using Vehicles     = World::Vehicles;
-    using LifespanType = Lifespan<double, 0.05>;
+    using LifespanType = Lifespan<double, 0.1>;
 
     explicit Vehicle(Vec2D const& position);
     Vehicle();
@@ -123,7 +123,7 @@ class Vehicle {
     void perform_explosion(World* world) const;
 
     World*       world                        = nullptr;
-    LifespanType health                       = 20.0;
+    LifespanType health                       = 25.0;
     int          age                          = 0;
     double       mass                         = 1.0;
     int          time_since_last_reproduction = -1;

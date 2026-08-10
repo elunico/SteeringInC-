@@ -20,7 +20,7 @@ QtToggleButton::QtToggleButton(World*                  world,
     color(FL_GRAY);
     align(FL_ALIGN_INSIDE | FL_ALIGN_CENTER);
 
-    auto width = fl_width(label);
+    auto width = 1;  // fl_width(label);
     if (width > w) {
         int         index = midpoint(label);
         std::string new_label(label, 0, index);
