@@ -30,15 +30,12 @@ bool SplitLimit::operator!=(size_t other) const noexcept
                                              char               delimiter,
                                              SplitLimit         limit)
 {
-    std::vector<std::string> parts;
-    std::string              current;
     if (limit == 0ul) {
-        return {};
-    }
-    if (limit == 1ul) {
         return {str};
     }
     std::size_t char_count = 0;
+    std::vector<std::string> parts;
+    std::string              current;
     for (char c : str) {
         if (c == delimiter) {
             parts.push_back(current);
@@ -48,7 +45,7 @@ bool SplitLimit::operator!=(size_t other) const noexcept
         }
         char_count++;
         if (!limit.is_unlimited() &&
-            parts.size() >= static_cast<size_t>(limit) - 1) {
+            parts.size() >= static_cast<size_t>(limit)) {
             parts.emplace_back(str.begin() + char_count, str.end());
             return parts;
         }
