@@ -18,8 +18,8 @@ struct Environmental {
     IdType           id;
     World*           world;
     Vec2D            position;
-    Vec2D velocity{};
-    Vec2D acceleration{};
+    Vec2D            velocity{};
+    Vec2D            acceleration{};
     Lifespan<int, 1> lifespan;
 
     template <typename T, T tick_amt>
@@ -51,6 +51,8 @@ struct Environmental {
 
 struct Food : Environmental {
     using IdType = World::FoodIdType;
+    double velocity_dampening;
+
     FoodDNA dna{};
 
     Food() noexcept;
@@ -65,9 +67,10 @@ struct Food : Environmental {
 
     void update() noexcept override;
 
+    void dampen_velocity();
+
     void consume(Vehicle& consumer) noexcept override;
 
-    public:
     void try_flee(Vehicle const& source) noexcept;
 
     void apply_force(Vec2D const& force);
@@ -75,6 +78,8 @@ struct Food : Environmental {
     bool sees(Vec2D const& position) const noexcept;
 
     void expire() noexcept override;
+
+    void behaviors(World::Vehicles const& vehicles);
 
     void perform_explosion(World* world) const;
 

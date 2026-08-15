@@ -6,23 +6,21 @@
 namespace tom {
 
 Vec2D Vec2D::flee_force(Vec2D const& target,
-                        Vec2D const& currentPosition,
-                        Vec2D const& currentVelocity,
+                        Vec2D const& curPos,
+                        Vec2D const& curVel,
                         double       maxSpeed)
 {
-    return Vec2D::seek_force(target, currentPosition, currentVelocity,
-                             maxSpeed) *
-           -1;
+    return Vec2D::seek_force(target, curPos, curVel, maxSpeed) * -1;
 }
 
 Vec2D Vec2D::seek_force(Vec2D const& target,
-                        Vec2D const& currentPosition,
-                        Vec2D const& currentVelocity,
+                        Vec2D const& curPos,
+                        Vec2D const& curVel,
                         double       maxSpeed)
 {
-    Vec2D desired = target - currentPosition;
+    Vec2D desired = target - curPos;
     desired.set_mag(maxSpeed);
-    desired -= currentVelocity;
+    desired -= curVel;
     return desired;
 }
 

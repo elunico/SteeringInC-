@@ -66,6 +66,15 @@ void Food::expire() noexcept
     lifespan.expire();
 }
 
+void Food::behaviors(World::Vehicles const& vehicles)
+{
+    for (auto const& [id, v] : vehicles) {
+        if (sees(v.position)) {
+            try_flee(v);
+        }
+    }
+}
+
 [[nodiscard]] double Food::get_nutrition() const noexcept
 {
     return dna.nutrition;
@@ -97,7 +106,6 @@ void Food::update() noexcept
     velocity += acceleration;
     velocity.limit(dna.speed);
     position += velocity;
-    velocity *= 0.99; // dampening
     acceleration.reset();
 
     avoid_edges();
@@ -118,6 +126,11 @@ void Food::update() noexcept
         }
     }
     lifespan.update();
+    dampen_velocity();
+}
+
+void Food::dampen_velocity() {
+    velocity *= (1 - velocity_dampening);
 }
 
 void Food::consume(Vehicle& consumer) noexcept

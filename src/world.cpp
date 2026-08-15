@@ -309,15 +309,8 @@ void World::food_tick(Foods& food, Vehicles& vehicles)
 {
     prune_eaten_food();
 
-    for (auto& [id, f]: food) {
-        for (auto const& [id, v]: vehicles) {
-            if (f.sees(v.position)) {
-                f.try_flee(v);
-            }
-        }
-    }
-
     for (auto& [id, food] : food) {
+        food.behaviors(vehicles);
         food.update();
     }
 }
