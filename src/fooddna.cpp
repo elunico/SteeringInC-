@@ -9,7 +9,10 @@ FoodDNA::FoodDNA()
       speed(random_in_range(1, 3)),
       explosionChance(random_in_range(0.01, 0.1)),
       explosionCount(random_in_range(5, 15)),
-      mutationRate(0.1)
+      mutationRate(0.1),
+      perceptionRadius(50),
+      fleeChance(0.1),
+      fleeStrength(1.5)
 {
 }
 
@@ -23,6 +26,9 @@ FoodDNA FoodDNA::crossover(FoodDNA const& other) const noexcept
         random_bool() ? explosionChance : other.explosionChance;
     child.explosionCount =
         random_bool() ? explosionCount : other.explosionCount;
+    child.perceptionRadius = random_bool() ? perceptionRadius : other.perceptionRadius;
+    child.fleeChance = random_bool() ? fleeChance : other.fleeChance;
+    child.fleeStrength = random_bool() ? fleeStrength : other.fleeStrength;
     return child;
 }
 
@@ -42,6 +48,15 @@ void FoodDNA::mutate() noexcept
     }
     if (random_in_range(0, 1) < mutationRate) {
         explosionCount += random_delta(1);
+    }
+    if (random_in_range(0, 1) < mutationRate) {
+        perceptionRadius += random_delta(2);
+    }
+    if (random_in_range(0, 1) < mutationRate) {
+        fleeChance += random_delta(0.01);
+    }
+    if (random_in_range(0, 1) < mutationRate) {
+        fleeStrength += random_delta(0.1);
     }
 }
 

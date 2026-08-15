@@ -60,7 +60,7 @@ void QtToggleButton::draw()
     fl_color(text_color);
     fl_font(FL_HELVETICA_BOLD, 14);
     int  text_width = fl_width(label()) + 1;
-    auto parts      = split(label(), '\n', 2ul);
+    auto parts      = split<std::string>(label(), '\n', 2ul);
     if (parts.size() > 1) {
         auto text_width1 = fl_width(parts[0].c_str()) + 1;
         auto text_width2 = fl_width(parts[1].c_str()) + 1;

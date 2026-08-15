@@ -234,8 +234,7 @@ void Vehicle::update()
           << " is_hungry()=" << is_hungry()
           << " BehaviorState=" << behavior_state;
         auto msg = s.str();
-        tom::output(msg);
-        tom::output(std::string(msg.size(), '\b'));
+        tom::output(msg, std::string(msg.size(), '\b'), "\033[0K");
     }
     GUARD(health != 0);
 
@@ -497,18 +496,20 @@ void Vehicle::seek_for_reproduction(Vehicle* target, double record)
 
 Vec2D Vehicle::flee(Vec2D const& target) const
 {
-    Vec2D desired = position - target;
-    desired.set_mag(dna.max_speed);
-    desired -= velocity;
-    return desired;
+    // Vec2D desired = position - target;
+    // desired.set_mag(dna.max_speed);
+    // desired -= velocity;
+    // return desired;
+    return Vec2D::flee_force(target, position, velocity, dna.max_speed);
 }
 
 Vec2D Vehicle::seek(Vec2D const& target) const
 {
-    Vec2D desired = target - position;
-    desired.set_mag(dna.max_speed);
-    desired -= velocity;
-    return desired;
+    // Vec2D desired = target - position;
+    // desired.set_mag(dna.max_speed);
+    // desired -= velocity;
+    // return desired;
+    return Vec2D::seek_force(target, position, velocity, dna.max_speed);
 }
 
 Food& Vehicle::last_sought_food(double& record) const

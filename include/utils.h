@@ -12,6 +12,7 @@
 #include <random>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 #include "vec2d.h"
 
@@ -92,12 +93,36 @@ T remap(T value, T from1, T to1, T from2, T to2)
 
 void clear_screen();
 
+namespace ansi {
+
+std::string const red          = "\033[31m";
+std::string const cyan         = "\033[36m";
+std::string const black        = "\033[0m";
+std::string const erase_to_eol = "\033[0K";
+
+}  // namespace ansi
+
 template <typename... Args>
 void output(Args&&... args)
 {
     ((std::cout << std::forward<Args>(args)), ...);
     std::cout << std::flush;
 }
+
+struct color_output {
+    char const* color;
+    color_output(char const* c) : color(c)
+    {
+    }
+    template <typename... Args>
+    void operator()(Args&&... args) const
+    {
+        tom::output(color, args..., tom::ansi::black);
+    }
+};
+
+color_output const cyan_output = color_output{tom::ansi::cyan.c_str()};
+color_output const red_output  = color_output{tom::ansi::red.c_str()};
 
 #ifdef NDEBUG
 #define debug_output(...) ((void) 0)

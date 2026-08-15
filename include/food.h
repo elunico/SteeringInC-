@@ -18,6 +18,8 @@ struct Environmental {
     IdType           id;
     World*           world;
     Vec2D            position;
+    Vec2D velocity{};
+    Vec2D acceleration{};
     Lifespan<int, 1> lifespan;
 
     template <typename T, T tick_amt>
@@ -64,6 +66,13 @@ struct Food : Environmental {
     void update() noexcept override;
 
     void consume(Vehicle& consumer) noexcept override;
+
+    public:
+    void try_flee(Vehicle const& source) noexcept;
+
+    void apply_force(Vec2D const& force);
+
+    bool sees(Vec2D const& position) const noexcept;
 
     void expire() noexcept override;
 

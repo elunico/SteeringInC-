@@ -11,6 +11,9 @@ struct FoodDNA : public BaseDNA<FoodDNA> {
     double explosionChance;
     double explosionCount;
     double mutationRate;
+    double perceptionRadius;
+    double fleeChance;
+    double fleeStrength;
 
     FoodDNA();
 

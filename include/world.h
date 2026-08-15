@@ -87,9 +87,9 @@ struct World {
     unsigned int                            max_food     = 500;
 
     /* percent is between 1.0 and 100.0 */
-    double                                food_pct_chance = 5.0;
-    std::chrono::steady_clock::time_point start_time;
-    std::chrono::steady_clock::time_point end_time;
+    double            food_pct_chance = 5.0;
+    Clock::time_point start_time;
+    Clock::time_point end_time;
     cyclic<decltype(tick_counter), day_night_cycle_length> daytime;
 
     static void stop_running(int)
@@ -184,7 +184,7 @@ struct World {
    private:
     double current_tps{};
 
-    void food_tick(Foods& food_neighbors);
+    void food_tick(Foods& food_neighbors, Vehicles& vehicles);
 
     void vehicle_tick(Vehicles& neighbors, Foods& food_neighbors);
 

@@ -8,6 +8,7 @@
 #include <FL/Fl.H>
 #include "ui/fltkrenderer.h"
 #endif
+#include "food.h"
 #include "irenderer.h"
 #include "utils.h"
 #include "vehicle.h"
@@ -15,28 +16,18 @@
 #include "world.h"
 
 struct arguments {
-    double       food_pct_chance   = 45.0;
-    double       edge_threshold    = 25.0;
-    int          width             = 800;
-    int          height            = 600;
-    int          starting_vehicles = 10;
-    unsigned int max_food          = 1000;
-    unsigned int random_seed       = static_cast<unsigned int>(time(nullptr));
-    unsigned int start_food        = 200;
-    bool         auto_start        = true;
-    float        scale_factor      = 1.0f;
-    bool         unlimited_tps     = false;
+    double food_pct_chance   = 45.0;
+    double edge_threshold    = 25.0;
+    int    width             = 800;
+    int    height            = 600;
+    int    starting_vehicles = 10;
+    int    max_food          = 1000;
+    int    random_seed       = static_cast<int>(time(nullptr));
+    int    start_food        = 200;
+    bool   auto_start        = true;
+    float  scale_factor      = 1.0f;
+    bool   unlimited_tps     = false;
 };
-
-int get_dimension_width(char const* optarg)
-{
-    return std::stoi(optarg);
-}
-
-int get_dimension_height(char const* optarg)
-{
-    return std::stoi(optarg);
-}
 
 void lowercase(std::string& s)
 {
@@ -44,9 +35,10 @@ void lowercase(std::string& s)
                    [](unsigned char c) { return std::tolower(c); });
 }
 
-void parse_args(int argc, char const* argv[], arguments& args)
+arguments parse_args(int argc, char const* argv[])
 {
-    int c;
+    arguments args;
+    int       c;
     while ((c = getopt_shim(argc, argv, "uz:w:h:s:c:pr:e:f:x:")) != -1) {
         switch (c) {
             case 'u':
@@ -71,10 +63,10 @@ void parse_args(int argc, char const* argv[], arguments& args)
                 args.auto_start = false;
                 break;
             case 'w':
-                args.width = get_dimension_width(optarg_shim);
+                args.width = std::stoi(optarg_shim);
                 break;
             case 'h':
-                args.height = get_dimension_height(optarg_shim);
+                args.height = std::stoi(optarg_shim);
                 break;
             case 's':
                 args.starting_vehicles = std::stoi(optarg_shim);
@@ -86,7 +78,7 @@ void parse_args(int argc, char const* argv[], arguments& args)
             default:
                 std::cerr << "Unknown option: "
                           << static_cast<char>(optopt_shim) << "\n";
-                /* fallthrough */
+                [[fallthrough]];
             case 'q':
                 std::cerr << "Usage: " << argv[0]
                           << " [-w width] [-h height] [-s starting_vehicles] "
@@ -109,67 +101,62 @@ void parse_args(int argc, char const* argv[], arguments& args)
         std::cerr << "Starting vehicles must be a positive integer.\n";
         exit(EXIT_FAILURE);
     }
+    if (args.edge_threshold <= 0) {
+        std::cerr << "Edge threshold must be a positive integer.\n";
+        exit(EXIT_FAILURE);
+    }
+    if (args.start_food <= 0) {
+        std::cerr << "Starting food count must be a positive integer.\n";
+        exit(EXIT_FAILURE);
+    }
+    if (args.max_food <= 0) {
+        std::cerr << "Max food must be a positive integer.\n";
+        exit(EXIT_FAILURE);
+    }
+    if (args.food_pct_chance < 0.0 || args.food_pct_chance > 100.0) {
+        std::cerr << "Food spawn chance must be between 0 and 100.\n";
+        exit(EXIT_FAILURE);
+    }
+    return args;
 }
 
-tom::World initialize_world(arguments const&   args,
-                            unsigned int const seed,
-                            int const          width,
-                            int const          height)
+tom::World initialize_world(arguments const& args)
 {
     tom::World::is_paused      = !(args.auto_start);
     tom::World::edge_threshold = args.edge_threshold;
     tom::World::unlimited_tps  = args.unlimited_tps;
-    tom::World world(seed, width, height);
+    tom::World world(args.random_seed, args.width, args.height);
     world.max_food        = args.max_food;
     world.food_pct_chance = args.food_pct_chance;
     world.populate_world(args.starting_vehicles, args.start_food);
     return world;
 }
 
-template <typename T, typename R, typename... Args>
-struct GetOwningClass {
-    using ClassType = T;
-
-    GetOwningClass(R (T::*_)(Args...))
-    {
-    }
-};
-
-#define CYAN "\033[36m"
-#define BLACK "\033[0m"
-
 int main(int argc, char const* argv[])
 {
-    tom::output(CYAN "./main use -q for usage information\n" BLACK);
-    arguments args;
-    parse_args(argc, argv, args);
+    tom::cyan_output("./main use -q for usage information\n");
 
-    unsigned int const seed = args.random_seed;
-    tom::set_seed(seed);
-
-    int const width  = args.width;
-    int const height = args.height;
-
-    tom::World world = initialize_world(args, seed, width, height);
+    arguments args = parse_args(argc, argv);
+    tom::set_seed(args.random_seed);
+    tom::World world = initialize_world(args);
 
 #ifdef NOGUI
     tom::render::ConsoleRenderer renderer(&world);
 #else
-
-    tom::render::FLTKRenderer renderer(&world, width, height,
+    tom::render::FLTKRenderer renderer(&world, args.width, args.height,
                                        args.scale_factor);
 #endif
 
     world.run(renderer);
     renderer.render(tom::World::was_interrupted);
-    tom::output("\nSimulation ended.\n");
 
-    tom::output("Max fitness vehicle ID: ", tom::World::max_fitness.first,
-                " fitness: ", tom::World::max_fitness.second, "\n");
+    auto [id, fitness] = tom::World::max_fitness;
+    tom::output("\nSimulation ended.\n", "Max fitness vehicle ID: ", id,
+                " fitness: ", fitness, "\n");
 
     std::string s = world.info_stream().str();
-    std::ranges::transform(s, std::begin(s),
-                           [](auto const& c) { return c == '|' ? '\n' : c; });
+    std::transform(s.begin(), s.end(), s.begin(),
+                   [](auto c) { return c == '|' ? '\n' : c; });
     tom::output(s, "\n");
 
     return 0;

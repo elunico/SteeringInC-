@@ -26,6 +26,10 @@ struct ConsoleRenderer : public IRenderer {
 
     virtual void interrupt_ask();
 
+    virtual void enter_alt_buff() const;
+
+    virtual void exit_alt_buff() const;
+
     virtual ~ConsoleRenderer();
 };
 

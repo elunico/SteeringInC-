@@ -7,6 +7,16 @@
 
 static bool check_poll = false;
 
+void tom::render::ConsoleRenderer::enter_alt_buff() const
+{
+    console_out("\033[?1049h");
+}
+
+void tom::render::ConsoleRenderer::exit_alt_buff() const
+{
+    console_out("\033[?1049l");
+}
+
 tom::render::ConsoleRenderer::ConsoleRenderer(World* world) : world(world)
 {
     signal(SIGINT, [](int) { check_poll = true; });
@@ -27,21 +37,22 @@ void tom::render::ConsoleRenderer::clear_screen()
 
 void tom::render::ConsoleRenderer::interrupt_ask()
 {
+    enter_alt_buff();
 reask:
-    tom::clear_screen();
     // show cursor for options
+    tom::clear_screen();
     console_out("\033[?25h");
-    tom::output(world->info_stream().str());
-    tom::output("\n\nAvailable Commands:");
-    tom::output("\np: pause/unpause");
-    tom::output("\nu: sprint!");
-    tom::output("\nq: end the simulation");
-    tom::output("\nm: change the max food allowed");
-    tom::output("\nf: change the food spawn chance");
-    tom::output("\nv: add a number of vehicles");
-    tom::output("\na: add an amount of new food");
-    tom::output("\ns: return to the simulation");
-    tom::output("\n\nEnter a command: ");
+    console_out(world->info_stream().str());
+    console_out("\n\nAvailable Commands:");
+    console_out("\np: pause/unpause");
+    console_out("\nu: sprint!");
+    console_out("\nq: end the simulation");
+    console_out("\nm: change the max food allowed");
+    console_out("\nf: change the food spawn chance");
+    console_out("\nv: add a number of vehicles");
+    console_out("\na: add an amount of new food");
+    console_out("\ns: return to the simulation");
+    console_out("\n\nEnter a command: ");
     char c;
     std::cin >> c;
 
@@ -102,14 +113,14 @@ reask:
     if (check_poll)
         goto reask;
     else
-        console_out("\033[?25l");
+        exit_alt_buff();
 }
 
 void tom::render::ConsoleRenderer::render(bool transient)
 {
     // only update the console every 10 ticks to reduce flicker
     if (transient) {
-        console_out("\033[1;91m");
+        console_out(tom::ansi::red);
         return;
     }
     auto message = world->info_stream().str();
@@ -125,6 +136,7 @@ void tom::render::ConsoleRenderer::render(bool transient)
     console_out(backspaces);
 
     pmessage_size = message.size();
+    console_out(tom::ansi::black);
     if (check_poll) {
         interrupt_ask();
     }

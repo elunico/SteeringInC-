@@ -41,6 +41,16 @@ struct Vec2D {
     [[nodiscard]] double angle_between(Vec2D const& other) const;
 
     static Vec2D random(double magnitude = 1.0);
+
+    static Vec2D flee_force(Vec2D const& target,
+                            Vec2D const& currentPosition,
+                            Vec2D const& currentVelocity,
+                            double       maxSpeed);
+
+    static Vec2D seek_force(Vec2D const& target,
+                            Vec2D const& currentPosition,
+                            Vec2D const& currentVelocity,
+                            double       maxSpeed);
 };
 
 std::ostream& operator<<(std::ostream& os, Vec2D const& v);

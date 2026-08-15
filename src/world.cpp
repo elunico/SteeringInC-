@@ -182,17 +182,18 @@ std::stringstream World::info_stream() const
     ss << "(World: [" << width << "x" << height << "] " << " seed: " << seed
        << ") ";
 
+    auto elapsed_seconds =
+        std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time())
+            .count() /
+        1000.0;
+
     ss << "Vehicles: " << vehicles.size()
        << " ; Dead Vehicles: " << dead_counter
        << " ; Born Vehicles: " << born_counter
        << " ; Oldest Vehicle: " << max_age << " | Food: " << food.size()
        << " ; Spawn Chance " << food_pct_chance << "% ; Max: " << max_food
-       << " | Time Elapsed: "
-       << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time())
-                  .count() /
-              1000.0
-       << "s"
-       << " ; Tick: " << tick_counter << " ; TPS: " << tps() << " | "
+       << " | Time Elapsed: " << elapsed_seconds << "s"
+       << " ; Tick: " << tick_counter << " ; current TPS: " << tps() << " | "
        << (*daytime > (day_tick_length()) ? "Night" : "Day");
 
     if (World::is_paused) {
@@ -279,7 +280,7 @@ bool World::tick()
     /* food is pruned then the tick occurs. once food is pruned, events
      * are then added, when the tick loop repeats, the events are then
      * processed before the next pruning to prevent iterator invalidation */
-    food_tick(food);
+    food_tick(food, vehicles);
 
     /* vehicle pruning occurs like food pruning, see above */
     vehicle_tick(vehicles, food);
@@ -304,9 +305,17 @@ void World::clear_verbose_vehicles()
 
 World::~World() = default;
 
-void World::food_tick(Foods& food)
+void World::food_tick(Foods& food, Vehicles& vehicles)
 {
     prune_eaten_food();
+
+    for (auto& [id, f]: food) {
+        for (auto const& [id, v]: vehicles) {
+            if (f.sees(v.position)) {
+                f.try_flee(v);
+            }
+        }
+    }
 
     for (auto& [id, food] : food) {
         food.update();

@@ -40,6 +40,27 @@ Food::Food(World* world, Vec2D const& pos, FoodDNA const& dna) noexcept
     lifespan = IntLifespan{(int) dna.lifeticks};
 }
 
+bool Food::sees(Vec2D const& position) const noexcept
+{
+    auto d = Food::position.distance_to(position);
+    return (d < dna.perceptionRadius);
+}
+
+void Food::try_flee(Vehicle const& source) noexcept
+{
+    // TODO: is this better ?give chance every second not every tick
+    if (random_in_range(0, 1) < (dna.fleeChance / World::target_tps)) {
+        auto force = Vec2D::flee_force(source.position, position, velocity,
+                                       dna.fleeStrength);
+        apply_force(force);
+    }
+}
+
+void Food::apply_force(Vec2D const& force)
+{
+    acceleration += force;
+}
+
 void Food::expire() noexcept
 {
     lifespan.expire();
@@ -73,8 +94,11 @@ void Food::avoid_edges() noexcept
 
 void Food::update() noexcept
 {
+    velocity += acceleration;
     velocity.limit(dna.speed);
     position += velocity;
+    velocity *= 0.99; // dampening
+    acceleration.reset();
 
     avoid_edges();
 

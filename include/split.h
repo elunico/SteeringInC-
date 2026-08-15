@@ -2,41 +2,55 @@
 #define SPLIT_H
 
 #include <cstdlib>
-#include <limits>
+#include <optional>
 #include <string>
 #include <vector>
 
 namespace tom {
 
-class SplitLimit {
-    size_t limit;
-
-   public:
-    SplitLimit(size_t l) noexcept;
-
-    operator size_t() const noexcept;
-
-    bool operator==(size_t other) const noexcept;
-
-    bool operator!=(size_t other) const noexcept;
-
-    [[nodiscard]] bool is_unlimited() const noexcept;
-
-    static SplitLimit unlimited() noexcept
-    {
-        static_assert(
-            static_cast<size_t>(-1) >=
-            std::numeric_limits<std::vector<std::string>::size_type>::max());
-        return SplitLimit{static_cast<size_t>(-1)};
+template <typename Container, typename Element = Container::value_type>
+[[nodiscard]] std::vector<Container> split(Container const&           container,
+                                           Element                    delimiter,
+                                           std::optional<std::size_t> limit)
+{
+    if (limit == 0) {
+        return {container};
     }
-};
+    std::size_t            char_count = 0;
+    std::vector<Container> parts;
+    Container              current;
+    for (auto c : container) {
+        if (c == delimiter) {
+            parts.push_back(current);
+            current.clear();
+        } else {
+            current.push_back(c);
+        }
+        char_count++;
+        if (limit.has_value() && parts.size() >= static_cast<size_t>(*limit)) {
+            parts.emplace_back(container.begin() + char_count, container.end());
+            return parts;
+        }
+    }
+    parts.push_back(current);
+    return parts;
+}
 
-[[nodiscard]] std::vector<std::string> split(std::string const& str,
-                                             char               delimiter,
-                                             SplitLimit         limit);
+// template <>
+// [[nodiscard]] std::vector<std::string> split<char const* const&, char>(
+//     char const* const&         s,
+//     char                       delimiter,
+//     std::optional<std::size_t> limit)
+// {
+//     return split(std::string(s), delimiter, limit);
+// }
 
-[[nodiscard]] std::vector<std::string> split(std::string const& str,
-                                             char               delimiter);
+template <typename Container, typename Element = Container::value_type>
+[[nodiscard]] std::vector<Container> split(Container const& container,
+                                           Element          delimiter)
+{
+    return split(container, delimiter, std::nullopt);
+}
 
 };  // namespace tom
 
