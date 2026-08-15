@@ -73,6 +73,7 @@ struct World {
     long                                       seed;
     int                                        width;
     int                                        height;
+    bool disable_night{};
     std::unordered_map<VehicleIdType, Vehicle> vehicles;
     std::unordered_map<FoodIdType, Food>       food;
 

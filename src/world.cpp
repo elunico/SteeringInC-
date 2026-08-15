@@ -133,12 +133,12 @@ auto World::prune_eaten_food() -> decltype(food)::size_type
 
 bool World::is_day() const noexcept
 {
-    return *daytime <= day_tick_length();
+    return (*daytime < day_tick_length()) || disable_night;
 }
 
 bool World::is_night() const noexcept
 {
-    return *daytime > day_tick_length();
+    return disable_night ? false : (*daytime > day_tick_length());
 }
 
 bool World::knows_vehicle(Vehicle::IdType id) const
