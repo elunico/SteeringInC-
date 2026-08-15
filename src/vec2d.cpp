@@ -10,10 +10,9 @@ Vec2D Vec2D::flee_force(Vec2D const& target,
                         Vec2D const& currentVelocity,
                         double       maxSpeed)
 {
-    Vec2D desired = currentPosition - target;
-    desired.set_mag(maxSpeed);
-    desired -= currentVelocity;
-    return desired;
+    return Vec2D::seek_force(target, currentPosition, currentVelocity,
+                             maxSpeed) *
+           -1;
 }
 
 Vec2D Vec2D::seek_force(Vec2D const& target,
