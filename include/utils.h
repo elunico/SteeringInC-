@@ -98,7 +98,7 @@ static constexpr std::string RESET_ESC = "\033[0m";
 
 struct ANSICode {
     std::string code;
-    ANSICode(char* s);
+    ANSICode(char const* s);
     ANSICode(std::string s);
 
     template <typename... Args>

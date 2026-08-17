@@ -18,15 +18,17 @@
 
 namespace tom {
 
-bool   World::game_running    = true;
-bool   World::is_paused       = false;
-int    World::kill_radius     = 100;
-double World::edge_threshold  = 25.0;
-bool   World::was_interrupted = false;
-auto   World::view_mode       = OptionSet(World::ViewMode::PLAIN);
-auto   World::interact_mode   = OptionSet(World::InteractMode::NONE);
-bool   World::unlimited_tps   = false;
-std::pair<World::VehicleIdType, double> World::max_fitness = {0, 0.0};
+bool                                    World::game_running    = true;
+bool                                    World::is_paused       = false;
+int                                     World::kill_radius     = 100;
+double                                  World::edge_threshold  = 25.0;
+bool                                    World::was_interrupted = false;
+bool                                    World::unlimited_tps   = false;
+std::pair<World::VehicleIdType, double> World::max_fitness     = {0, 0.0};
+
+OptionSet<World::ViewMode> World::view_mode = OptionSet(World::ViewMode::PLAIN);
+OptionSet<World::InteractMode> World::interact_mode =
+    OptionSet(World::InteractMode::NONE);
 
 #define POISON_CHANCE 0.1
 
@@ -193,11 +195,12 @@ std::stringstream World::info_stream(char delim) const
     ss << "Vehicles: " << vehicles.size()
        << " ; Dead Vehicles: " << dead_counter
        << " ; Born Vehicles: " << born_counter
-       << " ; Oldest Vehicle: " << max_age << " " << delim << " Food: " << food.size()
-       << " ; Spawn Chance " << food_pct_chance << "% ; Max: " << max_food
-       << " " << delim << " Time Elapsed: " << elapsed_seconds << "s"
-       << " ; Tick: " << tick_counter << " ; current TPS: " << tps() << " " << delim << " "
-       << (is_night() ? "Night" : "Day");
+       << " ; Oldest Vehicle: " << max_age << " " << delim
+       << " Food: " << food.size() << " ; Spawn Chance " << food_pct_chance
+       << "% ; Max: " << max_food << " " << delim
+       << " Time Elapsed: " << elapsed_seconds << "s"
+       << " ; Tick: " << tick_counter << " ; current TPS: " << tps() << " "
+       << delim << " " << (is_night() ? "Night" : "Day");
 
     if (World::is_paused) {
         ss << " | PAUSED ";
