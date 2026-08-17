@@ -33,7 +33,7 @@ arguments parse_args(int argc, char const* argv[])
 {
     arguments args;
     int       c;
-    while ((c = getopt_shim(argc, argv, "uz:w:h:s:c:pr:e:f:x:n")) != -1) {
+    while ((c = getopt_shim(argc, argv, "uz:w:h:s:c:pr:e:f:x:nq")) != -1) {
         switch (c) {
             case 'n':
                 args.do_night_time = false;
@@ -77,12 +77,21 @@ arguments parse_args(int argc, char const* argv[])
                           << static_cast<char>(optopt_shim) << "\n";
                 [[fallthrough]];
             case 'q':
-                std::cerr << "Usage: " << argv[0]
-                          << " [-w width] [-h height] [-s starting_vehicles] "
-                             "[-p (pause)] [-r random_seed] [-e "
-                             "edge_threshold] [-f starting_food_count ] [ -c "
-                             "food_pct_chance ] [-x max_food] [-z scale_factor "
-                             "] [-u (unlimited_tps)] [ -n (disable night) ]\n";
+                std::cerr << "Usage: " << argv[0] << "\n"
+                          << "  Options with arguments: \n"
+                          << "    [ -w width ]                 (int) width of the world\n"
+                             "    [ -h height ]                (int) height of the world\n"
+                             "    [ -s starting_vehicles ]     (int) number of starting vehicles\n"
+                             "    [ -r random_seed ]           (int) random seed\n"
+                             "    [ -e edge_threshold ]        (int) pixel buffer around the edge of the world\n"
+                             "    [ -f starting_food_count ]   (int) amount of food to begin with\n"
+                             "    [ -c food_pct_chance ]       (int) 0-100 percent chance to spawn food each tick\n"
+                             "    [ -x max_food ]              (int) amount of food that will prevent more spawning food\n"
+                             "    [ -z scale_factor ]        (float) scaling of UI (only applicable in FLTK mode)\n"
+                             << "  Boolean options\n"
+                             "    [ -p (pause) ]             start the game paused \n"
+                             "    [ -u (unlimited_tps) ]     run the game without tps limit (normal limit is ~80 tps)\n"
+                             "    [ -n (disable night) ]     never allow night to happen during the simulation\n";
                 exit(EXIT_FAILURE);
         }
     }
