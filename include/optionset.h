@@ -2,6 +2,9 @@
 #define OPTIONSET_H
 
 #include <unordered_set>
+#include <iostream>
+
+namespace tom {
 
 template <typename T>
 struct OptionSet {
@@ -72,5 +75,23 @@ struct OptionSet {
         return options.contains(option);
     }
 };
+
+template <typename T>
+static inline std::ostream& operator<<(std::ostream&       os,
+                                       OptionSet<T> const& state)
+{
+    os << "OptionSet(";
+    auto i = state.options.cbegin();
+    while (i != state.options.cend()) {
+        os << *i++;
+        if (i == state.options.cend())
+            break;
+        os << " | ";
+    }
+    os << ")";
+    return os;
+}
+
+}
 
 #endif

@@ -27,7 +27,7 @@ struct arguments {
     bool   auto_start        = true;
     float  scale_factor      = 1.0f;
     bool   unlimited_tps     = false;
-    bool doNightTime = true;
+    bool   doNightTime       = true;
 };
 
 void lowercase(std::string& s)
@@ -130,7 +130,7 @@ tom::World initialize_world(arguments const& args)
     tom::World::edge_threshold = args.edge_threshold;
     tom::World::unlimited_tps  = args.unlimited_tps;
     tom::World world(args.random_seed, args.width, args.height);
-    world.disable_night = !args.doNightTime;
+    world.disable_night   = !args.doNightTime;
     world.max_food        = args.max_food;
     world.food_pct_chance = args.food_pct_chance;
     world.populate_world(args.starting_vehicles, args.start_food);
@@ -139,7 +139,7 @@ tom::World initialize_world(arguments const& args)
 
 int main(int argc, char const* argv[])
 {
-    tom::cyan_output("./main use -q for usage information\n");
+    tom::ansi::cyan.output("./main.cpp use -q for usage information\n");
 
     arguments args = parse_args(argc, argv);
     tom::set_seed(args.random_seed);
@@ -159,10 +159,7 @@ int main(int argc, char const* argv[])
     tom::output("\nSimulation ended.\n", "Max fitness vehicle ID: ", id,
                 " fitness: ", fitness, "\n");
 
-    std::string s = world.info_stream().str();
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](auto c) { return c == '|' ? '\n' : c; });
-    tom::output(s, "\n");
+    tom::output(world.info_stream('\n').str(), "\n");
 
     return 0;
 }

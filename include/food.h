@@ -75,7 +75,7 @@ struct Food : Environmental {
 
     void apply_force(Vec2D const& force);
 
-    bool sees(Vec2D const& position) const noexcept;
+    bool can_see(Vec2D const& position) const noexcept;
 
     void expire() noexcept override;
 

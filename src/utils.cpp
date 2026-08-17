@@ -6,6 +6,41 @@
 
 namespace tom {
 
+namespace ansi {
+
+
+#ifdef NOCOLOR
+ANSICode const red{""};
+ANSICode const cyan{""};
+ANSICode const reset{""};
+ANSICode const erase_to_eol{""};
+#else
+ANSICode const red{"\033[31m"};
+ANSICode const cyan{"\033[36m"};
+ANSICode const reset{"\033[0m"};
+ANSICode const erase_to_eol{"\033[0K"};
+#endif
+
+ANSICode::ANSICode(char* s) : code(s)
+{
+}
+ANSICode::ANSICode(std::string s) : code(s)
+{
+}
+
+ANSICode::operator std::string() const noexcept
+{
+    return code;
+}
+
+std::ostream& operator<<(std::ostream& os, ANSICode const& c)
+{
+    os << c.code;
+    return os;
+}
+
+}  // namespace ansi
+
 void clear_screen()
 {
     std::cout << "\033[2J\033[1;1H";
@@ -67,11 +102,5 @@ int random_int(int min, int max) noexcept
     return dis(gen);
 }
 #endif
-
-void log(std::string const& message)
-{
-    static std::ofstream log_file("simulation_log.txt", std::ios_base::app);
-    log_file << message << std::endl;
-}
 
 }  // namespace tom

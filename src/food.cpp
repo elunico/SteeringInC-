@@ -40,7 +40,7 @@ Food::Food(World* world, Vec2D const& pos, FoodDNA const& dna) noexcept
     lifespan = IntLifespan{(int) dna.lifeticks};
 }
 
-bool Food::sees(Vec2D const& position) const noexcept
+bool Food::can_see(Vec2D const& position) const noexcept
 {
     auto d = Food::position.distance_to(position);
     return (d < dna.perceptionRadius);
@@ -69,7 +69,7 @@ void Food::expire() noexcept
 void Food::behaviors(World::Vehicles const& vehicles)
 {
     for (auto const& [id, v] : vehicles) {
-        if (sees(v.position)) {
+        if (can_see(v.position)) {
             try_flee(v);
         }
     }
@@ -129,7 +129,8 @@ void Food::update() noexcept
     dampen_velocity();
 }
 
-void Food::dampen_velocity() {
+void Food::dampen_velocity()
+{
     velocity *= (1 - velocity_dampening);
 }
 

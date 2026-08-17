@@ -13,11 +13,12 @@ template <typename T, T maximum>
  *  The class will force the value to be in the interval [0, maximum)
  */
 class cyclic {
-    using NumberType = T;
-    using max        = std::integral_constant<T, maximum>;
     T value;
 
    public:
+    using NumberType = T;
+    using max        = std::integral_constant<T, maximum>;
+
     constexpr cyclic() : value(0)
     {
     }

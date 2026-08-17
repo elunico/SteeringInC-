@@ -136,7 +136,7 @@ void tom::render::ConsoleRenderer::render(bool transient)
     console_out(backspaces);
 
     pmessage_size = message.size();
-    console_out(tom::ansi::black);
+    console_out(tom::ansi::reset);
     if (check_poll) {
         interrupt_ask();
     }

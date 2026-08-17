@@ -73,7 +73,7 @@ struct World {
     long                                       seed;
     int                                        width;
     int                                        height;
-    bool disable_night{};
+    bool                                       disable_night{};
     std::unordered_map<VehicleIdType, Vehicle> vehicles;
     std::unordered_map<FoodIdType, Food>       food;
 
@@ -159,6 +159,8 @@ struct World {
     [[nodiscard]] double tps() const;
 
     [[nodiscard]] std::stringstream info_stream() const;
+
+    [[nodiscard]] std::stringstream info_stream(char delim) const;
 
     void run(render::IRenderer& renderer, int target_tps = World::target_tps);
 

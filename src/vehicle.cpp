@@ -208,22 +208,6 @@ static inline std::ostream& operator<<(std::ostream&          os,
     return os;
 }
 
-template <typename T>
-static inline std::ostream& operator<<(std::ostream&       os,
-                                       OptionSet<T> const& state)
-{
-    os << "OptionSet(";
-    auto i = state.options.cbegin();
-    while (i != state.options.cend()) {
-        os << *i++;
-        if (i == state.options.cend())
-            break;
-        os << " | ";
-    }
-    os << ")";
-    return os;
-}
-
 void Vehicle::update()
 {
     if (verbose) {
@@ -496,19 +480,11 @@ void Vehicle::seek_for_reproduction(Vehicle* target, double record)
 
 Vec2D Vehicle::flee(Vec2D const& target) const
 {
-    // Vec2D desired = position - target;
-    // desired.set_mag(dna.max_speed);
-    // desired -= velocity;
-    // return desired;
     return Vec2D::flee_force(target, position, velocity, dna.max_speed);
 }
 
 Vec2D Vehicle::seek(Vec2D const& target) const
 {
-    // Vec2D desired = target - position;
-    // desired.set_mag(dna.max_speed);
-    // desired -= velocity;
-    // return desired;
     return Vec2D::seek_force(target, position, velocity, dna.max_speed);
 }
 

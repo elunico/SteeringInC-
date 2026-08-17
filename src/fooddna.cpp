@@ -26,8 +26,9 @@ FoodDNA FoodDNA::crossover(FoodDNA const& other) const noexcept
         random_bool() ? explosionChance : other.explosionChance;
     child.explosionCount =
         random_bool() ? explosionCount : other.explosionCount;
-    child.perceptionRadius = random_bool() ? perceptionRadius : other.perceptionRadius;
-    child.fleeChance = random_bool() ? fleeChance : other.fleeChance;
+    child.perceptionRadius =
+        random_bool() ? perceptionRadius : other.perceptionRadius;
+    child.fleeChance   = random_bool() ? fleeChance : other.fleeChance;
     child.fleeStrength = random_bool() ? fleeStrength : other.fleeStrength;
     return child;
 }
