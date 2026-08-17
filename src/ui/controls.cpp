@@ -24,6 +24,8 @@ void QtSeparator::draw()
     fl_rectf(Fl_Box::x(), Fl_Box::y(), Fl_Box::w(), Fl_Box::h());
 }
 
+bool ControlWindow::show_info = true;
+
 ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
     : Fl_Window(start_x, 0, W, std::max(H, 650), "Control Window"), world(world)
 {
@@ -32,6 +34,15 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
     align(FL_ALIGN_INSIDE | FL_ALIGN_TOP | FL_ALIGN_LEFT);
 
     static int const button_width = W - 20;
+
+    create_button(
+        button_width, "Toggle Info", FL_BLACK, QtButtonBase::default_on_color,
+        [this](int) {
+            ControlWindow::show_info = !ControlWindow::show_info;
+            redraw();
+            return 1;
+        },
+        []() { return ControlWindow::show_info; });
 
     create_button(
         button_width, "Pause/Step", FL_BLACK, QtButtonBase::default_on_color,

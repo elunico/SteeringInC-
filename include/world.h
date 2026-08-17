@@ -100,6 +100,14 @@ struct World {
         was_interrupted = true;
     }
 
+    /**
+      * Note that World::World() installs a signal handler on SIGINT
+      * If anything attempts to replace this handler it must take care to
+      * set World::was_interrupted to true if they expect the program to end
+      * for example tom::render::ConsoleRenderer sets a new SIGINT handler
+      * to show a menu, but handles the quit case by setting the variable
+      * World::was_interrupted to true to exit
+      */
     World(long seed, int width, int height);
 
     /**
@@ -160,7 +168,7 @@ struct World {
 
     [[nodiscard]] std::stringstream info_stream() const;
 
-    [[nodiscard]] std::stringstream info_stream(char delim) const;
+    [[nodiscard]] std::stringstream info_stream(std::string delim) const;
 
     void run(render::IRenderer& renderer, int target_tps = World::target_tps);
 
@@ -176,6 +184,10 @@ struct World {
 
     void check_time_of_day();
 
+    /**
+      * The main method that powers the simulation. Call this to update
+      * EVERYTHING. Returns false if all vehicles are gone; true otherwise
+      */
     bool tick();
 
     Vehicle& create_vehicle(Vec2D const& position);

@@ -176,28 +176,35 @@ double World::tps() const
 
 std::stringstream World::info_stream() const
 {
-    return info_stream('|');
+    return info_stream(" | ");
 }
 
-std::stringstream World::info_stream(char delim) const
+std::stringstream World::info_stream(std::string delim) const
 {
-    std::stringstream ss;
-    ss << "(World: [" << width << "x" << height << "] " << " seed: " << seed
-       << ") ";
-
     auto elapsed_seconds =
         std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time())
             .count() /
         1000.0;
 
+    std::stringstream ss;
+    ss << "World: [" << width << "x" << height << "] " << " seed: " << seed
+       << " " << delim;
+
     ss << "Vehicles: " << vehicles.size()
        << " ; Dead Vehicles: " << dead_counter
        << " ; Born Vehicles: " << born_counter
-       << " ; Oldest Vehicle: " << max_age << " " << delim << " Food: " << food.size()
-       << " ; Spawn Chance " << food_pct_chance << "% ; Max: " << max_food
-       << " " << delim << " Time Elapsed: " << elapsed_seconds << "s"
-       << " ; Tick: " << tick_counter << " ; current TPS: " << tps() << " " << delim << " "
-       << (is_night() ? "Night" : "Day");
+       << " ; Oldest Vehicle: " << max_age << delim;
+
+    ss << "Food: " << food.size() << " ; Spawn Chance " << food_pct_chance
+       << "% ; Max: " << max_food << " " << delim;
+
+    ss << "Time Elapsed: " << elapsed_seconds << "s"
+       << " ; Tick: " << tick_counter << " ; current TPS: " << tps() << delim;
+
+    ss << "Fittest Vehicle (id=" << World::max_fitness.first << ") "
+       << World::max_fitness.second << delim;
+
+    ss << (is_night() ? "Night" : "Day");
 
     if (World::is_paused) {
         ss << " | PAUSED ";
@@ -245,6 +252,7 @@ void World::run(render::IRenderer& renderer, int target_tps)
             current_tps   = calc_tps_from_tick_duration(tick_start, tick_end);
         }
     }
+    renderer.render(true);
     end_time = Clock::now();
 }
 

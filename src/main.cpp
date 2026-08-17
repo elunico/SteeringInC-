@@ -140,9 +140,10 @@ tom::World initialize_world(arguments const& args)
 int main(int argc, char const* argv[])
 {
     tom::ansi::cyan.output("./main.cpp use -q for usage information\n");
-
     arguments args = parse_args(argc, argv);
+
     tom::set_seed(args.random_seed);
+
     tom::World world = initialize_world(args);
 
 #ifdef NOGUI
@@ -153,13 +154,7 @@ int main(int argc, char const* argv[])
 #endif
 
     world.run(renderer);
-    renderer.render(tom::World::was_interrupted);
-
-    auto [id, fitness] = tom::World::max_fitness;
-    tom::output("\nSimulation ended.\n", "Max fitness vehicle ID: ", id,
-                " fitness: ", fitness, "\n");
-
-    tom::output(world.info_stream('\n').str(), "\n");
+    tom::output("\nSimulation ended.\n", world.info_stream("\n").str(), "\n");
 
     return 0;
 }

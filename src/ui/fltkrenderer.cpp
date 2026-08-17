@@ -107,11 +107,13 @@ void FLTKCustomDrawer::draw()
     }
     fl_rectf(x(), y(), w(), h());
 
-    auto ss  = world->info_stream();
-    auto msg = ss.str();
-    fl_font(FL_HELVETICA_BOLD, 14);
-    fl_color(FL_BLACK);
-    fl_draw(msg.c_str(), 0, 0, w(), h(), FL_ALIGN_TOP_LEFT | FL_ALIGN_WRAP);
+    if (ControlWindow::show_info) {
+        auto ss  = world->info_stream("\n");
+        auto msg = ss.str();
+        fl_font(FL_HELVETICA_BOLD, 14);
+        fl_color(FL_BLACK);
+        fl_draw(msg.c_str(), 0, 0, w(), h(), FL_ALIGN_TOP_LEFT | FL_ALIGN_WRAP);
+    }
     if (!world->vehicles.empty()) {
         draw_living_world();
     } else {
