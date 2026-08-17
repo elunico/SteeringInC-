@@ -24,10 +24,10 @@ void QtSeparator::draw()
     fl_rectf(Fl_Box::x(), Fl_Box::y(), Fl_Box::w(), Fl_Box::h());
 }
 
-bool ControlWindow::show_info = true;
+bool ControlWindow::show_info = false;
 
 ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
-    : Fl_Window(start_x, 0, W, std::max(H, 650), "Control Window"), world(world)
+    : Fl_Window(start_x, 0, W, std::max(H, 750), "Control Window"), world(world)
 {
     box(FL_UP_BOX);
     color(FL_LIGHT2);
@@ -65,6 +65,23 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
                       return 1;  // Indicate handled
                   });
 
+    create_separator(button_width);
+
+    create_button(button_width, "Change target TPS", FL_BLACK, FL_BLACK,
+                  [this](int) {
+                      auto s = fl_input("Enter target TPS");
+                      if (s == nullptr) {
+                          return 0;
+                      }
+                      int count = std::stol(s);
+                      if (count < 10 || count > 1000) {
+                          return 0;
+                      }
+                      World::target_tps = count;
+                      redraw();
+                      return 1;
+                  });
+
     create_button(
         button_width, "Sprint!", FL_BLACK, QtButtonBase::default_on_color,
         [this](int) {
@@ -73,6 +90,16 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
             return 1;  // Indicate handled
         },
         []() { return World::unlimited_tps; });
+
+    create_button(
+        button_width, "Toggle Night Occurance", FL_BLACK,
+        QtButtonBase::default_on_color,
+        [this, world](int) {
+            world->disable_night = !world->disable_night;
+            redraw();
+            return 1;
+        },
+        [world]() { return !world->disable_night; });
 
     create_separator(button_width);
 
@@ -196,8 +223,7 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
     // buttons.push_back(std::make_unique<QtSeparator>(button_width));
 
     create_button(
-        button_width, "Change Food % Chance", FL_BLACK, FL_BLACK,
-        [world](int) {
+        button_width, "Change Food % Chance", FL_BLACK, FL_BLACK, [world](int) {
             auto s = fl_input("Enter new food spawn chance (0-100)");
             if (s) {
                 try {

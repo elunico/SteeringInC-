@@ -5,7 +5,7 @@
 
 namespace tom {
 
-template <typename T, T maximum>
+template <typename T>
     requires std::is_arithmetic_v<T>
 /**
  *  Class representing modular arithmetic using the underlying value of type T
@@ -14,12 +14,17 @@ template <typename T, T maximum>
  */
 class cyclic {
     T value;
+    T maximum;
 
    public:
     using NumberType = T;
-    using max        = std::integral_constant<T, maximum>;
 
-    constexpr cyclic() : value(0)
+    T max() const noexcept
+    {
+        return maximum;
+    }
+
+    explicit constexpr cyclic(T maximum) : value(0), maximum(maximum)
     {
     }
 
@@ -34,7 +39,8 @@ class cyclic {
      * @param initial The initial value to assign to the cyclic object.
      *                It will be reduced modulo the maximum value.
      */
-    explicit constexpr cyclic(T initial) : value(initial % maximum)
+    explicit constexpr cyclic(T initial, T maximum)
+        : value(initial % maximum), maximum(maximum)
     {
     }
 
@@ -102,38 +108,32 @@ class cyclic {
         return *this;
     }
 
-    template <T other_max = maximum>
-    constexpr bool operator==(cyclic<T, other_max> const& other) const
+    constexpr bool operator==(cyclic<T> const& other) const
     {
         return value == other.value;
     }
 
-    template <T other_max = maximum>
-    constexpr bool operator!=(cyclic<T, other_max> const& other) const
+    constexpr bool operator!=(cyclic<T> const& other) const
     {
         return value != other.value;
     }
 
-    template <T other_max = maximum>
-    constexpr bool operator<(cyclic<T, other_max> const& other) const
+    constexpr bool operator<(cyclic<T> const& other) const
     {
         return value < other.value;
     }
 
-    template <T other_max = maximum>
-    constexpr bool operator<=(cyclic<T, other_max> const& other) const
+    constexpr bool operator<=(cyclic<T> const& other) const
     {
         return value <= other.value;
     }
 
-    template <T other_max = maximum>
-    constexpr bool operator>(cyclic<T, other_max> const& other) const
+    constexpr bool operator>(cyclic<T> const& other) const
     {
         return value > other.value;
     }
 
-    template <T other_max = maximum>
-    constexpr bool operator>=(cyclic<T, other_max> const& other) const
+    constexpr bool operator>=(cyclic<T> const& other) const
     {
         return value >= other.value;
     }

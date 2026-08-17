@@ -25,6 +25,8 @@ double                                  World::edge_threshold  = 25.0;
 bool                                    World::was_interrupted = false;
 bool                                    World::unlimited_tps   = false;
 std::pair<World::VehicleIdType, double> World::max_fitness     = {0, 0.0};
+int                                     World::target_tps      = 90;
+int World::day_night_cycle_length = target_tps * 60;
 
 OptionSet<World::ViewMode> World::view_mode = OptionSet(World::ViewMode::PLAIN);
 OptionSet<World::InteractMode> World::interact_mode =
@@ -36,6 +38,11 @@ World::World(long seed, int width, int height)
     : seed(seed), width(width), height(height)
 {
     signal(SIGINT, stop_running);
+}
+
+World::Duration World::one_tick_time()
+{
+    return World::Duration{Duration::period::den / target_tps};
 }
 
 void World::add_vehicle(Vehicle&& vehicle)
@@ -189,24 +196,22 @@ std::stringstream World::info_stream(std::string delim) const
         1000.0;
 
     std::stringstream ss;
-    ss << "World: [" << width << "x" << height << "] " << " seed: " << seed
-       << " " << delim;
+    ss << "[WORLD]    size: " << width << "x" << height << "; "
+       << "seed: " << seed << "; " << "target TPS: " << target_tps << ""
+       << delim;
 
-    ss << "Vehicles: " << vehicles.size()
-       << " ; Dead Vehicles: " << dead_counter
-       << " ; Born Vehicles: " << born_counter
-       << " ; Oldest Vehicle: " << max_age << delim;
+    ss << "[TIME]     Elapsed: " << elapsed_seconds << "s" << "; "
+       << (is_night() ? "Night" : "Day") << delim;
+    ss << "[TICK]     " << tick_counter << "; current TPS: " << tps() << delim;
 
-    ss << "Food: " << food.size() << " ; Spawn Chance " << food_pct_chance
-       << "% ; Max: " << max_food << " " << delim;
-
-    ss << "Time Elapsed: " << elapsed_seconds << "s"
-       << " ; Tick: " << tick_counter << " ; current TPS: " << tps() << delim;
-
-    ss << "Fittest Vehicle (id=" << World::max_fitness.first << ") "
+    ss << "[VEHICLES] Current: " << vehicles.size()
+       << "; Dead: " << dead_counter << "; Borne: " << born_counter
+       << "; Oldest: " << max_age
+       << "; Fittest (id=" << World::max_fitness.first << ") "
        << World::max_fitness.second << delim;
 
-    ss << (is_night() ? "Night" : "Day");
+    ss << "[FOOD]     Count: " << food.size() << "; Spawn Chance "
+       << food_pct_chance << "%; Max: " << max_food << " " << delim;
 
     if (vehicles.empty()) {
         ss << delim << "ALL VEHICLES HAVE PERISHED.";

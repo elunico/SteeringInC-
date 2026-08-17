@@ -1,4 +1,5 @@
 #include "ui/fltkrenderer.h"
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <ranges>
@@ -19,6 +20,9 @@ Fl_Window* FLTKRenderer::window = nullptr;
 
 Fl_Window* FLTKRenderer::control_window = nullptr;
 
+Fl_Window* FLTKRenderer::info_window = nullptr;
+Fl_Box*    FLTKRenderer::info_label  = nullptr;
+
 FLTKRenderer::FLTKRenderer(World* world, int W, int H, float scale_factor)
     : world(world), scale_factor(scale_factor)
 {
@@ -35,6 +39,8 @@ FLTKRenderer::FLTKRenderer(World* world, int W, int H, float scale_factor)
     tom::output("Scaling is not supported by this version of FLTK\n");
 #endif
 
+    Fl::set_font(FL_COURIER, "Menlo");
+
     window = new Fl_Window(W, H);
     window->label("Vehicle Simulation");
 
@@ -48,8 +54,19 @@ FLTKRenderer::FLTKRenderer(World* world, int W, int H, float scale_factor)
         tom::World::stop_running(0);
         FLTKRenderer::teardown();
     });
+
     window->end();
     window->show();
+
+    info_window = new Fl_Window(0, std::min(H + 65 + 35, Fl::h() - 10), 700,
+                                150, "Information");
+    info_window->align(FL_ALIGN_LEFT_TOP | FL_ALIGN_INSIDE);
+    info_label = new Fl_Box(0, 0, 700, 100, "Testing");
+    info_label->labelfont(FL_COURIER);
+    info_window->resizable(info_window);
+    info_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+    info_window->end();
+    info_window->show();
 
     control_window =
         new ControlWindow(world, W + 10, FLTKRenderer::CONTROL_WINDOW_WIDTH, H);
@@ -109,10 +126,11 @@ void FLTKCustomDrawer::draw()
 
     draw_living_world();
 
+    auto ss  = world->info_stream("\n");
+    auto msg = ss.str();
+    FLTKRenderer::info_label->copy_label(msg.c_str());
     if (ControlWindow::show_info) {
-        auto ss  = world->info_stream("\n");
-        auto msg = ss.str();
-        fl_font(FL_HELVETICA_BOLD, 14);
+        fl_font(FL_COURIER, 14);
         fl_color(FL_BLACK);
         fl_draw(msg.c_str(), 0, 0, w(), h(), FL_ALIGN_TOP_LEFT | FL_ALIGN_WRAP);
     } else if (world && world->vehicles.empty()) {
@@ -185,19 +203,10 @@ void FLTKCustomDrawer::draw_vehicle(Vehicle const& vehicle)
 
 void FLTKCustomDrawer::draw_food(Food const& food_item)
 {
-    // if (food_item.nutrition < 0) {
-    // fl_color(FL_RED);
-    // } else {
-    // fl_color(FL_GREEN);
-    // }
-    // fl_pie(static_cast<int>(position.position.x) - 2,
-    //        static_cast<int>(position.position.y) - 2, 4, 4, 0, 360);
+    auto s = remap(food_item.dna.nutrition, 1.0, 50.0, 5.0, 15.0);
 
-    fl_rectf(food_item.position.x, food_item.position.y, 4, 4,
+    fl_rectf(food_item.position.x, food_item.position.y, s, s,
              food_item.dna.nutrition < 0 ? FL_RED : FL_GREEN);
-    // fl_draw(std::to_string((int) food_item.get_nutrition()).c_str(),
-    // static_cast<int>(food_item.position.x),
-    // static_cast<int>(food_item.position.y) - 5);
 }
 
 void FLTKCustomDrawer::draw_living_world()
@@ -273,6 +282,9 @@ void FLTKRenderer::teardown()
 {
     if (control_window) {
         control_window->hide();
+    }
+    if (info_window) {
+        info_window->hide();
     }
     if (window) {
         window->hide();

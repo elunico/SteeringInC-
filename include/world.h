@@ -38,7 +38,7 @@ struct World {
     using Duration      = Clock::duration;
     using TimePoint     = Clock::time_point;
 
-    static constexpr int                    target_tps = 90;
+    static int                              target_tps;
     static bool                             game_running;
     static bool                             is_paused;
     static OptionSet<ViewMode>              view_mode;
@@ -50,25 +50,24 @@ struct World {
     static std::pair<VehicleIdType, double> max_fitness;
     // for tracking the fittest vehicle in the world
 
-    static constexpr int day_tick_length() noexcept
+    static int day_tick_length() noexcept
     {
-        constexpr auto l = day_night_cycle_length * (6.0 / 10.0);
-        static_assert(l != 0 && l != day_night_cycle_length,
-                      "Total length too short!");
+        auto l = day_night_cycle_length * (6.0 / 10.0);
+        // static_assert(l != 0 && l != day_night_cycle_length,
+        //               "Total length too short!");
         return l;
     }
 
-    static constexpr int night_tick_length() noexcept
+    static int night_tick_length() noexcept
     {
-        constexpr auto l = day_night_cycle_length * (4.0 / 10.0);
-        static_assert(l != 0 && l != day_night_cycle_length,
-                      "Total length too short!");
+        auto l = day_night_cycle_length * (4.0 / 10.0);
+        // static_assert(l != 0 && l != day_night_cycle_length,
+        //               "Total length too short!");
         return l;
     }
 
     /*                                              1 minute days */
-    static constexpr int      day_night_cycle_length = target_tps * 60;
-    static constexpr Duration one_tick{Duration::period::den / target_tps};
+    static int day_night_cycle_length;
 
     long                                       seed;
     int                                        width;
@@ -88,10 +87,10 @@ struct World {
     unsigned int                            max_food     = 500;
 
     /* percent is between 1.0 and 100.0 */
-    double            food_pct_chance = 5.0;
-    Clock::time_point start_time;
-    Clock::time_point end_time;
-    cyclic<decltype(tick_counter), day_night_cycle_length> daytime;
+    double                         food_pct_chance = 5.0;
+    Clock::time_point              start_time;
+    Clock::time_point              end_time;
+    cyclic<decltype(tick_counter)> daytime{day_night_cycle_length};
 
     static void stop_running(int)
     {
@@ -205,11 +204,13 @@ struct World {
 
     void process_events();
 
+    static Duration one_tick_time();
+
     inline static void tps_target_wait(TimePoint const& start_time)
     {
         auto const tick_duration = Clock::now() - start_time;
-        if (tick_duration < one_tick) {
-            auto sleep_duration = one_tick - tick_duration;
+        if (tick_duration < one_tick_time()) {
+            auto sleep_duration = one_tick_time() - tick_duration;
             usleep_shim(sleep_duration.count() / 1000);
         }
     }
