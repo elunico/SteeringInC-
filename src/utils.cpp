@@ -21,7 +21,7 @@ ANSICode const reset{"\033[0m"};
 ANSICode const erase_to_eol{"\033[0K"};
 #endif
 
-ANSICode::ANSICode(char* s) : code(s)
+ANSICode::ANSICode(char const* s) : code(s)
 {
 }
 ANSICode::ANSICode(std::string s) : code(s)
