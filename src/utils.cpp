@@ -8,7 +8,6 @@ namespace tom {
 
 namespace ansi {
 
-
 #ifdef NOCOLOR
 ANSICode const red{""};
 ANSICode const cyan{""};

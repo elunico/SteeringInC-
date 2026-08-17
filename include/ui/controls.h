@@ -20,7 +20,7 @@ struct QtSeparator : QtBase, Fl_Box {
 };
 
 struct ControlWindow : public Fl_Window {
-    static bool show_info;
+    static bool                          show_info;
     World*                               world;
     std::vector<std::unique_ptr<QtBase>> buttons;
 

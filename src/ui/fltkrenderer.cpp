@@ -107,16 +107,15 @@ void FLTKCustomDrawer::draw()
     }
     fl_rectf(x(), y(), w(), h());
 
+    draw_living_world();
+
     if (ControlWindow::show_info) {
         auto ss  = world->info_stream("\n");
         auto msg = ss.str();
         fl_font(FL_HELVETICA_BOLD, 14);
         fl_color(FL_BLACK);
         fl_draw(msg.c_str(), 0, 0, w(), h(), FL_ALIGN_TOP_LEFT | FL_ALIGN_WRAP);
-    }
-    if (!world->vehicles.empty()) {
-        draw_living_world();
-    } else {
+    } else if (world && world->vehicles.empty()) {
         draw_dead_world();
     }
 }
@@ -216,7 +215,7 @@ void FLTKCustomDrawer::draw_dead_world()
 {
     fl_color(FL_RED);
     std::string message = "All vehicles have perished.";
-    fl_font(FL_HELVETICA_BOLD, 24);
+    fl_font(FL_HELVETICA_BOLD, 18);
     int text_width = fl_width(message.c_str()) + 1;
     fl_draw(message.c_str(), (w() - text_width) / 2, h() / 2);
 }

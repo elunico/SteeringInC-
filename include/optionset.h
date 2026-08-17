@@ -1,8 +1,8 @@
 #ifndef OPTIONSET_H
 #define OPTIONSET_H
 
-#include <unordered_set>
 #include <iostream>
+#include <unordered_set>
 
 namespace tom {
 
@@ -92,6 +92,6 @@ static inline std::ostream& operator<<(std::ostream&       os,
     return os;
 }
 
-}
+}  // namespace tom
 
 #endif

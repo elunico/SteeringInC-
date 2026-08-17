@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -16,25 +15,19 @@
 #include "world.h"
 
 struct arguments {
-    double food_pct_chance   = 45.0;
-    double edge_threshold    = 25.0;
+    double food_pct_chance   = 35.0;
+    double edge_threshold    = 20.0;
     int    width             = 800;
     int    height            = 600;
-    int    starting_vehicles = 10;
-    int    max_food          = 1000;
+    int    starting_vehicles = 20;
+    int    max_food          = 750;
     int    random_seed       = static_cast<int>(time(nullptr));
-    int    start_food        = 200;
+    int    start_food        = 100;
     bool   auto_start        = true;
     float  scale_factor      = 1.0f;
     bool   unlimited_tps     = false;
     bool   doNightTime       = true;
 };
-
-void lowercase(std::string& s)
-{
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
-}
 
 arguments parse_args(int argc, char const* argv[])
 {

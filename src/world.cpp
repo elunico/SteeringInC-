@@ -208,14 +208,18 @@ std::stringstream World::info_stream(std::string delim) const
 
     ss << (is_night() ? "Night" : "Day");
 
+    if (vehicles.empty()) {
+        ss << delim << "ALL VEHICLES HAVE PERISHED.";
+    }
+
     if (World::is_paused) {
-        ss << " | PAUSED ";
+        ss << delim << "PAUSED ";
     }
     if (interact_mode.contains(World::InteractMode::KILL)) {
-        ss << "\n[KILL MODE ON (Radius: " << World::kill_radius << ")] ";
+        ss << delim << "[KILL MODE ON (Radius: " << World::kill_radius << ")] ";
     }
     if (interact_mode.contains(World::InteractMode::FEED)) {
-        ss << "\n[FEED MODE ON (Count: " << feed_count << ")] ";
+        ss << delim << "[FEED MODE ON (Count: " << feed_count << ")] ";
     }
     return ss;
 }
@@ -236,10 +240,7 @@ void World::run(render::IRenderer& renderer, int target_tps)
     while (game_running) {
         auto tick_start = Clock::now();
         if (!is_paused) {
-            if (!tick()) {
-                game_running = false;
-                break;
-            }
+            tick();  // continue running even if all vehicles die
         }
         renderer.render();
         if (was_interrupted) {
