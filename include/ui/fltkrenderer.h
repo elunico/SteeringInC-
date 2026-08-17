@@ -44,7 +44,7 @@ struct FLTKRenderer : public IRenderer {
     float             scale_factor;
     static Fl_Window* window;
     static Fl_Window* control_window;
-    static int const  CONTROL_WINDOW_WIDTH = 200;
+    static int const  CONTROL_WINDOW_WIDTH = 225;
 
     FLTKRenderer(World* world, int W, int H, float scale_factor);
 

@@ -196,7 +196,7 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
     // buttons.push_back(std::make_unique<QtSeparator>(button_width));
 
     create_button(
-        button_width, "Change Food Spawn Chance", FL_BLACK, FL_BLACK,
+        button_width, "Change Food % Chance", FL_BLACK, FL_BLACK,
         [world](int) {
             auto s = fl_input("Enter new food spawn chance (0-100)");
             if (s) {

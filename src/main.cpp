@@ -26,7 +26,7 @@ struct arguments {
     bool   auto_start        = true;
     float  scale_factor      = 1.0f;
     bool   unlimited_tps     = false;
-    bool   doNightTime       = true;
+    bool   do_night_time     = true;
 };
 
 arguments parse_args(int argc, char const* argv[])
@@ -36,7 +36,7 @@ arguments parse_args(int argc, char const* argv[])
     while ((c = getopt_shim(argc, argv, "uz:w:h:s:c:pr:e:f:x:n")) != -1) {
         switch (c) {
             case 'n':
-                args.doNightTime = false;
+                args.do_night_time = false;
                 break;
             case 'u':
                 args.unlimited_tps = true;
@@ -123,7 +123,7 @@ tom::World initialize_world(arguments const& args)
     tom::World::edge_threshold = args.edge_threshold;
     tom::World::unlimited_tps  = args.unlimited_tps;
     tom::World world(args.random_seed, args.width, args.height);
-    world.disable_night   = !args.doNightTime;
+    world.disable_night   = !args.do_night_time;
     world.max_food        = args.max_food;
     world.food_pct_chance = args.food_pct_chance;
     world.populate_world(args.starting_vehicles, args.start_food);

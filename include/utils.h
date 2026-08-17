@@ -62,8 +62,6 @@ double random_in_range(double min, double max) noexcept;
 
 int random_int(int min, int max) noexcept;
 
-void log(std::string const& message);
-
 static inline bool double_equal(double a,
                                 double b,
                                 double epsilon = 0.001) noexcept

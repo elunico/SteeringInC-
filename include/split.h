@@ -36,15 +36,6 @@ template <typename Container, typename Element = Container::value_type>
     return parts;
 }
 
-// template <>
-// [[nodiscard]] std::vector<std::string> split<char const* const&, char>(
-//     char const* const&         s,
-//     char                       delimiter,
-//     std::optional<std::size_t> limit)
-// {
-//     return split(std::string(s), delimiter, limit);
-// }
-
 template <typename Container, typename Element = Container::value_type>
 [[nodiscard]] std::vector<Container> split(Container const& container,
                                            Element          delimiter)
