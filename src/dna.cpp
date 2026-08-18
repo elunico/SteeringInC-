@@ -21,7 +21,8 @@ DNA::DNA() noexcept
 {
 }
 
-[[nodiscard]] DNA DNA::crossover(DNA const& partner) const noexcept
+[[nodiscard]]
+DNA DNA::crossover(DNA const& partner) const noexcept
 {
     DNA child;
     child.perception_radius =

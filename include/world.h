@@ -137,7 +137,8 @@ struct World {
 
     void add_all_vehicles(std::vector<Vehicle>&& new_vehicles);
 
-    [[nodiscard]] Vec2D rand_pos_in_bounds(double margin = 0.0) const;
+    [[nodiscard]]
+    Vec2D rand_pos_in_bounds(double margin = 0.0) const;
 
     Food const& new_random_food();
 
@@ -145,29 +146,38 @@ struct World {
 
     Food const& new_food(double nutrition);
 
-    [[nodiscard]] bool should_spawn_food() const noexcept;
+    [[nodiscard]]
+    bool should_spawn_food() const noexcept;
 
     auto prune_dead_vehicles() -> typename decltype(vehicles)::size_type;
 
     auto prune_eaten_food() -> typename decltype(food)::size_type;
 
-    [[nodiscard]] bool is_day() const noexcept;
+    [[nodiscard]]
+    bool is_day() const noexcept;
 
-    [[nodiscard]] bool is_night() const noexcept;
+    [[nodiscard]]
+    bool is_night() const noexcept;
 
-    [[nodiscard]] bool knows_vehicle(VehicleIdType id) const;
+    [[nodiscard]]
+    bool knows_vehicle(VehicleIdType id) const;
 
-    [[nodiscard]] bool knows_food(FoodIdType id) const;
+    [[nodiscard]]
+    bool knows_food(FoodIdType id) const;
 
-    [[nodiscard]] auto elapsed_time() const -> Duration;
+    [[nodiscard]]
+    auto elapsed_time() const -> Duration;
 
     void populate_world(int vehicle_count, int food_count);
 
-    [[nodiscard]] double tps() const;
+    [[nodiscard]]
+    double tps() const;
 
-    [[nodiscard]] std::stringstream info_stream() const;
+    [[nodiscard]]
+    std::stringstream info_stream() const;
 
-    [[nodiscard]] std::stringstream info_stream(std::string delim) const;
+    [[nodiscard]]
+    std::stringstream info_stream(std::string delim) const;
 
     void run(render::IRenderer& renderer, int target_tps = World::target_tps);
 

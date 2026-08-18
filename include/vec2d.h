@@ -11,10 +11,14 @@ struct Vec2D {
     Vec2D();
     Vec2D(double x, double y);
     Vec2D(Vec2D const& other) = default;
-    [[nodiscard]] Vec2D operator+(Vec2D const& other) const;
-    [[nodiscard]] Vec2D operator-(Vec2D const& other) const;
-    [[nodiscard]] Vec2D operator*(double scalar) const;
-    [[nodiscard]] Vec2D operator/(double scalar) const;
+    [[nodiscard]]
+    Vec2D operator+(Vec2D const& other) const;
+    [[nodiscard]]
+    Vec2D operator-(Vec2D const& other) const;
+    [[nodiscard]]
+    Vec2D operator*(double scalar) const;
+    [[nodiscard]]
+    Vec2D operator/(double scalar) const;
 
     Vec2D& operator=(Vec2D const& other) = default;
 
@@ -23,22 +27,31 @@ struct Vec2D {
     Vec2D& operator*=(double scalar);
     Vec2D& operator/=(double scalar);
 
-    [[nodiscard]] double magSq() const;
-    [[nodiscard]] double distance_to(Vec2D const& other) const;
-    [[nodiscard]] double magnitude() const;
-    void                 set_mag(double mag);
-    void                 normalize();
-    [[nodiscard]] Vec2D  normalized() const;
-    void                 limit(double max);
-    void                 set_heading(double angle);
-    [[nodiscard]] double heading() const;
-    [[nodiscard]] Vec2D  copy() const;
-    void                 rotate(double angle);
-    [[nodiscard]] Vec2D  rotated(double angle) const;
-    void                 reset();
-    void                 set(double new_x, double new_y);
-    [[nodiscard]] double dot(Vec2D const& other) const;
-    [[nodiscard]] double angle_between(Vec2D const& other) const;
+    [[nodiscard]]
+    double magSq() const;
+    [[nodiscard]]
+    double distance_to(Vec2D const& other) const;
+    [[nodiscard]]
+    double magnitude() const;
+    void   set_mag(double mag);
+    void   normalize();
+    [[nodiscard]]
+    Vec2D normalized() const;
+    void  limit(double max);
+    void  set_heading(double angle);
+    [[nodiscard]]
+    double heading() const;
+    [[nodiscard]]
+    Vec2D copy() const;
+    void  rotate(double angle);
+    [[nodiscard]]
+    Vec2D rotated(double angle) const;
+    void  reset();
+    void  set(double new_x, double new_y);
+    [[nodiscard]]
+    double dot(Vec2D const& other) const;
+    [[nodiscard]]
+    double angle_between(Vec2D const& other) const;
 
     static Vec2D random(double magnitude = 1.0);
 

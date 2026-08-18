@@ -64,51 +64,61 @@ Vehicle::Vehicle() : Vehicle(Vec2D{0.0, 0.0})
     // output("Default constructor called. Vehicle id is ", id, "\n");
 }
 
-[[nodiscard]] Vehicle::LifespanType Vehicle::get_health() const
+[[nodiscard]]
+Vehicle::LifespanType Vehicle::get_health() const
 {
     return health;
 }
 
-[[nodiscard]] int Vehicle::get_age() const
+[[nodiscard]]
+int Vehicle::get_age() const
 {
     return age;
 }
 
-[[nodiscard]] double Vehicle::get_fitness() const
+[[nodiscard]]
+double Vehicle::get_fitness() const
 {
     return get_health().remaining() + get_age() * 0.1;
 }
 
-[[nodiscard]] DNA const& Vehicle::get_dna() const
+[[nodiscard]]
+DNA const& Vehicle::get_dna() const
 {
     return dna;
 }
 
-[[nodiscard]] Vec2D const& Vehicle::get_position() const
+[[nodiscard]]
+Vec2D const& Vehicle::get_position() const
 {
     return position;
 }
 
-[[nodiscard]] Vec2D const& Vehicle::get_velocity() const
+[[nodiscard]]
+Vec2D const& Vehicle::get_velocity() const
 {
     return velocity;
 }
 
-[[nodiscard]] int Vehicle::get_generation() const
+[[nodiscard]]
+int Vehicle::get_generation() const
 {
     return generation;
 }
-[[nodiscard]] Vec2D const& Vehicle::get_acceleration() const
+[[nodiscard]]
+Vec2D const& Vehicle::get_acceleration() const
 {
     return acceleration;
 }
-[[nodiscard]] Vehicle& Vehicle::last_sought_vehicle() const
+[[nodiscard]]
+Vehicle& Vehicle::last_sought_vehicle() const
 {
     double d{};
     return last_sought_vehicle(d);
 }
 
-[[nodiscard]] Vehicle& Vehicle::last_sought_vehicle(double& record) const
+[[nodiscard]]
+Vehicle& Vehicle::last_sought_vehicle(double& record) const
 {
     assert(last_sought_vehicle_id != 0);
     Vehicle& v = world->vehicles.at(last_sought_vehicle_id);
@@ -116,18 +126,21 @@ Vehicle::Vehicle() : Vehicle(Vec2D{0.0, 0.0})
     return v;
 }
 
-[[nodiscard]] Food& Vehicle::last_sought_food() const
+[[nodiscard]]
+Food& Vehicle::last_sought_food() const
 {
     double record;
     return last_sought_food(record);
 }
 
-[[nodiscard]] Vehicle::IdType Vehicle::get_last_sought_vehicle_id() const
+[[nodiscard]]
+Vehicle::IdType Vehicle::get_last_sought_vehicle_id() const
 {
     return last_sought_vehicle_id;
 }
 
-[[nodiscard]] bool Vehicle::is_verbose() const
+[[nodiscard]]
+bool Vehicle::is_verbose() const
 {
     return verbose;
 }
@@ -137,7 +150,8 @@ bool Vehicle::can_see(Vec2D const& target) const
     return can_see(position.distance_to(target));
 }
 
-[[nodiscard]] bool Vehicle::will_seek_vehicle() const
+[[nodiscard]]
+bool Vehicle::will_seek_vehicle() const
 {
     // during the day Vehicles only seek others if they are high enough to not
     // need food too badly when health is very low Vehicles scramble for food
@@ -167,7 +181,8 @@ bool Vehicle::is_dead() const
     return health.is_expired();
 }
 
-[[nodiscard]] double Vehicle::get_health_pct() const
+[[nodiscard]]
+double Vehicle::get_health_pct() const
 {
     double remainingTicks = health.remaining();
     double totalTicks     = Vehicle::MAX_HEALTH;
@@ -175,16 +190,19 @@ bool Vehicle::is_dead() const
     return lifePct;
 }
 
-[[nodiscard]] bool Vehicle::is_health_pct_above(double pct) const
+[[nodiscard]]
+bool Vehicle::is_health_pct_above(double pct) const
 {
     return get_health_pct() > pct;
 }
 
-[[nodiscard]] bool Vehicle::is_health_pct_below(double pct) const
+[[nodiscard]]
+bool Vehicle::is_health_pct_below(double pct) const
 {
     return get_health_pct() < pct;
 }
 
+[[maybe_unused]]
 static inline std::ostream& operator<<(std::ostream&          os,
                                        Vehicle::BehaviorState state)
 {
@@ -306,7 +324,8 @@ void Vehicle::wander()
     apply_force(force);
 }
 
-[[nodiscard]] bool Vehicle::is_hungry() const
+[[nodiscard]]
+bool Vehicle::is_hungry() const
 {
     return is_health_pct_below(0.5);
 }

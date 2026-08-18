@@ -30,7 +30,8 @@ struct Environmental {
     {
     }
 
-    [[nodiscard]] virtual Vec2D const& get_position() const noexcept;
+    [[nodiscard]]
+    virtual Vec2D const& get_position() const noexcept;
 
     virtual void update() noexcept = 0;
 
@@ -38,7 +39,8 @@ struct Environmental {
 
     virtual void expire() noexcept = 0;
 
-    [[nodiscard]] virtual bool is_expired() const noexcept;
+    [[nodiscard]]
+    virtual bool is_expired() const noexcept;
 
     static IdType next_id() noexcept
     {
@@ -61,9 +63,11 @@ struct Food : Environmental {
 
     Food(World* world, Vec2D const& pos, FoodDNA const& dna) noexcept;
 
-    [[nodiscard]] double get_nutrition() const noexcept;
+    [[nodiscard]]
+    double get_nutrition() const noexcept;
 
-    [[nodiscard]] Vec2D const& get_position() const noexcept override;
+    [[nodiscard]]
+    Vec2D const& get_position() const noexcept override;
 
     void update() noexcept override;
 

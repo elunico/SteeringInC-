@@ -39,32 +39,55 @@ class Vehicle {
     explicit Vehicle(Vec2D const& position);
     Vehicle();
 
-    [[nodiscard]] LifespanType get_health() const;
-    [[nodiscard]] int          get_age() const;
-    [[nodiscard]] double       get_fitness() const;
-    [[nodiscard]] DNA const&   get_dna() const;
-    [[nodiscard]] Vec2D const& get_position() const;
-    [[nodiscard]] Vec2D const& get_velocity() const;
-    [[nodiscard]] int          get_generation() const;
-    [[nodiscard]] Vec2D const& get_acceleration() const;
-    [[nodiscard]] Vehicle&     last_sought_vehicle() const;
-    [[nodiscard]] Vehicle&     last_sought_vehicle(double& record) const;
-    [[nodiscard]] Food&        last_sought_food() const;
-    [[nodiscard]] IdType       get_last_sought_vehicle_id() const;
-    [[nodiscard]] bool         is_verbose() const;
-    [[nodiscard]] bool         can_see(Vec2D const& target) const;
-    [[nodiscard]] bool         will_seek_vehicle() const;
-    [[nodiscard]] bool         is_hungry() const;
-    [[nodiscard]] bool         can_touch(Vec2D const& target) const;
-    [[nodiscard]] bool         can_see(double distance) const;
-    [[nodiscard]] bool         can_touch(double distance) const;
-    [[nodiscard]] bool         is_health_pct_above(double pct) const;
-    [[nodiscard]] bool         is_health_pct_below(double pct) const;
-    [[nodiscard]] double       get_health_pct() const;
-    [[nodiscard]] bool         is_dead() const;
-    void                       update();
-    void                       kill();
-    void                       avoid_edges();
+    [[nodiscard]]
+    LifespanType get_health() const;
+    [[nodiscard]]
+    int get_age() const;
+    [[nodiscard]]
+    double get_fitness() const;
+    [[nodiscard]]
+    DNA const& get_dna() const;
+    [[nodiscard]]
+    Vec2D const& get_position() const;
+    [[nodiscard]]
+    Vec2D const& get_velocity() const;
+    [[nodiscard]]
+    int get_generation() const;
+    [[nodiscard]]
+    Vec2D const& get_acceleration() const;
+    [[nodiscard]]
+    Vehicle& last_sought_vehicle() const;
+    [[nodiscard]]
+    Vehicle& last_sought_vehicle(double& record) const;
+    [[nodiscard]]
+    Food& last_sought_food() const;
+    [[nodiscard]]
+    IdType get_last_sought_vehicle_id() const;
+    [[nodiscard]]
+    bool is_verbose() const;
+    [[nodiscard]]
+    bool can_see(Vec2D const& target) const;
+    [[nodiscard]]
+    bool will_seek_vehicle() const;
+    [[nodiscard]]
+    bool is_hungry() const;
+    [[nodiscard]]
+    bool can_touch(Vec2D const& target) const;
+    [[nodiscard]]
+    bool can_see(double distance) const;
+    [[nodiscard]]
+    bool can_touch(double distance) const;
+    [[nodiscard]]
+    bool is_health_pct_above(double pct) const;
+    [[nodiscard]]
+    bool is_health_pct_below(double pct) const;
+    [[nodiscard]]
+    double get_health_pct() const;
+    [[nodiscard]]
+    bool is_dead() const;
+    void update();
+    void kill();
+    void avoid_edges();
     void behaviors(Vehicles& vehicles, Foods& food_positions);
     void populate_in_place(IdType       id,
                            World*       world,
@@ -98,7 +121,8 @@ class Vehicle {
         return nearest;
     }
 
-    [[nodiscard]] bool is_less_fit(Vehicle const& other) const;
+    [[nodiscard]]
+    bool is_less_fit(Vehicle const& other) const;
 
    private:
     static IdType       global_id_counter;
@@ -112,17 +136,20 @@ class Vehicle {
     void                seek_for_altruism(Vehicle* target, double record);
     void                seek_for_reproduction(Vehicle* target, double record);
     void                wander();
-    [[nodiscard]] Vec2D seek(Vec2D const& target) const;
-    [[nodiscard]] Vec2D flee(Vec2D const& target) const;
-    [[nodiscard]] Food& last_sought_food(double& record) const;
-    void                food_behaviors(Foods& food_positions);
-    void                check_sought_vehicle();
-    void                check_sought_food();
-    void                vehicle_behaviors(Vehicles& vehicles);
-    void                try_explosion();
-    void                apply_force(Vec2D force, bool unlimited = false);
-    void perform_reproduction(Vehicle const& mom, Vehicle const& dad) const;
-    void perform_explosion(World* world) const;
+    [[nodiscard]]
+    Vec2D seek(Vec2D const& target) const;
+    [[nodiscard]]
+    Vec2D flee(Vec2D const& target) const;
+    [[nodiscard]]
+    Food& last_sought_food(double& record) const;
+    void  food_behaviors(Foods& food_positions);
+    void  check_sought_vehicle();
+    void  check_sought_food();
+    void  vehicle_behaviors(Vehicles& vehicles);
+    void  try_explosion();
+    void  apply_force(Vec2D force, bool unlimited = false);
+    void  perform_reproduction(Vehicle const& mom, Vehicle const& dad) const;
+    void  perform_explosion(World* world) const;
 
     World*       world                        = nullptr;
     LifespanType health                       = 25.0;

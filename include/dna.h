@@ -22,8 +22,9 @@ struct DNA : public BaseDNA<DNA> {
 
     DNA() noexcept;
 
-    [[nodiscard]] DNA crossover(DNA const& partner) const noexcept;
-    void              mutate() noexcept;
+    [[nodiscard]]
+    DNA  crossover(DNA const& partner) const noexcept;
+    void mutate() noexcept;
 };
 
 }  // namespace tom

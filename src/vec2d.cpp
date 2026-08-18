@@ -31,19 +31,23 @@ Vec2D::Vec2D() : x(0), y(0)
 Vec2D::Vec2D(double x, double y) : x(x), y(y)
 {
 }
-[[nodiscard]] Vec2D Vec2D::operator+(Vec2D const& other) const
+[[nodiscard]]
+Vec2D Vec2D::operator+(Vec2D const& other) const
 {
     return {x + other.x, y + other.y};
 }
-[[nodiscard]] Vec2D Vec2D::operator-(Vec2D const& other) const
+[[nodiscard]]
+Vec2D Vec2D::operator-(Vec2D const& other) const
 {
     return {x - other.x, y - other.y};
 }
-[[nodiscard]] Vec2D Vec2D::operator*(double scalar) const
+[[nodiscard]]
+Vec2D Vec2D::operator*(double scalar) const
 {
     return {x * scalar, y * scalar};
 }
-[[nodiscard]] Vec2D Vec2D::operator/(double scalar) const
+[[nodiscard]]
+Vec2D Vec2D::operator/(double scalar) const
 {
     return {x / scalar, y / scalar};
 }
@@ -73,19 +77,22 @@ Vec2D& Vec2D::operator/=(double scalar)
     y /= scalar;
     return *this;
 }
-[[nodiscard]] double Vec2D::distance_to(Vec2D const& other) const
+[[nodiscard]]
+double Vec2D::distance_to(Vec2D const& other) const
 {
     double dx = x - other.x;
     double dy = y - other.y;
     return std::sqrt(dx * dx + dy * dy);
 }
 
-[[nodiscard]] double Vec2D::magSq() const
+[[nodiscard]]
+double Vec2D::magSq() const
 {
     return x * x + y * y;
 }
 
-[[nodiscard]] double Vec2D::magnitude() const
+[[nodiscard]]
+double Vec2D::magnitude() const
 {
     return std::sqrt(x * x + y * y);
 }
@@ -104,7 +111,8 @@ void Vec2D::normalize()
     }
 }
 
-[[nodiscard]] Vec2D Vec2D::normalized() const
+[[nodiscard]]
+Vec2D Vec2D::normalized() const
 {
     double const mag = magnitude();
     if (mag == 0)
@@ -125,12 +133,14 @@ void Vec2D::set_heading(double angle)
     set(cos(angle) * mag, sin(angle) * mag);
 }
 
-[[nodiscard]] double Vec2D::heading() const
+[[nodiscard]]
+double Vec2D::heading() const
 {
     return atan2(y, x);
 }
 
-[[nodiscard]] Vec2D Vec2D::copy() const
+[[nodiscard]]
+Vec2D Vec2D::copy() const
 {
     return {x, y};
 }
@@ -144,7 +154,8 @@ void Vec2D::rotate(double angle)
     set(new_x, new_y);
 }
 
-[[nodiscard]] Vec2D Vec2D::rotated(double angle) const
+[[nodiscard]]
+Vec2D Vec2D::rotated(double angle) const
 {
     double cos_a = cos(angle);
     double sin_a = sin(angle);
@@ -163,12 +174,14 @@ void Vec2D::set(double new_x, double new_y)
     y = new_y;
 }
 
-[[nodiscard]] double Vec2D::dot(Vec2D const& other) const
+[[nodiscard]]
+double Vec2D::dot(Vec2D const& other) const
 {
     return x * other.x + y * other.y;
 }
 
-[[nodiscard]] double Vec2D::angle_between(Vec2D const& other) const
+[[nodiscard]]
+double Vec2D::angle_between(Vec2D const& other) const
 {
     return acos(dot(other) / (magnitude() * other.magnitude()));
 }

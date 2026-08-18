@@ -70,7 +70,8 @@ struct OptionSet {
         options.clear();
     }
 
-    [[nodiscard]] bool contains(T option) const
+    [[nodiscard]]
+    bool contains(T option) const
     {
         return options.contains(option);
     }

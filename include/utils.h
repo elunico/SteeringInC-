@@ -35,7 +35,8 @@ concept Positionable = requires(T a) {
 
 #ifdef FAST_RANDOM
 
-[[maybe_unused]] static inline void set_seed(auto seed) noexcept
+[[maybe_unused]]
+static inline void set_seed(auto seed) noexcept
 {
     srand(static_cast<unsigned int>(seed));
 }

@@ -78,7 +78,8 @@ class Lifespan {
         }
     }
 
-    [[nodiscard]] T remaining() const noexcept
+    [[nodiscard]]
+    T remaining() const noexcept
     {
         return life;
     }
@@ -94,7 +95,8 @@ class Lifespan {
             life = 0;
     }
 
-    [[nodiscard]] bool is_expired() const noexcept
+    [[nodiscard]]
+    bool is_expired() const noexcept
     {
         return !unlimited_ && life <= 0;
     }

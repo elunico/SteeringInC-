@@ -19,6 +19,7 @@ SpaceAfterTemplateKeyword: true
 SpaceBeforeParens: ControlStatements
 SpacesInContainerLiterals: true
 UseTab: Never
+BreakAfterAttributes: Always
 
 
 # Nice style but not as good as above, but not based on any existing style

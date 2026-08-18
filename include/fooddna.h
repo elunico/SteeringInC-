@@ -17,9 +17,9 @@ struct FoodDNA : public BaseDNA<FoodDNA> {
 
     FoodDNA();
 
-    [[nodiscard]] virtual FoodDNA crossover(
-        FoodDNA const& partner) const noexcept;
-    virtual void mutate() noexcept;
+    [[nodiscard]]
+    virtual FoodDNA crossover(FoodDNA const& partner) const noexcept;
+    virtual void    mutate() noexcept;
 };
 }  // namespace tom
 

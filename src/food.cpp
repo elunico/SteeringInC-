@@ -10,7 +10,8 @@
 
 namespace tom {
 
-[[nodiscard]] Vec2D const& Environmental::get_position() const noexcept
+[[nodiscard]]
+Vec2D const& Environmental::get_position() const noexcept
 {
     return position;
 }
@@ -75,7 +76,8 @@ void Food::behaviors(World::Vehicles const& vehicles)
     }
 }
 
-[[nodiscard]] double Food::get_nutrition() const noexcept
+[[nodiscard]]
+double Food::get_nutrition() const noexcept
 {
     return dna.nutrition;
 }

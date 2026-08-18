@@ -9,9 +9,10 @@
 namespace tom {
 
 template <typename Container, typename Element = Container::value_type>
-[[nodiscard]] std::vector<Container> split(Container const&           container,
-                                           Element                    delimiter,
-                                           std::optional<std::size_t> limit)
+[[nodiscard]]
+std::vector<Container> split(Container const&           container,
+                             Element                    delimiter,
+                             std::optional<std::size_t> limit)
 {
     if (limit == 0) {
         return {container};
@@ -37,8 +38,8 @@ template <typename Container, typename Element = Container::value_type>
 }
 
 template <typename Container, typename Element = Container::value_type>
-[[nodiscard]] std::vector<Container> split(Container const& container,
-                                           Element          delimiter)
+[[nodiscard]]
+std::vector<Container> split(Container const& container, Element delimiter)
 {
     return split(container, delimiter, std::nullopt);
 }
