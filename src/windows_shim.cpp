@@ -11,7 +11,6 @@ void usleep_shim(long microseconds)
 }
 
 extern "C" {
-
 char const* optarg_shim = NULL;
 int         optopt_shim = '?';
 int         argpos      = 1;
