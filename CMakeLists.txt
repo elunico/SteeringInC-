@@ -5,8 +5,9 @@ project(vehicles)
 include_directories(.)
 include_directories(include)
 
-option(RELEASE_BUILD "Build in release mode" OFF)
+option(RELEASE_BUILD "Build in release mode" ON)
 option(NOGUI "Build without GUI" OFF)
+option(NEW_EDGE_AVOIDANCE "Use the new (imperfect) algorithm for edge avoidance" ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
 if(NOGUI)
@@ -35,6 +36,10 @@ else()
     if(THREAD_SANITIZER)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fsanitize=thread")
     endif()
+endif()
+
+if(NEW_EDGE_AVOIDANCE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNEW_EDGE_AVOIDANCE")
 endif()
 
 

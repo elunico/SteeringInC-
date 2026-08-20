@@ -16,12 +16,11 @@ FLTKCustomDrawer::FLTKCustomDrawer(World* world, int W, int H)
     : Fl_Box(0, 0, W, H, nullptr), world(world)
 {
 }
-Fl_Window* FLTKRenderer::window = nullptr;
 
+Fl_Window* FLTKRenderer::window         = nullptr;
 Fl_Window* FLTKRenderer::control_window = nullptr;
-
-Fl_Window* FLTKRenderer::info_window = nullptr;
-Fl_Box*    FLTKRenderer::info_label  = nullptr;
+Fl_Window* FLTKRenderer::info_window    = nullptr;
+Fl_Box*    FLTKRenderer::info_label     = nullptr;
 
 FLTKRenderer::FLTKRenderer(World* world, int W, int H, float scale_factor)
     : world(world), scale_factor(scale_factor)
@@ -50,9 +49,13 @@ FLTKRenderer::FLTKRenderer(World* world, int W, int H, float scale_factor)
     // double free is caused by calling delete drawer after the destructor
     // runs for FLTKRenderer?
     drawer = new FLTKCustomDrawer(world, W, H);
-    Fl::set_atclose([](auto, auto) {
-        tom::World::stop_running(0);
-        FLTKRenderer::teardown();
+    Fl::set_atclose([](auto closing_window, auto) {
+        if (window == closing_window) {
+            tom::World::stop_running(0);
+            FLTKRenderer::teardown();
+        } else {
+            closing_window->hide();
+        }
     });
 
     window->end();
@@ -64,7 +67,7 @@ FLTKRenderer::FLTKRenderer(World* world, int W, int H, float scale_factor)
     info_label = new Fl_Box(0, 0, 700, 100, "Testing");
     info_label->labelfont(FL_COURIER);
     info_window->resizable(info_window);
-    info_label->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+    info_label->align(FL_ALIGN_LEFT_BOTTOM | FL_ALIGN_INSIDE);
     info_window->end();
     info_window->show();
 
@@ -128,7 +131,9 @@ void FLTKCustomDrawer::draw()
 
     auto ss  = world->info_stream("\n");
     auto msg = ss.str();
-    FLTKRenderer::info_label->copy_label(msg.c_str());
+    if (FLTKRenderer::info_window) {
+        FLTKRenderer::info_label->copy_label(msg.c_str());
+    }
     if (ControlWindow::show_info) {
         fl_font(FL_COURIER, 14);
         fl_color(FL_BLACK);

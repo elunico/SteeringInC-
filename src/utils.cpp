@@ -12,18 +12,24 @@ namespace ansi {
 ANSICode const red{""};
 ANSICode const cyan{""};
 ANSICode const reset{""};
-ANSICode const erase_to_eol{""};
 #else
 ANSICode const red{"\033[31m"};
 ANSICode const cyan{"\033[36m"};
 ANSICode const reset{"\033[0m"};
-ANSICode const erase_to_eol{"\033[0K"};
 #endif
+
+ANSICode const        erase_to_eol{"\033[0K"};
+PartialANSICode const set_scrollable_area{"\033[{};{}r"};
 
 ANSICode::ANSICode(char const* s) : code(s)
 {
 }
+
 ANSICode::ANSICode(std::string s) : code(s)
+{
+}
+
+ANSICode::ANSICode(std::string s, std::string end) : code(s), reset_code(end)
 {
 }
 

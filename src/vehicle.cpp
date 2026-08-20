@@ -16,6 +16,9 @@
 
 namespace tom {
 
+static int edge_kill_count      = 0;
+static int last_tick_edge_death = 0;
+
 template <typename T, T amount>
 static Lifespan<T, amount> min(Lifespan<T, amount> const& lifespan, T d)
 {
@@ -150,6 +153,11 @@ bool Vehicle::can_see(Vec2D const& target) const
     return can_see(position.distance_to(target));
 }
 
+bool Vehicle::feels(Vehicle::BehaviorState state) const
+{
+    return behavior_state.contains(state);
+}
+
 [[nodiscard]]
 bool Vehicle::will_seek_vehicle() const
 {
@@ -256,11 +264,20 @@ void Vehicle::update()
 
     position += velocity;
 
-    if (position.x < 0 || position.x > world->width || position.y < 0 ||
-        position.y > world->height) {
+    if (position.x < -World::edge_threshold ||
+        position.x > (world->width + World::edge_threshold) ||
+        position.y < -World::edge_threshold ||
+        position.y > (world->height + World::edge_threshold)) {
+        edge_kill_count++;
+        last_tick_edge_death = world->tick_counter;
         kill();
         return;
     }
+
+    DEBUG_USE(auto s = tom::ansi::erase_to_eol.stringify(
+                  "Killed ", edge_kill_count, " by edges. Last death ",
+                  world->tick_counter - last_tick_edge_death, "\r"));
+    debug_output(s);
 
     // Reset acceleration after each update
     acceleration.reset();
@@ -280,6 +297,17 @@ void Vehicle::kill()
 
 void Vehicle::avoid_edges()
 {
+#ifdef NEW_EDGE_AVOIDANCE
+    if (position.x < World::edge_threshold ||
+        position.x > world->width - World::edge_threshold ||
+        position.y < World::edge_threshold ||
+        position.y > world->height - World::edge_threshold) {
+        auto force = seek(Vec2D{world->width / 2.0, world->height / 2.0});
+        force.set_mag(dna.edge_repulsion);
+        apply_force(force);
+    }
+#else
+
     Vec2D steer  = position;
     bool  active = false;
 
@@ -303,6 +331,8 @@ void Vehicle::avoid_edges()
         steer = seek(steer);
         apply_force(steer, true);
     }
+
+#endif
 }
 
 void Vehicle::wander()
@@ -361,19 +391,19 @@ void Vehicle::behaviors(
 
     determine_behavior();
 
-    if (behavior_state.contains(BehaviorState::DESPERATE)) {
+    if (feels(BehaviorState::DESPERATE)) {
         try_explosion();
     }
 
-    if (behavior_state.contains(BehaviorState::WANDERING)) {
+    if (feels(BehaviorState::WANDERING)) {
         wander();
     }
 
-    if (behavior_state.contains(BehaviorState::HUNGRY)) {
+    if (feels(BehaviorState::HUNGRY)) {
         food_behaviors(food_positions);
     }
 
-    if (behavior_state.contains(BehaviorState::OUTGOING)) {
+    if (feels(BehaviorState::OUTGOING)) {
         vehicle_behaviors(vehicles);
     }
 }

@@ -1,5 +1,6 @@
 #include "dna.h"
 #include "utils.h"
+#include "vehicle.h"
 
 namespace tom {
 
@@ -17,7 +18,9 @@ DNA::DNA() noexcept
       explosion_chance(random_in_range(0.001, 0.005)),
       explosion_tries(random_in_range(2, 10)),
       reproduction_cooldown(random_int(500, 1000)),
-      age_of_maturity(random_int(75, 200))
+      age_of_maturity(random_int(75, 200)),
+      edge_repulsion(
+          random_int(3 * Vehicle::MAX_FORCE / 2, Vehicle::MAX_FORCE * 5))
 {
 }
 
@@ -52,6 +55,8 @@ DNA DNA::crossover(DNA const& partner) const noexcept
         (random_bool()) ? malice_damage : partner.malice_damage;
     child.altruism_heal =
         (random_bool()) ? altruism_heal : partner.altruism_heal;
+    child.edge_repulsion =
+        random_bool() ? edge_repulsion : partner.edge_repulsion;
     return child;
 }
 
@@ -97,6 +102,9 @@ void DNA::mutate() noexcept
     }
     if (random_in_range(0, 1) < mutation_rate) {
         altruism_heal += random_delta();
+    }
+    if (random_in_range(0, 1) < mutation_rate) {
+        edge_repulsion += random_delta(Vehicle::MAX_FORCE / 5);
     }
 }
 }  // namespace tom

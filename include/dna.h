@@ -19,6 +19,7 @@ struct DNA : public BaseDNA<DNA> {
     double explosion_tries;
     int    reproduction_cooldown;
     int    age_of_maturity;
+    double edge_repulsion;
 
     DNA() noexcept;
 

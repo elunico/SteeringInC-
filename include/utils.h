@@ -3,13 +3,16 @@
 
 #include <cassert>
 #include <concepts>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <format>
 #include <iostream>
 #include <limits>
 #include <numeric>
 #include <ostream>
 #include <random>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -97,16 +100,33 @@ static constexpr std::string RESET_ESC = "\033[0m";
 
 struct ANSICode {
     std::string code;
+    std::string reset_code = RESET_ESC;
     ANSICode(char const* s);
     ANSICode(std::string s);
+    ANSICode(std::string s, std::string escape_code);
 
     template <typename... Args>
     void output(Args&&... args) const noexcept
     {
-        std::cout << code;
-        ((std::cout << args), ...);
-        std::cout << RESET_ESC;
-        std::cout << std::flush;
+        return output_impl(std::cout, args...);
+    }
+
+    template <typename... Args>
+    std::string stringify(Args&&... args) const noexcept
+    {
+        std::stringstream ss;
+        output_impl(ss, args...);
+        return ss.str();
+    }
+
+   private:
+    template <typename... Args>
+    void output_impl(std::ostream& os, Args&&... args) const noexcept
+    {
+        os << code;
+        ((os << args), ...);
+        os << reset_code;
+        os << std::flush;
     }
 
 #ifndef NDEBUG
@@ -132,19 +152,27 @@ struct ANSICode {
     operator std::string() const noexcept;
 };
 
+struct PartialANSICode {
+    std::string format;
+
+    template <typename... Ts>
+    constexpr ANSICode complete(Ts... args) const
+    {
+        std::string result;
+        result.reserve(1024);
+        snprintf(result.data(), 1023, format.c_str(), args...);
+        result.shrink_to_fit();
+        return ANSICode{result};
+    }
+};
+
 std::ostream& operator<<(std::ostream& os, ANSICode const& c);
 
-#ifdef NOCOLOR
-extern ANSICode const red;
-extern ANSICode const cyan;
-extern ANSICode const reset;
-extern ANSICode const erase_to_eol;
-#else
-extern ANSICode const red;
-extern ANSICode const cyan;
-extern ANSICode const reset;
-extern ANSICode const erase_to_eol;
-#endif
+extern ANSICode const        red;
+extern ANSICode const        cyan;
+extern ANSICode const        reset;
+extern ANSICode const        erase_to_eol;
+extern PartialANSICode const set_scrollable_area;
 }  // namespace ansi
 
 template <typename... Args>

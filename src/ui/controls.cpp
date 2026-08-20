@@ -39,6 +39,9 @@ ControlWindow::ControlWindow(World* world, int start_x, int W, int H)
         button_width, "Toggle Info", FL_BLACK, QtButtonBase::default_on_color,
         [this](int) {
             ControlWindow::show_info = !ControlWindow::show_info;
+            if (!FLTKRenderer::info_window->shown()) {
+                FLTKRenderer::info_window->show();
+            }
             redraw();
             return 1;
         },
